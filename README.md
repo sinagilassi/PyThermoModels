@@ -1,2 +1,2 @@
-# pyThermoModels
+# PyThermoModels
 Python Thermodynamic Models
