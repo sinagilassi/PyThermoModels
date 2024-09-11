@@ -26,18 +26,19 @@ class eosCoreClass(eosClass):
         # parent
         super().__init__(self.P, self.T, eosName, moleFraction)
 
-    def classDes():
-        print("functions used by all equation of states")
-
     def _eosPR(self):
         '''
-        find compressibility factor (Z) at specified P and T
-        then molar-volume is found.
+        find compressibility factor (Z) at specified P and T then molar-volume is found.
 
-        output:
-            res:
-                Z: compressibility coefficient [-]
-                eos-params: a,b,A,B,alpha,beta,gamma
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        res: dict
+            Z: compressibility coefficient [-]
+            eos-params: a,b,A,B,alpha,beta,gamma
         '''
         try:
             # component data
@@ -104,7 +105,7 @@ class eosCoreClass(eosClass):
             # find f(Z) root
             rootList = np.sort(self.findRootfZ(alpha, beta, gamma))
 
-            #! check how many real Z
+            # ! check how many real Z
             ZsNo = len(rootList)
 
             # z

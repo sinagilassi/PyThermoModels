@@ -1,8 +1,9 @@
 # import packages/modules
 
 # local
-from .configs import __description__, __version__, packageName, packageShortName
-from .docs import eosCoreClass, FugacityClass
+from .configs import __description__, __version__, packageName, \
+    packageShortName
+from .docs import eosCoreClass, FugacityClass, ManagerClass
 
 
 def intro():
@@ -14,62 +15,27 @@ def intro():
     print(_des)
 
 
-def calculate_fugacity(modelInput):
+def calculate_fugacity(input_file):
     '''
-    Calculate fugacity for gas/liquid/solid phase
+    Calculate fugacity for gas/liquid/solid phases
 
-    args:
-        modelInput:
-            eos-name: eos equation name
-            phase: component phase (gas/liquid/solid)
-            compList: component list
-            MoFr: mole fraction
-            params: 
-                pressure [Pa]
-                temperature [K]
-            unit: set unit (SI: default, cgs)  
+    Parameters
+    ----------
+    input_file: str
+        input_file file path
+
+    Returns
+    -------
+    fugacity: list
+        fugacity for gas/liquid/solid phase
     '''
     try:
-        # get primary info
-        compList = modelInput.get("components")
-        # eos method
-        eosModel = modelInput.get('eos-model')
-        # phase
-        phase = modelInput.get("phase")
-        # ole fraction
-        moleFraction = modelInput.get('MoFr', 1)
-        # params
-        params = modelInput.get('params')
+        # load input file
+        model_input = ManagerClass.load_yml(input_file)
 
-        # check component list
-        compListUnique = dUtilityClass.buildComponentList(compList)
-
-        # load all data
-        compData = loadDataEOS(compListUnique)
-
-        # * init eos class
-        _eosCoreClass = eosCoreClass(
-            compData, compList, eosModel, moleFraction, params)
-
-        # select method
-        selectEOS = {
-            "PR": lambda: _eosCoreClass._eosPR()
-        }
-        # res
-        _eosRes = selectEOS.get(eosModel)()
-
-        # * init fugacity class
-        _fugacityClass = FugacityClass(compData, compList, _eosRes, phase)
-
-        # select method
-        selectFugacity = {
-            "PR": lambda: _fugacityClass.FugacityPR()
-        }
-
-        # res
-        _fugacityRes = selectFugacity.get(eosModel)()
+        fugacity = 1
 
         # return
-        return _fugacityRes
+        return fugacity
     except Exception as e:
-        raise Exception("Fugacity calculation failed!, ", e)
+        raise Exception("Calculating the Fugacity failed!, ", e)
