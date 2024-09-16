@@ -1,0 +1,5 @@
+thermodb:
+  ALL:
+    Pc: ['GENERAL']['Pc']
+    Tc: ['GENERAL']['Tc']
+    AcFa: ['GENERAL']['AcFa']

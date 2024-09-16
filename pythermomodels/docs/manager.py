@@ -5,11 +5,20 @@ import csv
 # local
 from .eoscore import eosCoreClass
 from .fugacity import FugacityClass
+from .thermodb import ThermoDB
 
 
-class ManagerClass:
-    def __init__(self, model_input):
-        self.model_input = model_input
+class Manager(ThermoDB):
+
+    _input = {}
+
+    def __init__(self):
+        # init ThermoDB
+        ThermoDB.__init__(self)
+
+    @property
+    def input(self):
+        return self._input
 
     @staticmethod
     def load_yml(yml_file):
@@ -65,30 +74,54 @@ class ManagerClass:
         except Exception as e:
             raise Exception("Loading data filed!, ", e)
 
-    def fugacity_cal_init(self):
+    def check_thermodb(self):
+        '''
+        Check thermo databook (thermodb file created by pyThermoDB)
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        thermodb : dict
+            dict of components in the thermodb 
+        '''
+        try:
+            # check name
+            return self.thermodb
+        except Exception as e:
+            raise Exception('Checking thermodb failed! ', e)
+
+    def fugacity_cal_init(self, model_input):
         '''
         Initialize fugacity calculation
         '''
         try:
-            # model input
-            model_setting = self.model_input["model_setting"]
-
-            eos = model_setting.get('eos', 'Peng–Robinson')
-            phase = model_setting.get('phase', 'gas')
-
+            # eos
+            eos_model = model_input.get('eos-model', 'Peng–Robinson')
+            # phase
+            phase = model_input.get('phase', 'gas')
             # component
-            components = self.model_input["components"]
-
+            components = model_input["components"]
+            # mole fraction
+            mole_fraction = model_input["mole-fraction"]
             # operating conditions
-            operating_conditions = self.model_input["operating_conditions"]
+            operating_conditions = model_input["operating_conditions"]
 
-            # data source
-            data_source = self.model_input["data_source"]
-            # load
+            # thermodb
+            thermodb = self.thermodb
+            # thermodb rule
+            thermodb_rule = self.thermodb_rule
+
+            # check value
+            a = thermodb['CO2'].check_property(
+                'GENERAL').get_property('dHf_IG')['value']
+            print(type(a))
 
             # # * init eos class
-            # _eosCoreClass = eosCoreClass(
-            #     compData, compList, eosModel, moleFraction, params)
+            _eosCoreClass = eosCoreClass(
+                compData, components, eos_model, mole_fraction, operating_conditions)
 
             # # select method
             # selectEOS = {

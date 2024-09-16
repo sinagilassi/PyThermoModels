@@ -135,6 +135,115 @@ class eosCoreClass(eosClass):
         except Exception as e:
             raise Exception(e)
 
+    def _eosPR_V2(self):
+        '''
+        find compressibility factor (Z) at specified P and T then molar-volume is found.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        res: dict
+            Z: compressibility coefficient [-]
+            eos-params: a,b,A,B,alpha,beta,gamma
+        '''
+        try:
+            # component data
+            componentsData = self.compData
+
+            # sorted data
+            # Pc [bar], Tc [K], w [-]
+            # ! Pc [bar] => [Pa]
+            componentsDataSorted = [
+                [float(item['Pc'])*1e5, float(item['Tc']), float(item['w'])] for item in componentsData]
+
+            # set a b matrix
+            a = np.zeros(self.componentsNo)
+            b = np.zeros(self.componentsNo)
+
+            count = 0
+            for item in componentsDataSorted:
+                aLoop = self.aPR(item[0], item[1], item[2])
+                # a.append(aLoop)
+                a[count] = aLoop
+                bLoop = self.bPR(item[0], item[1])
+                # b.append(bLoop)
+                b[count] = bLoop
+
+                # T/Tc ratio
+                T_Tc_ratio = self.T/item[1]
+
+                # set
+                count += 1
+
+            # check pure, multi-component system
+            if self.componentsNo > 1:
+                # mixing rule to calculate a/b
+                # kij
+                kij = self.kijFill()
+                aij = self.aijFill(a, kij)
+                aSet = self.aMixing(aij, self.moleFraction)
+                bSet = self.bMixing(b, self.moleFraction)
+            else:
+                # no change a/b (pure component)
+                aSet = a[0]
+                bSet = b[0]
+
+            # set parameters A,B
+            A = self.eos_A(aSet)
+            B = self.eos_B(bSet)
+
+            # build polynomial eos equation f(Z)
+            alpha = self.eos_alpha(B)
+            beta = self.eos_beta(A, B)
+            gamma = self.eos_gamma(A, B)
+
+            # eso-params
+            esoParams = {
+                "a": aSet,
+                "b": bSet,
+                "A": A,
+                "B": B,
+                "alpha": alpha,
+                "beta": beta,
+                "gamma": gamma
+            }
+
+            # find f(Z) root
+            rootList = np.sort(self.findRootfZ(alpha, beta, gamma))
+
+            # ! check how many real Z
+            ZsNo = len(rootList)
+
+            # z
+            minZ = np.amin(rootList)
+            maxZ = np.amax(rootList)
+
+            # # molar-volume [m3/mol]
+            # # -> all
+            # molarVolumes = np.sort(self.molarVolume(rootList))
+            # # -> liquid
+            # molarVolumeLiquid = self.molarVolume(minZ)
+            # # -> gas
+            # molarVolumeGas = self.molarVolume(maxZ)
+
+            # REVIEW
+            # calculate specific volume [m^3/kg]
+            # res
+            res = {
+                "Zs": rootList,
+                "eos-params": esoParams,
+                "pressure": self.P,
+                "temperature": self.T
+            }
+
+            return res
+
+        except Exception as e:
+            raise Exception(e)
+
     def _eosMixPR(self):
         '''
         find compressibility factor (Z) at specified P and T

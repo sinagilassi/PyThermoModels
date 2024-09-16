@@ -1,3 +1,3 @@
-from .app import __version__, intro, calculate_fugacity
+from .app import __version__, intro, fugacity
 
-__all__ = ['__version__', 'calculate_fugacity', 'intro']
+__all__ = ['__version__', 'fugacity', 'intro']

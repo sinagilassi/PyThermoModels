@@ -1,0 +1,5 @@
+thermodb:
+  CO2:
+    Pc: ['GENERAL','Pc']
+    Tc: ['GENERAL','Tc']
+    AcFa: ['GENERAL','AcFa']

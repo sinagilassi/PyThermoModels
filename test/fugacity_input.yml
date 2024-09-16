@@ -9,5 +9,8 @@ operating_conditions:
   pressure: 15.55, Pa
   temperature: 473.15, K
 
-data_source:
-  path: E:\Python Projects\PyThermoModels\test\fugacity_data.csv
+thermodb:
+  CO2:
+    Pc: ['GENERAL']['Pc']
+    Tc: ['GENERAL']['Tc']
+    AcFa: ['GENERAL']['AcFa']

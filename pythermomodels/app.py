@@ -3,7 +3,7 @@
 # local
 from .configs import __description__, __version__, packageName, \
     packageShortName
-from .docs import eosCoreClass, FugacityClass, ManagerClass
+from .docs import eosCoreClass, FugacityClass, Manager
 
 
 def intro():
@@ -15,21 +15,13 @@ def intro():
     print(_des)
 
 
-def database_config():
+def fugacity():
     '''
-    Database config
-    '''
-    pass
-
-
-def calculate_fugacity(input_file):
-    '''
-    Calculate fugacity for gas/liquid/solid phases
+    Initialize fugacity calculation
 
     Parameters
     ----------
-    input_file: str
-        input_file file path
+    None
 
     Returns
     -------
@@ -37,12 +29,9 @@ def calculate_fugacity(input_file):
         fugacity for gas/liquid/solid phase
     '''
     try:
-        # load input file
-        model_input = ManagerClass.load_yml(input_file)
-
-        fugacity = 1
-
+        # manager
+        ManagerC = Manager()
         # return
-        return fugacity
+        return ManagerC
     except Exception as e:
         raise Exception("Calculating the Fugacity failed!, ", e)
