@@ -1,5 +1,5 @@
 # import packages/modules
-import pythermomodels as ptm
+import PyThermoModels as ptm
 
 # check version
 print(ptm.__version__)

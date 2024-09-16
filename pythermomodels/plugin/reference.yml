@@ -1,0 +1,30 @@
+REFERENCES:
+  PENG-ROBINSON:
+    ARGS:
+      temperature:
+        name: temperature
+        symbol: T
+        unit: K
+      pressure:
+        name: pressure
+        symbol: P
+        unit: Pa
+    RETURNS:
+      fugacity:
+        name: fugacity
+        symbol: Fug
+        unit: -
+    DEPENDANT-INPUT: 
+      critical-temperature:
+        name: critical temperature
+        symbol: Tc
+        unit: K
+      critical-pressure:
+        name: critical pressure
+        symbol: Pc
+        unit: Pa
+      acentric-factor:
+        name: acentric factor
+        symbol: AscFac
+        unit: -
+    DEPENDANT-EQUATIONS: None 

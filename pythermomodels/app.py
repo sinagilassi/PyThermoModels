@@ -15,6 +15,13 @@ def intro():
     print(_des)
 
 
+def database_config():
+    '''
+    Database config
+    '''
+    pass
+
+
 def calculate_fugacity(input_file):
     '''
     Calculate fugacity for gas/liquid/solid phases
