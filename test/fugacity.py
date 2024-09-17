@@ -1,4 +1,5 @@
 # import packages/modules
+from pprint import pprint as pp
 import PyThermoModels as ptm
 import pyThermoDB as ptdb
 import os
@@ -17,7 +18,8 @@ CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
 print(type(CO2_thermodb))
 
-
+# CO2_thermodb
+CO2_thermodb
 # ========================================
 # INITIALIZE FUGACITY OBJECT
 # ========================================
@@ -43,10 +45,10 @@ print(fugacity_obj.check_thermodb())
 # =======================================
 # model input
 # eos model
-eos_model = 'PR'
+eos_model = 'Peng_Robinson'
 
 # component phase
-phase = "gas"
+phase = "GAS"
 
 # component list
 comp_list = ["CO2"]
@@ -57,10 +59,10 @@ comp_list = ["CO2"]
 MoFri = []
 
 # temperature [K]
-T = 200 + 273.15
+T = 298.15
 
 # pressure [Pa]
-P = 15.55*1e5
+P = 3*1e5
 
 # model input
 model_input = {
@@ -69,10 +71,12 @@ model_input = {
     "components": comp_list,
     "mole-fraction": MoFri,
     "operating_conditions": {
-        "P": P,
-        "T": T,
+        "pressure": P,
+        "temperature": T,
     },
 }
 
+# check reference
+# pp(fugacity_obj.fugacity_check_reference(eos_model))
 # eos
 fugacity_obj.fugacity_cal_init(model_input)

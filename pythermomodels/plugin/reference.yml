@@ -1,5 +1,5 @@
 REFERENCES:
-  PENG-ROBINSON:
+  PENG_ROBINSON:
     ARGS:
       temperature:
         name: temperature
@@ -13,8 +13,8 @@ REFERENCES:
       fugacity:
         name: fugacity
         symbol: Fug
-        unit: -
-    DEPENDANT-INPUT: 
+        unit: None
+    DEPENDANT-DATA: 
       critical-temperature:
         name: critical temperature
         symbol: Tc
@@ -25,6 +25,6 @@ REFERENCES:
         unit: Pa
       acentric-factor:
         name: acentric factor
-        symbol: AscFac
-        unit: -
+        symbol: AcFa
+        unit: None
     DEPENDANT-EQUATIONS: None 

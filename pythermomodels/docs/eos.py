@@ -14,7 +14,7 @@ from ..configs import EOS_ROOT_ACCURACY
 from ..utils import roundNum, removeDuplicatesList
 
 
-class eosClass:
+class EOS:
     # init
     def __init__(self, P, T, eosName, moleFraction=[]):
         self.P = P
@@ -34,7 +34,7 @@ class eosClass:
         eosNameSet = self.eosName
         # select method
         selectEOS = {
-            "PR": lambda: (a * self.P) / np.power(CONST.R_CONST * self.T, 2),
+            "PENG_ROBINSON": lambda: (a * self.P) / np.power(CONST.R_CONST * self.T, 2),
             "RK": lambda: (a * self.P) / (np.power(CONST.R_CONST, 2) * np.power(self.T, 2.5)),
             "VDW": lambda: (a * self.P) / np.power(CONST.R_CONST * self.T, 2),
         }
@@ -62,7 +62,7 @@ class eosClass:
         selectEOS = {
             "VDW": lambda B: -1 - B,
             "SKR": lambda B: -1,
-            "PR": lambda B: -1 + B,
+            "PENG_ROBINSON": lambda B: -1 + B,
         }
         # res
         res = selectEOS.get(eosNameSet)(B)
@@ -80,7 +80,7 @@ class eosClass:
         selectEOS = {
             "VDW": lambda A, B: A,
             "SKR": lambda A, B: A - B - np.power(B, 2),
-            "PR": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
+            "PENG_ROBINSON": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
         }
         # res
         res = selectEOS.get(eosNameSet)(A, B)
@@ -98,7 +98,7 @@ class eosClass:
         selectEOS = {
             "VDW": lambda A, B: -A * B,
             "SKR": lambda A, B: -A * B,
-            "PR": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
+            "PENG_ROBINSON": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
         }
         # res
         res = selectEOS.get(eosNameSet)(A, B)
@@ -233,18 +233,26 @@ class eosClass:
 
     def aPR(self, Pc, Tc, w):
         '''
-        calculate peng-robinson a constant
+        Calculate peng-robinson a constant
 
-        args:
-            Pc: critical pressure [Pa]
-                its unit is compatible with R [J/mol.K]/[Pa.m^3/mol.K]
-            Tc: critical temperature [K]
-            w: acentric factors [-]
+        Parameters
+        ----------
+        Pc : float
+            critical pressure [Pa] (its unit is compatible with R [J/mol.K]/[Pa.m^3/mol.K])
+        Tc : float
+            critical temperature [K]
+        w : float
+            acentric factor [-]
 
+        Returns
+        -------
+        a : float
+            PR constant [Pa.(m3^2)/(mol^2)]
+
+        Notes
+        -----
+        check for w
         while universal gas constant [J/mol.K]
-
-        output:
-            a: PR constant [Pa.(m3^2)/(mol^2)]
         '''
         # check for w
         if w < 0.49:

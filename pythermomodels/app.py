@@ -3,7 +3,7 @@
 # local
 from .configs import __description__, __version__, packageName, \
     packageShortName
-from .docs import eosCoreClass, FugacityClass, Manager
+from .docs import Manager
 
 
 def intro():

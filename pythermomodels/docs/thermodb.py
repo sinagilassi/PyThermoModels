@@ -12,6 +12,7 @@ class ThermoDB:
     _thermodb_rule = {}
 
     def __init__(self):
+        # load reference
         pass
 
     @property
@@ -48,11 +49,17 @@ class ThermoDB:
             # check file
             if not os.path.exists(config_file):
                 raise Exception('Configuration file not found!')
+
+            # set name
+            name = str(name).strip()
             # load
             with open(config_file, 'r') as f:
                 _ref = yaml.load(f, Loader=yaml.FullLoader)
-                # set
-                self._thermodb_rule[str(name).strip()] = _ref['thermodb']
+                # check name exists
+                if name in _ref.keys():
+                    # set
+                    self._thermodb_rule[name] = _ref[name]
+
         except Exception as e:
             raise Exception('Configuration failed!, ', e)
 
@@ -114,7 +121,7 @@ class ThermoDB:
         except Exception as e:
             raise Exception('Deleting record failed!, ', e)
 
-    def build_datasource(self, components):
+    def build_datasource(self, components, reference):
         '''
         Build datasource
 
@@ -122,15 +129,41 @@ class ThermoDB:
         ----------
         components : list
             list of components
+        reference : dict
+            dict data of the reference
 
         Returns
         -------
         None
         '''
         try:
+            # reference
+            # get all dependent data
+            dependent_data_src = reference['DEPENDANT-DATA']
+            dependent_data = []
+            # check
+            if dependent_data_src is not None:
+                for item, value in dependent_data_src.items():
+                    _item_symbol = value['symbol']
+                    dependent_data.append(_item_symbol)
+
+            # datasource
+            datasource = {}
             for component in components:
                 if component in self._thermodb:
-                    # res
-                    return 1
+                    # set
+                    datasource[component] = {}
+                    # parms
+                    for item in dependent_data:
+                        # check property src
+                        check_property_src = 'GENERAL'
+                        if component in self.thermodb_rule.keys():
+                            check_property_src = self.thermodb_rule[component][item][0]
+
+                        # val
+                        _val = self.thermodb[component].check_property(
+                            check_property_src).get_property(str(item).strip())
+                        datasource[component][item] = _val
+                    return datasource
         except Exception as e:
             raise Exception('Building datasource failed!, ', e)

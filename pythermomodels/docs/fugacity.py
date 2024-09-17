@@ -21,20 +21,33 @@ class FugacityClass():
         # set
         self.P = params.get("pressure", 0)
         self.T = params.get("temperature", 0)
-        self.Zs = eosRes.get("eos-res")['Zs']
-        self.vaporPressure = eosRes.get("vapor-pressure", 0)
+        # eos res
+        # compressibility factor
+        self.Zs = eosRes['Zs']
+        # vapor pressure
+        self.vaporPressure = eosRes.get("VaPr", 0)
         # comp no
         self.componentsNo = len(self.components)
 
-    def FugacityPR(self, phase):
+    def FugacityPR(self, phase: str):
         '''
-        set fugacity equation based on a phase (gas/liquid/solid)
+        Set fugacity equation based on a phase (gas/liquid/solid)
+
+        Parameters
+        ----------
+        phase: str
+            gas/liquid/solid
+
+        Returns
+        -------
+        fugacity: float
+            fugacity
         '''
         try:
             # phase equation selection
             phaseEqSelection = {
-                'gas': self._glFugacityPR,
-                'liquid': self._glFugacityPR
+                'GAS': self._glFugacityPR,
+                'LIQUID': self._glFugacityPR
             }
 
             # set
@@ -43,7 +56,7 @@ class FugacityClass():
             # res
             return res
         except Exception as e:
-            raise Exception("PR fugacity failed!")
+            raise Exception("PR fugacity failed!", e)
 
     def _eqPR(self, Z):
         '''
@@ -54,7 +67,7 @@ class FugacityClass():
         '''
         try:
             # set
-            eosParams = self.eosRes.get("eos-res")['eos-params']
+            eosParams = self.eosRes['eos-params']
             # A/B
             A = eosParams.get("A")
             B = eosParams.get("B")
@@ -79,12 +92,14 @@ class FugacityClass():
         '''
         try:
             # check
-            if phase == 'gas':
+            if phase == 'GAS':
                 # Z (the highest value)
                 Z = np.amax(self.Zs)
-            elif phase == 'liquid':
+            elif phase == 'LIQUID':
                 # Z (the lowest value)
                 Z = np.amin(self.Zs)
+            else:
+                raise Exception("Phase not found!")
 
             # calculate fugacity coefficient
             _fugCoefficient = self._eqPR(Z)
@@ -158,10 +173,9 @@ class FugacityClass():
             componentsData = self.compData
 
             # sorted data
-            # Pc [bar], Tc [K], w [-]
-            # ! Pc [bar] => [Pa]
+            # ! Pc [Pa], Tc [K], w [-]
             componentsDataSorted = [
-                [float(item['Pc'])*1e5, float(item['Tc']), float(item['Zc'])] for item in componentsData]
+                [float(item['Pc']), float(item['Tc']), float(item['Zc'])] for item in componentsData]
 
             # critical molar-volume [m^3/mol]
             Vc = np.zeros(self.componentsNo)
@@ -177,7 +191,7 @@ class FugacityClass():
             return Vc
 
         except Exception as e:
-            raise Exception("critical molar-volume failed!")
+            raise Exception("critical molar-volume failed!", e)
 
     def calSaturatedLiquidVolume(self, Vc):
         '''
@@ -188,10 +202,9 @@ class FugacityClass():
             componentsData = self.compData
 
             # sorted data
-            # Pc [bar], Tc [K], w [-]
-            # ! Pc [bar] => [Pa]
+            # ! Pc [Pa], Tc [K], w [-]
             componentsDataSorted = [
-                [float(item['Pc'])*1e5, float(item['Tc']), float(item['Zc'])] for item in componentsData]
+                [float(item['Pc']), float(item['Tc']), float(item['Zc'])] for item in componentsData]
 
             # saturated molar-volume [m^3/mol]
             Vsat = np.zeros(self.componentsNo)
@@ -210,4 +223,4 @@ class FugacityClass():
             return Vsat
 
         except Exception as e:
-            raise Exception("saturated liquid volume failed!")
+            raise Exception("saturated liquid volume failed!", e)

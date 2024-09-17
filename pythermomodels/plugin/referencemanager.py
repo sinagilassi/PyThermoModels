@@ -6,7 +6,7 @@ import os
 import yaml
 
 
-class DataManager:
+class ReferenceManager:
 
     def __init__(self):
         pass
@@ -38,7 +38,9 @@ class DataManager:
             if os.path.exists(reference_file):
                 # load yml
                 with open(reference_file, 'r') as f:
-                    return yaml.load(f, Loader=yaml.FullLoader)
+                    ref = yaml.load(f, Loader=yaml.FullLoader)
+
+                    return ref['REFERENCES']
             else:
                 raise Exception('Reference file not found!')
         except Exception as e:
