@@ -142,9 +142,9 @@ class Manager(ThermoDB, ReferenceManager):
             }
 
             # res
-            res = selectFugacity.get(eos_model)(phase)
+            res2 = selectFugacity.get(eos_model)(phase)
 
-            return res
+            return res1, res2
 
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)

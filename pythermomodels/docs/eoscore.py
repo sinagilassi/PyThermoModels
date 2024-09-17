@@ -50,8 +50,9 @@ class EOSCore(EOS):
 
             # sorted data
             # ! Pc [Pa], Tc [K], w [-]
+            # ! MPa to Pa
             componentsDataSorted = [
-                [float(values['Pc']['value']), float(
+                [float(values['Pc']['value'])*1e6, float(
                     values['Tc']['value']), float(values['AcFa']['value'])]
                 for item, values in componentsData.items()]
 

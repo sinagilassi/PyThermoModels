@@ -12,14 +12,26 @@ print(ptdb.__version__)
 # =======================================
 # LOAD THERMODB
 # =======================================
-# thermodb file name
-CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
-# load
-CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
-print(type(CO2_thermodb))
 
+# ! CO2
+# # thermodb file name
+# CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
+# # load
+# CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
+# print(type(CO2_thermodb))
+
+# # CO2_thermodb
 # CO2_thermodb
-CO2_thermodb
+
+# ! acetylene
+# thermodb file name
+acetylene_thermodb_file = os.path.join(os.getcwd(), 'test', 'acetylene.pkl')
+# load
+acetylene_thermodb = ptdb.load_thermodb(acetylene_thermodb_file)
+print(type(acetylene_thermodb))
+
+acetylene_thermodb
+
 # ========================================
 # INITIALIZE FUGACITY OBJECT
 # ========================================
@@ -30,15 +42,24 @@ print("fugacity_obj: ", fugacity_obj)
 # =======================================
 # THERMODB CONFIGURATION
 # =======================================
-# add CO2 thermodb
-fugacity_obj.add_thermodb('CO2', CO2_thermodb)
 
-# add thermodb rule
+# ! CO2
+# add CO2 thermodb
+# fugacity_obj.add_thermodb('CO2', CO2_thermodb)
+
+# ! acetylene
+# add acetylene thermodb
+fugacity_obj.add_thermodb('acetylene', acetylene_thermodb)
+
+
+# * add thermodb rule
 thermodb_config_file = os.path.join(os.getcwd(), 'test', 'thermodb_config.yml')
-fugacity_obj.config_thermodb('CO2', thermodb_config_file)
+fugacity_obj.config_thermodb('acetylene', thermodb_config_file)
+
 
 # check thermodb
 print(fugacity_obj.check_thermodb())
+
 
 # =======================================
 # CALCULATE FUGACITY FOR PURE COMPONENT
@@ -51,7 +72,7 @@ eos_model = 'Peng_Robinson'
 phase = "GAS"
 
 # component list
-comp_list = ["CO2"]
+comp_list = ["acetylene"]
 # required component input
 # MW,Tc,Pc,w,Zc,Vc
 
@@ -59,10 +80,10 @@ comp_list = ["CO2"]
 MoFri = []
 
 # temperature [K]
-T = 298.15
+T = 250
 
 # pressure [Pa]
-P = 3*1e5
+P = 10*1e5
 
 # model input
 model_input = {
@@ -79,4 +100,5 @@ model_input = {
 # check reference
 # pp(fugacity_obj.fugacity_check_reference(eos_model))
 # eos
-fugacity_obj.fugacity_cal_init(model_input)
+res = fugacity_obj.fugacity_cal_init(model_input)
+pp(res)

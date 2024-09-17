@@ -174,8 +174,9 @@ class FugacityClass():
 
             # sorted data
             # ! Pc [Pa], Tc [K], w [-]
+            # ! MPa to Pa
             componentsDataSorted = [
-                [float(item['Pc']), float(item['Tc']), float(item['Zc'])] for item in componentsData]
+                [float(item['Pc'])*1e6, float(item['Tc']), float(item['Zc'])] for item in componentsData]
 
             # critical molar-volume [m^3/mol]
             Vc = np.zeros(self.componentsNo)
@@ -203,8 +204,9 @@ class FugacityClass():
 
             # sorted data
             # ! Pc [Pa], Tc [K], w [-]
+            # ! MPa to Pa
             componentsDataSorted = [
-                [float(item['Pc']), float(item['Tc']), float(item['Zc'])] for item in componentsData]
+                [float(item['Pc'])*1e6, float(item['Tc']), float(item['Zc'])] for item in componentsData]
 
             # saturated molar-volume [m^3/mol]
             Vsat = np.zeros(self.componentsNo)

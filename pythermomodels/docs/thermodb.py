@@ -157,12 +157,18 @@ class ThermoDB:
                     for item in dependent_data:
                         # check property src
                         check_property_src = 'GENERAL'
+                        check_unit_conversion = 1
                         if component in self.thermodb_rule.keys():
+                            # property source
                             check_property_src = self.thermodb_rule[component][item][0]
+                            # unit conversion
+                            # check_unit_conversion = self.thermodb_rule[component][item][2]
 
                         # val
                         _val = self.thermodb[component].check_property(
                             check_property_src).get_property(str(item).strip())
+                        # unit conversion
+
                         datasource[component][item] = _val
                     return datasource
         except Exception as e:
