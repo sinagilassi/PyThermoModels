@@ -50,9 +50,8 @@ class EOSCore(EOS):
 
             # sorted data
             # ! Pc [Pa], Tc [K], w [-]
-            # ! MPa to Pa
             componentsDataSorted = [
-                [float(values['Pc']['value'])*1e6, float(
+                [float(values['Pc']['value']), float(
                     values['Tc']['value']), float(values['AcFa']['value'])]
                 for item, values in componentsData.items()]
 
@@ -161,10 +160,9 @@ class EOSCore(EOS):
             componentsData = self.compData
 
             # sorted data
-            # Pc [bar], Tc [K], w [-]
-            # ! Pc [bar] => [Pa]
+            # ! Pc [Pa], Tc [K], w [-]
             componentsDataSorted = [
-                [float(item['Pc'])*1e5, float(item['Tc']), float(item['w'])] for item in componentsData]
+                [float(item['Pc']), float(item['Tc']), float(item['w'])] for item in componentsData]
 
             # set a b matrix
             a = np.zeros(self.componentsNo)
@@ -263,10 +261,9 @@ class EOSCore(EOS):
             componentsData = self.compData
 
             # sorted data
-            # Pc [bar], Tc [K], w [-]
-            # ! Pc [bar] => [Pa]
+            # ! Pc [Pa], Tc [K], w [-]
             componentsDataSorted = [
-                [float(item['Pc'])*1e5, float(item['Tc']), float(item['w'])] for item in componentsData]
+                [float(item['Pc']), float(item['Tc']), float(item['w'])] for item in componentsData]
 
             # set a b matrix
             a = np.zeros(self.componentsNo)

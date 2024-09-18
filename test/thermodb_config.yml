@@ -3,10 +3,10 @@
   # Pc: ['GENERAL','Pc','conversion']
 
 CO2:
-  Pc: ['GENERAL','Pc',1E6]
-  Tc: ['GENERAL','Tc',1]
-  AcFa: ['GENERAL','AcFa',1]
+  Pc: ['GENERAL','Pc']
+  Tc: ['GENERAL','Tc']
+  AcFa: ['GENERAL','AcFa']
 acetylene:
-  Pc: ['GENERAL','Pc',1E6]
-  Tc: ['GENERAL','Tc',1]
-  AcFa: ['GENERAL','AcFa',1]
+  Pc: ['GENERAL','Pc']
+  Tc: ['GENERAL','Tc']
+  AcFa: ['GENERAL','AcFa']
