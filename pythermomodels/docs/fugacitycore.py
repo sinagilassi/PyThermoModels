@@ -9,20 +9,26 @@ from .eosmanager import EOSManager
 
 
 class FugacityCore(EOSManager):
-    def __init__(self, datasource, equationsource, components, operating_conditions):
+    def __init__(self, datasource, equationsource, components, operating_conditions, eos_parms):
         self.datasource = datasource
         self.equationsource = equationsource
         self.components = components
         # set
         self.P = operating_conditions.get("pressure")
         self.T = operating_conditions.get("temperature")
+        # phase
+        self.phase = eos_parms['phase']
+        # eos model
+        self.eos_model = eos_parms['eos-model']
+        # mode
+        self.mode = eos_parms['mode']
         # comp no
         self.componentsNo = len(self.components)
 
         # init
         EOSManager.__init__(self, self.datasource)
 
-    def fugacity_cal(self, phase):
+    def fugacity_cal(self, yi, solver_method='ls', root_analysis_set=3):
         '''
         Calculate fugacity
 
@@ -39,12 +45,18 @@ class FugacityCore(EOSManager):
             eos parameters
         '''
         try:
+            # set parms
+            options = {
+                'solver_method': solver_method,
+                'root_analysis_set': root_analysis_set
+            }
+
             # check
-            if phase == 'GAS':
-                _phi, _eos_params = self.gas_fugacity()
-            elif phase == 'LIQUID':
-                _phi, _eos_params = self.liquid_fugacity()
-            elif phase == 'SOLID':
+            if self.phase == 'GAS':
+                _phi, _eos_params = self.gas_fugacity(yi, options)
+            elif self.phase == 'LIQUID':
+                _phi, _eos_params = self.liquid_fugacity(yi, options)
+            elif self.phase == 'SOLID':
                 _phi, _eos_params = self.solid_fugacity()
             else:
                 raise Exception('Invalid phase!')
@@ -53,7 +65,7 @@ class FugacityCore(EOSManager):
         except Exception as e:
             raise Exception('Fugacity calculation failed!, ', e)
 
-    def gas_fugacity(self, yi=[], eos_model='SRK', solver_method="ls", mode="single", root_analysis_set=3):
+    def gas_fugacity(self, yi=[], **kwargs):
         '''
         Estimate gas fugacity using eos (largest Z)
 
@@ -84,10 +96,23 @@ class FugacityCore(EOSManager):
         # universal gas constant [J/mol.K]
         # R = R_CONST
 
+        # default values
+        eos_model = self.eos_model
+        mode = self.mode
+
+        # setting
+        solver_method = kwargs.get('solver_method', 'ls')
+        root_analysis_set = kwargs.get('root_analysis_set', 3)
+
         # thermodynamic data
         thermo_data = self.datasource
         # thermodynamic functions
         thermo_fun = self.equationsource
+
+        # eos model
+        eos_model = self.eos_model
+        # mode
+        mode = self.mode
 
         # compressibility factor (for pure vapor phase)
         # set eos roots
@@ -100,24 +125,25 @@ class FugacityCore(EOSManager):
         # check
         if mode == 'mixture':
             # Z
-            _Zi, _eos_params = self.eos_roots(self.P, self.T, self.components, thermo_data, root_analysis_res,
+            _Zi, _eos_params = self.eos_roots(self.P, self.T, self.components, root_analysis_res,
                                               xi=yi, eos_model=eos_model, solver_method=solver_method, mode=mode)
             # gas phase (only max root)
             Zi = _Zi[0]
 
             # fugacity coefficient (vapor phase)
             _phi = self.eos_fugacity(self.P, self.T, Zi, _eos_params, self.components,
-                                     thermo_data, yi=yi, eos_model=eos_model, mode=mode)
+                                     yi=yi, eos_model=eos_model, mode=mode)
 
         elif mode == 'single':
             # Z
             _Zi, _eos_params = self.eos_roots(
-                self.P, self.T, self.components, thermo_data, root_analysis_res, eos_model=eos_model, solver_method=solver_method, mode=mode)
+                self.P, self.T, self.components, root_analysis_res,
+                eos_model=eos_model, solver_method=solver_method, mode=mode)
             Zi = _Zi[0]
 
             # fugacity coefficient (vapor phase)
             _phi = self.eos_fugacity(
-                self.P, self.T, Zi, _eos_params[0], self.components, thermo_data, eos_model=eos_model, mode=mode)
+                self.P, self.T, Zi, _eos_params[0], self.components, eos_model=eos_model, mode=mode)
 
         else:
             raise Exception("mode must be 'mixture' or 'single'")
@@ -125,7 +151,7 @@ class FugacityCore(EOSManager):
         # res
         return Zi, _phi, _eos_params
 
-    def liquid_fugacity(self, eos_model='SRK', solver_method="ls", mode="single", root_analysis_set=3):
+    def liquid_fugacity(self, **kwargs):
         '''
         Estimate liquid fugacity using the Poynting term
 
@@ -151,6 +177,10 @@ class FugacityCore(EOSManager):
         _eos_params : dict
             eos parameters
         '''
+        # setting
+        solver_method = kwargs.get('solver_method', 'ls')
+        root_analysis_set = kwargs.get('root_analysis_set', 3)
+
         # component no.
         compNo = len(self.components)
 
@@ -158,6 +188,11 @@ class FugacityCore(EOSManager):
         thermo_data = self.datasource
         # thermodynamic functions
         thermo_fun = self.equationsource
+
+        # eos model
+        eos_model = self.eos_model
+        # mode
+        mode = self.mode
 
         # antoine equation
         f_VaPr_equation = thermo_fun['VaPr']

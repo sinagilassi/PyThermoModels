@@ -150,7 +150,7 @@ class Manager(ThermoDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def fugacity_cal(self, model_input):
+    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=3):
         '''
         Calculate fugacity
 
@@ -187,9 +187,9 @@ class Manager(ThermoDB, ReferenceManager):
                 # single
                 if len(components) == 1:
                     calculation_mode = 'single'
-                # multi
+                # mixture
                 else:
-                    calculation_mode = 'multi'
+                    calculation_mode = 'mixture'
             else:
                 raise Exception('Components list not provided!')
 
@@ -197,7 +197,7 @@ class Manager(ThermoDB, ReferenceManager):
             mole_fraction = model_input["mole-fraction"]
 
             # check if multi
-            if calculation_mode == 'multi':
+            if calculation_mode == 'mixture':
                 # check
                 if len(mole_fraction) != component_num:
                     raise Exception('Mole fraction list not provided!')
@@ -211,6 +211,13 @@ class Manager(ThermoDB, ReferenceManager):
             if 'temperature' not in operating_conditions.keys():
                 raise Exception('No temperature in operating conditions!')
 
+            # eos parms
+            eos_parms = {
+                'phase': phase,
+                'eos-model': eos_model,
+                'mode': calculation_mode
+            }
+
             # reference for eos
             reference = self._references.get(eos_model, None)
 
@@ -220,9 +227,10 @@ class Manager(ThermoDB, ReferenceManager):
             equation_equationsource = None
 
             FugacityCoreC = FugacityCore(
-                component_datasource, equation_equationsource, components, operating_conditions)
+                component_datasource, equation_equationsource, components, operating_conditions, eos_parms)
 
-            fugacity = 1
+            fugacity = FugacityCoreC.fugacity_cal(
+                mole_fraction, solver_method=solver_method, root_analysis_set=root_analysis_set)
 
             return fugacity
         except Exception as e:
