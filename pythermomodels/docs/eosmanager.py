@@ -4,8 +4,10 @@
 # import packages/modules
 import numpy as np
 from scipy import optimize
+from math import pow, exp, log, sqrt
 # local
 from .eosmodels import EOSModels
+from ..configs import R_CONST
 
 
 class EOSManager(EOSModels):
@@ -18,7 +20,7 @@ class EOSManager(EOSModels):
     def __call__(self):
         pass
 
-    def eos_roots(self, P, T, components, thermo_data, root_analysis, xi=[], eos_model="SRK", solver_method="ls", mode="single"):
+    def eos_roots(self, P, T, components, root_analysis, xi=[], eos_model="SRK", solver_method="ls", mode="single"):
         '''
         Estimates fugacity coefficient at fixed temperature and pressure through finding Z (lowest: for liquid, largest: for vapor)
 
@@ -103,8 +105,8 @@ class EOSManager(EOSModels):
 
         # functions
         fZ = self.eos_equation  # SRK_equation
-        # fpZ = eos_equation_prime
-        # fp2Z = eos_equation_prime2
+        fpZ = None  # eos_equation_prime
+        fp2Z = None  # eos_equation_prime2
 
         # ! method selection
         if solver_method == 'ls':  # *** least-square ***
@@ -215,3 +217,110 @@ class EOSManager(EOSModels):
                 k += 1
 
         return np.array(Z), _eos_params
+
+    def eos_fugacity(self, P, T, Z, params, components, yi=[], eos_model="SRK", mode="single"):
+        '''
+        Determines fugacity coefficient
+
+        Parameters
+        ----------
+        P : float
+            pressure [Pa]
+        T : float
+            temperature [K]
+        Z : list
+            compressibility factor
+        components : list
+            list of components
+        root_analysis : dict
+            root analysis
+        yi : list
+            mole fraction of components
+
+        Returns
+        -------
+        fugacity : list
+            fugacity coefficient
+        '''
+        # universal gas constant [J/mol.K]
+        R = R_CONST
+
+        # molar volume [m^3/mol]
+        V = Z*R*T/P
+
+        # ! check
+        if mode == 'single':  # ! single
+
+            # model parameters
+            sigma = params['sigma']
+            epsilon = params['epsilon']
+            omega = params['omega']
+            psi = params['psi']
+            alpha = params['alpha']
+            beta = params['beta']
+            q = params['q']
+            a = params['a']
+            b = params['b']
+            B = params['B']
+
+            # model selection
+            if eos_model == "vdW":
+                _phi = (Z-1) - log(Z*(1-(b/V))) - (a/(R*T*V))
+            elif eos_model == "RK":
+                _phi = (Z-1) - log(Z*(1-(b/V))) - (a/(b*R*T))*log(1+(b/V))
+            elif eos_model == "SRK" or eos_model == "PR":
+                _phi = (Z-1) - log(Z-B) - (alpha/(b*R*T*(sigma-epsilon))) * \
+                    log((Z+sigma*B)/(Z+epsilon*B))
+            else:
+                _phi = 0
+
+            phi = exp(_phi)
+
+        elif mode == 'mixture':  # ! mixture
+            # component no
+            compNo = len(components)
+
+            # fugacity coefficient
+            phi = np.zeros(compNo)
+
+            # mixing parameters
+            _params_mix = params[-1]
+            beta_min = _params_mix['beta']
+            q_mix = _params_mix['q']
+            a_mix = _params_mix['a']
+            b_mix = _params_mix['b']
+            B_mix = _params_mix['B']
+            aij = _params_mix['aij']
+
+            for i in range(compNo):
+                _params_i = params[i]
+
+                # model parameters
+                sigma = _params_i['sigma']
+                epsilon = _params_i['epsilon']
+                omega = _params_i['omega']
+                psi = _params_i['psi']
+                alpha = _params_i['alpha']
+                beta = _params_i['beta']
+                q = _params_i['q']
+                a = _params_i['a']
+                b = _params_i['b']
+                B = _params_i['B']
+
+                # fugacity coefficient
+                if eos_model == "SRK":
+                    # from book
+                    _phi = log(V/(V-b_mix)) - (2*np.dot(yi, aij[i, :])/(R*T*b_mix))*log((V+b_mix)/V) + (b/(V-b_mix)) - log((P)*V/(R*T)) + \
+                        (a_mix*b/(R*T*(b_mix**2))) * \
+                        (log((V+b_mix)/V) - (b_mix/(V+b_mix)))
+
+                elif eos_model == 'RK':
+                    _phi = 1
+
+                phi[i] = exp(_phi)
+
+        else:
+            raise Exception("mode must be 'single' or 'mixture'")
+
+        # res
+        return phi
