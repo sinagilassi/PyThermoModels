@@ -5,6 +5,7 @@ from .eoscore import EOSCore
 from .fugacity import FugacityClass
 from .thermodb import ThermoDB
 from ..plugin import ReferenceManager
+from .fugacitycore import FugacityCore
 
 
 class Manager(ThermoDB, ReferenceManager):
@@ -148,3 +149,81 @@ class Manager(ThermoDB, ReferenceManager):
 
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
+
+    def fugacity_cal(self, model_input):
+        '''
+        Calculate fugacity
+
+        Parameters
+        ----------
+        model_input: dict
+            model input
+
+        Returns
+        -------
+        fugacity: list
+            fugacity
+        '''
+        try:
+            # eos
+            eos_model = model_input.get('eos-model', 'Peng_Robinson')
+            eos_model = eos_model.upper()
+            # phase
+            phase = model_input.get('phase', 'gas')
+            phase = phase.upper()
+
+            # calculation mode
+            calculation_mode = 'single'
+            # component number
+            component_num = 0
+
+            # component
+            components = model_input["components"]
+
+            # check
+            if isinstance(components, list):
+                # set
+                component_num = len(components)
+                # single
+                if len(components) == 1:
+                    calculation_mode = 'single'
+                # multi
+                else:
+                    calculation_mode = 'multi'
+            else:
+                raise Exception('Components list not provided!')
+
+            # mole fraction
+            mole_fraction = model_input["mole-fraction"]
+
+            # check if multi
+            if calculation_mode == 'multi':
+                # check
+                if len(mole_fraction) != component_num:
+                    raise Exception('Mole fraction list not provided!')
+
+            # operating conditions
+            operating_conditions = model_input["operating_conditions"]
+            # check temperature and pressure
+            if 'pressure' not in operating_conditions.keys():
+                raise Exception('No pressure in operating conditions!')
+
+            if 'temperature' not in operating_conditions.keys():
+                raise Exception('No temperature in operating conditions!')
+
+            # reference for eos
+            reference = self._references.get(eos_model, None)
+
+            # build datasource
+            component_datasource = self.build_datasource(components, reference)
+            # build equation source
+            equation_equationsource = None
+
+            FugacityCoreC = FugacityCore(
+                component_datasource, equation_equationsource, components, operating_conditions)
+
+            fugacity = 1
+
+            return fugacity
+        except Exception as e:
+            raise Exception("Fugacity calculation failed!, ", e)

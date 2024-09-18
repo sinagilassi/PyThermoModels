@@ -12,8 +12,9 @@ from ..configs import R_CONST
 
 class EOSManager(EOSModels):
 
-    def __init__(self, datasource):
+    def __init__(self, datasource, equationsource):
         self.datasource = datasource
+        self.equationsource = equationsource
         # init
         EOSModels.__init__(self, datasource)
 

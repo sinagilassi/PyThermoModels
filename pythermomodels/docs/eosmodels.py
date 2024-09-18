@@ -11,8 +11,9 @@ from ..configs import R_CONST
 
 class EOSModels:
     # init
-    def __init__(self, datasource):
+    def __init__(self, datasource, equationsource):
         self.datasource = datasource
+        self.equationsource = equationsource
 
     def eos_parameters(self, P, T, component_name, method="SRK"):
         '''
