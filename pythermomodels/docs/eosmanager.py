@@ -53,10 +53,11 @@ class EOSManager(EOSModels):
 
         Notes
         -----
-        1. P=P*, 3 real roots
-        2. T<Tc, P>P*, 1 real root (liquid)
-        3. T<Tc, P<P*, 1 real root (superheated vapor)
-        4. T>Tc, 1 real root (supercritical fluid varies between `vapor-like` and `liquid-like`)
+        ### Roots: 
+            1. P=P*, 3 real roots
+            2. T<Tc, P>P*, 1 real root (liquid)
+            3. T<Tc, P<P*, 1 real root (superheated vapor)
+            4. T>Tc, 1 real root (supercritical fluid varies between `vapor-like` and `liquid-like`)
         '''
         # SRK params
         _eos_params = []
@@ -168,7 +169,11 @@ class EOSManager(EOSModels):
                 # result checks
                 if (_res.success is True and _res.x > 0):
                     # x
-                    zList[k] = _res.x
+                    # check
+                    if len(_res.x) == 1:
+                        zList[k] = _res.x[0]
+                    else:
+                        raise Exception("least_squares failed!")
                     # cost/fun
                     fZ_cost[k] = _res.cost
 
@@ -179,7 +184,7 @@ class EOSManager(EOSModels):
             _zList = zList[zList > 0]
             # min/max
             _Z_min = np.min(_zList)
-            _Z_max = max(_zList)
+            _Z_max = np.max(_zList)
 
             if _root_0 == 1:  # 3 roots
                 Z.append(_Z_min)

@@ -6,6 +6,7 @@ from .fugacity import FugacityClass
 from .thermodb import ThermoDB
 from ..plugin import ReferenceManager
 from .fugacitycore import FugacityCore
+from ..utils import eos_model_name
 
 
 class Manager(ThermoDB, ReferenceManager):
@@ -52,6 +53,8 @@ class Manager(ThermoDB, ReferenceManager):
         ----------
         eos_model : str
             equation of state name
+        dataframe : bool, optional
+            return dataframe, default False
 
         Returns
         -------
@@ -150,7 +153,7 @@ class Manager(ThermoDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=3):
+    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=1):
         '''
         Calculate fugacity
 
@@ -158,18 +161,37 @@ class Manager(ThermoDB, ReferenceManager):
         ----------
         model_input: dict
             model input
+        solver_method: str
+            solver method
+        root_analysis_set: int
+            root analysis set
 
         Returns
         -------
         fugacity: list
             fugacity
+
+        Notes
+        -----
+        ### solver_method:
+            - ls: least square method
+            - newton: newton method
+            - fsolve: fsolve method
+
+        ### root_analysis_set:
+            - 1: 3 roots
+            - 2: 1 root (liquid)
+            - 3: 1 root (vapor)
+            - 4: 1 root (superheat)
         '''
         try:
             # eos
-            eos_model = model_input.get('eos-model', 'Peng_Robinson')
+            eos_model = model_input.get('eos-model', 'RSK')
             eos_model = eos_model.upper()
+            eos_model = eos_model_name(eos_model)
+
             # phase
-            phase = model_input.get('phase', 'gas')
+            phase = model_input.get('phase', 'GAS')
             phase = phase.upper()
 
             # calculation mode
@@ -226,9 +248,10 @@ class Manager(ThermoDB, ReferenceManager):
             # build equation source
             equation_equationsource = None
 
+            # init
             FugacityCoreC = FugacityCore(
                 component_datasource, equation_equationsource, components, operating_conditions, eos_parms)
-
+            # calculation
             fugacity = FugacityCoreC.fugacity_cal(
                 mole_fraction, solver_method=solver_method, root_analysis_set=root_analysis_set)
 

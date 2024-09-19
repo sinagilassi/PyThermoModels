@@ -4,7 +4,7 @@
 # import packages/modules
 import math
 
-#! eos names
+# ! eos names
 PENG_ROBINSON = "PR"
 REDLICH_KWONG_SOAVE = "RSK"
 VAN_DER_WAALS = "VDW"

@@ -5,6 +5,7 @@
 import numpy as np
 # internal
 from ..configs import ROUND_FUN_ACCURACY
+from ..configs import PENG_ROBINSON, REDLICH_KWONG_SOAVE, VAN_DER_WAALS
 
 
 def roundNum(value, ACCURACY=ROUND_FUN_ACCURACY):
@@ -41,3 +42,44 @@ def removeDuplicatesList(value):
         list without duplicates
     '''
     return list(dict.fromkeys(value))
+
+
+def eos_model_name(model_name):
+    '''
+    Sets eos model name
+
+    Parameters
+    ----------
+    model_name : str
+        name of eos model
+
+    Returns
+    -------
+    model_name_set : str
+        name of eos model
+    '''
+    try:
+        model_name_set = ''
+        # check
+        if model_name is None:
+            raise Exception('Empty equation of state name!')
+        else:
+            # upper
+            model_name = model_name.upper()
+            # PR
+            if model_name == 'PENG_ROBINSON' or model_name == 'PENG-ROBINSON':
+                model_name_set = PENG_ROBINSON
+
+            # SRK
+            elif model_name == 'REDLICH_KWONG_SOAVE' or model_name == 'REDLICH-KWONG-SOAVE':
+                model_name_set = REDLICH_KWONG_SOAVE
+
+            # VDW
+            elif model_name == 'VAN_DER_WAALS' or model_name == 'VAN-DEER-WAALS':
+                model_name_set = VAN_DER_WAALS
+
+            else:
+                raise Exception('Invalid equation of state name!')
+        return model_name_set
+    except Exception as e:
+        raise Exception('Setting eos model failed!, ', e)

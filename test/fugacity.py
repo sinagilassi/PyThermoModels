@@ -66,7 +66,7 @@ print(fugacity_obj.check_thermodb())
 # =======================================
 # model input
 # eos model
-eos_model = 'Peng_Robinson'
+eos_model = 'SRK'
 
 # component phase
 phase = "GAS"
@@ -100,5 +100,9 @@ model_input = {
 # check reference
 # pp(fugacity_obj.fugacity_check_reference(eos_model))
 # eos
-res = fugacity_obj.fugacity_cal_init(model_input)
+# res = fugacity_obj.fugacity_cal_init(model_input)
+# pp(res)
+
+# method 2
+res = fugacity_obj.fugacity_cal(model_input)
 pp(res)
