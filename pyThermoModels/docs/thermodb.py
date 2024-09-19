@@ -137,6 +137,10 @@ class ThermoDB:
         None
         '''
         try:
+            # check reference
+            if reference is None or reference == 'None':
+                raise Exception('Empty reference!')
+
             # reference
             # get all dependent data
             dependent_data_src = reference['DEPENDANT-DATA']

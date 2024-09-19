@@ -5,7 +5,7 @@
 import numpy as np
 # internal
 from ..configs import ROUND_FUN_ACCURACY
-from ..configs import PENG_ROBINSON, REDLICH_KWONG_SOAVE, VAN_DER_WAALS
+from ..configs import PENG_ROBINSON, SOAVE_REDLICH_KWONG, VAN_DER_WAALS
 
 
 def roundNum(value, ACCURACY=ROUND_FUN_ACCURACY):
@@ -70,12 +70,21 @@ def eos_model_name(model_name):
             if model_name == 'PENG_ROBINSON' or model_name == 'PENG-ROBINSON':
                 model_name_set = PENG_ROBINSON
 
+            elif model_name == 'PR':
+                model_name_set = PENG_ROBINSON
+
             # SRK
-            elif model_name == 'REDLICH_KWONG_SOAVE' or model_name == 'REDLICH-KWONG-SOAVE':
-                model_name_set = REDLICH_KWONG_SOAVE
+            elif model_name == 'SOAVE_REDLICH_KWONG' or model_name == 'SOAVE-REDLICH-KWONG':
+                model_name_set = SOAVE_REDLICH_KWONG
+
+            elif model_name == 'SRK':
+                model_name_set = SOAVE_REDLICH_KWONG
 
             # VDW
             elif model_name == 'VAN_DER_WAALS' or model_name == 'VAN-DEER-WAALS':
+                model_name_set = VAN_DER_WAALS
+
+            elif model_name == 'VDW':
                 model_name_set = VAN_DER_WAALS
 
             else:

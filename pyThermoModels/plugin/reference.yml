@@ -28,7 +28,7 @@ REFERENCES:
         symbol: AcFa
         unit: None
     DEPENDANT-EQUATIONS: None 
-  RSK:
+  SRK:
     ARGS:
       temperature:
         name: temperature

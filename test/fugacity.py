@@ -1,6 +1,6 @@
 # import packages/modules
 from pprint import pprint as pp
-import PyThermoModels as ptm
+import pyThermoModels as ptm
 import pyThermoDB as ptdb
 import os
 
@@ -14,14 +14,14 @@ print(ptdb.__version__)
 # =======================================
 
 # ! CO2
-# # thermodb file name
-# CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
-# # load
-# CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
-# print(type(CO2_thermodb))
+# thermodb file name
+CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
+# load
+CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
+print(type(CO2_thermodb))
 
-# # CO2_thermodb
 # CO2_thermodb
+CO2_thermodb
 
 # ! acetylene
 # thermodb file name
@@ -45,7 +45,7 @@ print("fugacity_obj: ", fugacity_obj)
 
 # ! CO2
 # add CO2 thermodb
-# fugacity_obj.add_thermodb('CO2', CO2_thermodb)
+fugacity_obj.add_thermodb('CO2', CO2_thermodb)
 
 # ! acetylene
 # add acetylene thermodb
@@ -55,6 +55,7 @@ fugacity_obj.add_thermodb('acetylene', acetylene_thermodb)
 # * add thermodb rule
 thermodb_config_file = os.path.join(os.getcwd(), 'test', 'thermodb_config.yml')
 fugacity_obj.config_thermodb('acetylene', thermodb_config_file)
+fugacity_obj.config_thermodb('CO2', thermodb_config_file)
 
 
 # check thermodb
@@ -72,7 +73,7 @@ eos_model = 'SRK'
 phase = "GAS"
 
 # component list
-comp_list = ["acetylene"]
+comp_list = ["CO2"]
 # required component input
 # MW,Tc,Pc,w,Zc,Vc
 
@@ -80,10 +81,10 @@ comp_list = ["acetylene"]
 MoFri = []
 
 # temperature [K]
-T = 250
+T = 310
 
 # pressure [Pa]
-P = 10*1e5
+P = 8*1e5
 
 # model input
 model_input = {

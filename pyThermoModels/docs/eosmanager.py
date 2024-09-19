@@ -16,7 +16,7 @@ class EOSManager(EOSModels):
         self.datasource = datasource
         self.equationsource = equationsource
         # init
-        EOSModels.__init__(self, datasource)
+        EOSModels.__init__(self, datasource, equationsource)
 
     def __call__(self):
         pass
@@ -53,7 +53,7 @@ class EOSManager(EOSModels):
 
         Notes
         -----
-        ### Roots: 
+        ### Roots:
             1. P=P*, 3 real roots
             2. T<Tc, P>P*, 1 real root (liquid)
             3. T<Tc, P<P*, 1 real root (superheated vapor)

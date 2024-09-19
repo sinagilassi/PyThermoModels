@@ -168,8 +168,8 @@ class Manager(ThermoDB, ReferenceManager):
 
         Returns
         -------
-        fugacity: list
-            fugacity
+        res: list
+            compressibility factor (Z), fugacity coefficient (phi), eos parms
 
         Notes
         -----
@@ -186,7 +186,7 @@ class Manager(ThermoDB, ReferenceManager):
         '''
         try:
             # eos
-            eos_model = model_input.get('eos-model', 'RSK')
+            eos_model = model_input.get('eos-model', 'SRK')
             eos_model = eos_model.upper()
             eos_model = eos_model_name(eos_model)
 
@@ -252,9 +252,9 @@ class Manager(ThermoDB, ReferenceManager):
             FugacityCoreC = FugacityCore(
                 component_datasource, equation_equationsource, components, operating_conditions, eos_parms)
             # calculation
-            fugacity = FugacityCoreC.fugacity_cal(
+            res = FugacityCoreC.fugacity_cal(
                 mole_fraction, solver_method=solver_method, root_analysis_set=root_analysis_set)
 
-            return fugacity
+            return res
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
