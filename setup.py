@@ -24,10 +24,11 @@ setup(
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     include_package_data=True,  # Make sure to include non-Python files
     # Add both config and data files
-    package_data={'': ['config/*.yml', 'data/*.csv']},
+    package_data={'': ['config/*.yml', 'config/*.csv', 'data/*.csv',
+                       'data/*.yml', 'plugin/*.yml', 'plugin/*.csv']},
     license='MIT',
     install_requires=['pandas', 'pillow', 'requests',
-                      'urllib3', 'matplotlib', 'numpy', 'PyYAML', 'sympy'],
+                      'urllib3', 'matplotlib', 'numpy', 'PyYAML', 'sympy', 'PyThermoDB'],
     keywords=['python', 'chemical engineering', 'thermodynamics',
               'PyThermoDB'],
     classifiers=[
