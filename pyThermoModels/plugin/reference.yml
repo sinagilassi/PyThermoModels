@@ -56,4 +56,8 @@ REFERENCES:
         name: acentric factor
         symbol: AcFa
         unit: None
-    DEPENDANT-EQUATIONS: None 
+    DEPENDANT-EQUATIONS: 
+      vapor-pressure:
+        name: vapor pressure
+        symbol: VaPr
+        unit: Pa

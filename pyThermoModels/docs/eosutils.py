@@ -3,14 +3,16 @@
 
 # import packages/modules
 from math import exp
+import pycuc
 # local
 from ..configs import R_CONST
 
 
 class EOSUtils:
     # init
-    def __init__(self):
-        pass
+    def __init__(self, datasource, equationsource):
+        self.datasource = datasource
+        self.equationsource = equationsource
 
     def rackett(self, Zc, Pc, Tc, T):
         '''
@@ -91,7 +93,7 @@ class EOSUtils:
         # res
         return res
 
-    def eos_root_analysis(self, P, T, components, thermo_data, thermo_fun):
+    def eos_root_analysis(self, P, T, components):
         '''
         Determine root numbers for each component
 
@@ -127,47 +129,140 @@ class EOSUtils:
         _root_analysis = []
         _root_no = []
 
-        # antoine equation
-        f_antoine_equation = thermo_fun['antoine-equation']['fun']
+        # res
+        res = []
 
-        for i in components:
-            # antoine equations [bar]
-            _antoine_parameters = thermo_data[str(
-                i)]['antoine-equation']['parameters']
-            _vp = f_antoine_equation(_antoine_parameters, T)
-            _vapor_pressure.append(_vp)
+        # set
+        k = 0
 
+        # looping through components
+        for component in components:
+            # ! equation source
+            # antoine equations [Pa]
+            VaPr_eq = self.equationsource[str(component)]['VaPr']
+            # args
+            VaPr_args = VaPr_eq.args
+            # check args (SI)
+            VaPr_args_required = self.check_args(
+                VaPr_args, self.datasource[str(component)])
+
+            # build args
+            _VaPr_args = self.build_args(
+                VaPr_args_required, self.datasource[str(component)])
+            # update P and T
+            _VaPr_args['P'] = P
+            _VaPr_args['T'] = T
+
+            # execute
+            _VaPr = VaPr_eq.cal(**_VaPr_args)
+            _vapor_pressure.append(_VaPr)
+
+            # ! data source
             # critical temperature
-            _Tc = thermo_data[str(i)]['Tc']['value']
+            _Tc_val = self.datasource[str(component)]['Tc']['value']
+            _Tc_unit = self.datasource[str(component)]['Tc']['unit']
+            # unit conversion
+            _unit_block = f"{_Tc_unit} => K"
+            _Tc = pycuc.to(_Tc_val, _unit_block)
             _critical_temperature.append(_Tc)
 
             # critical pressure
-            _Pc = thermo_data[str(i)]['Pc']['value']
+            _Pc_val = self.datasource[str(component)]['Pc']['value']
+            _Pc_unit = self.datasource[str(component)]['Pc']['unit']
+            # unit conversion
+            _unit_block = f"{_Pc_unit} => Pa"
+            _Pc = pycuc.to(_Pc_val, _unit_block)
             _critical_pressure.append(_Pc)
 
-            if P == _vp and T < _Tc:
+            # check
+            if P == _VaPr and T < _Tc:
                 _root_analysis.append(1)
                 _root_no.append("3 real roots")
-            elif P >= _vp and T < _Tc:
+            elif P >= _VaPr and T < _Tc:
                 _root_analysis.append(2)
                 _root_no.append("1 real root (liquid)")
-            elif P <= _vp and T < _Tc:
+            elif P <= _VaPr and T < _Tc:
                 _root_analysis.append(3)
                 _root_no.append("1 real root (vapor)")
             elif T > _Tc:
                 _root_analysis.append(4)
                 _root_no.append("1 real root (supercritical fluid)")
 
-        # res
-        res = {
-            "components": components[0],
-            "P": P,
-            "T": T,
-            "root": _root_analysis,
-            "root-no": _root_no,
-            "VaPr": _vapor_pressure,
-            "Tc": _critical_temperature,
-            "Pc": _critical_pressure
-        }
+            # res
+            _res = {
+                "components": component,
+                "P": P,
+                "T": T,
+                "root": _root_analysis[k],
+                "root-no": _root_no[k],
+                "VaPr": _VaPr,
+                "Tc": _Tc,
+                "Pc": _Pc
+            }
 
+            # save
+            res.append(_res)
+
+            # set
+            k += 1
+
+        return res
+
+    def check_args(self, args, component_datasource):
+        '''
+        Checks equation args
+
+        Parameters
+        ----------
+        args : tuple
+            equation args
+        component_datasource : dict
+            component datasource
+        '''
+        try:
+            # required args
+            required_args = []
+
+            # datasource list
+            datasource_component_list = list(component_datasource.keys())
+            datasource_component_list.append("P")
+            datasource_component_list.append("T")
+
+            # check args within datasource
+            for arg_key, arg_value in args.items():
+                # symbol
+                if arg_value['symbol'] in datasource_component_list:
+                    # update
+                    required_args.append(arg_value)
+                else:
+                    raise Exception('Args not in datasource!')
+
+            # res
+            return required_args
+
+        except Exception as e:
+            raise Exception('Finding args failed!, ', e)
+
+    def build_args(self, args, component_datasource):
+        '''
+        Builds args
+
+        Parameters
+        ----------
+        args : tuple
+            equation args
+        component_datasource : dict
+            component datasource
+        '''
+        # res
+        res = {}
+        for arg in args:
+            # symbol
+            symbol = arg['symbol']
+            # check not P and T
+            if symbol != "P" and symbol != "T":
+                # check in component database
+                for key, value in component_datasource.items():
+                    if symbol == key:
+                        res[symbol] = value
         return res

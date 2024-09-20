@@ -6,7 +6,19 @@ CO2:
   Pc: ['GENERAL','Pc']
   Tc: ['GENERAL','Tc']
   AcFa: ['GENERAL','AcFa']
+  VaPr: ['VAPOR-PRESSURE','VaPr']
 acetylene:
   Pc: ['GENERAL','Pc']
   Tc: ['GENERAL','Tc']
   AcFa: ['GENERAL','AcFa']
+  VaPr: ['VAPOR-PRESSURE','VaPr']
+EtOH:
+  Pc: ['GENERAL','Pc']
+  Tc: ['GENERAL','Tc']
+  AcFa: ['GENERAL','AcFa']
+  VaPr: ['VAPOR-PRESSURE','VaPr']
+MeOH:
+  Pc: ['GENERAL','Pc']
+  Tc: ['GENERAL','Tc']
+  AcFa: ['GENERAL','AcFa']
+  VaPr: ['VAPOR-PRESSURE','VaPr']

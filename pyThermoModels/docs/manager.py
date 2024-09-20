@@ -1,5 +1,6 @@
 # import package/modules
 import pandas as pd
+import pycuc
 # local
 from .eoscore import EOSCore
 from .fugacity import FugacityClass
@@ -7,6 +8,7 @@ from .thermodb import ThermoDB
 from ..plugin import ReferenceManager
 from .fugacitycore import FugacityCore
 from ..utils import eos_model_name
+from .eosutils import EOSUtils
 
 
 class Manager(ThermoDB, ReferenceManager):
@@ -37,7 +39,7 @@ class Manager(ThermoDB, ReferenceManager):
         Returns
         -------
         thermodb : dict
-            dict of components in the thermodb 
+            dict of components in the thermodb
         '''
         try:
             # check name
@@ -153,7 +155,7 @@ class Manager(ThermoDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=1):
+    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=None, liquid_fugacity_method='liquid'):
         '''
         Calculate fugacity
 
@@ -165,6 +167,8 @@ class Manager(ThermoDB, ReferenceManager):
             solver method
         root_analysis_set: int
             root analysis set
+        liquid_fugacity_method: str
+            liquid fugacity method, liquid: Poynting method, eos: Equation of state (lowest Z)
 
         Returns
         -------
@@ -179,10 +183,49 @@ class Manager(ThermoDB, ReferenceManager):
             - fsolve: fsolve method
 
         ### root_analysis_set:
-            - 1: 3 roots
-            - 2: 1 root (liquid)
-            - 3: 1 root (vapor)
-            - 4: 1 root (superheat)
+            - [1]: 3 roots (VAPOR-LIQUID)
+            - [2]: 1 root (LIQUID)
+            - [3]: 1 root (VAPOR)
+            - [4]: 1 root (SUPERCRITICAL)
+
+        ### `model_input` must be defined as:
+            ```python
+            ## single component
+            # component list
+            comp_list = ["CO2"]
+            # mole fraction
+            MoFri = []
+
+            ## multi-component
+            # component list
+            comp_list = ["EtOH", "MeOH"]
+            # mole fraction
+            MoFri = [0.75, 0.25]
+
+            ## Others
+            # model input
+            # eos model
+            eos_model = 'SRK'
+            # component phase
+            phase = "VAPOR"
+            # temperature [K]
+            T = 300
+            # pressure [Pa]
+            P = 1.2*1e5
+
+            # model input
+            model_input = {
+                "eos-model": eos_model,
+                "phase": phase,
+                "components": comp_list,
+                "mole-fraction": MoFri,
+                "operating_conditions": {
+                    "pressure": [P, 'Pa'],
+                    "temperature": [T, 'K'],
+                },
+            }
+            ```
+
         '''
         try:
             # eos
@@ -191,7 +234,7 @@ class Manager(ThermoDB, ReferenceManager):
             eos_model = eos_model_name(eos_model)
 
             # phase
-            phase = model_input.get('phase', 'GAS')
+            phase = model_input.get('phase', 'VAPOR')
             phase = phase.upper()
 
             # calculation mode
@@ -246,14 +289,120 @@ class Manager(ThermoDB, ReferenceManager):
             # build datasource
             component_datasource = self.build_datasource(components, reference)
             # build equation source
-            equation_equationsource = None
+            equation_equationsource = self.build_equationsource(
+                components, reference)
 
             # init
             FugacityCoreC = FugacityCore(
                 component_datasource, equation_equationsource, components, operating_conditions, eos_parms)
+
+            # root analysis mode
+            if root_analysis_set is None:
+                root_analysis_set = FugacityCoreC.root_analysis_mode()
+
             # calculation
             res = FugacityCoreC.fugacity_cal(
                 mole_fraction, solver_method=solver_method, root_analysis_set=root_analysis_set)
+
+            return res
+        except Exception as e:
+            raise Exception("Fugacity calculation failed!, ", e)
+
+    def check_eos_roots(self, model_input):
+        '''
+        Checking eos roots
+
+        Parameters
+        ----------
+        model_input: dict
+            model input
+        solver_method: str
+            solver method
+        root_analysis_set: int
+            root analysis set
+
+        Returns
+        -------
+        res: list
+            eos root analysis
+
+        Notes
+        -----
+
+        References
+        ----------
+        1. Introductory Chemical Engineering Thermodynamics
+        '''
+        try:
+            # eos
+            eos_model = model_input.get('eos-model', 'SRK')
+            eos_model = eos_model.upper()
+            eos_model = eos_model_name(eos_model)
+
+            # phase
+            phase = model_input.get('phase', 'VAPOR')
+            phase = phase.upper()
+
+            # calculation mode
+            calculation_mode = 'single'
+            # component number
+            component_num = 0
+
+            # component
+            components = model_input["components"]
+
+            # check
+            if isinstance(components, list):
+                # set
+                component_num = len(components)
+                # single
+                if len(components) == 1:
+                    calculation_mode = 'single'
+                # mixture
+                else:
+                    calculation_mode = 'mixture'
+            else:
+                raise Exception('Components list not provided!')
+
+            # mole fraction
+            mole_fraction = model_input["mole-fraction"]
+
+            # check if multi
+            if calculation_mode == 'mixture':
+                # check
+                if len(mole_fraction) != component_num:
+                    raise Exception('Mole fraction list not provided!')
+
+            # operating conditions
+            operating_conditions = model_input["operating_conditions"]
+            # check temperature and pressure
+            if 'pressure' not in operating_conditions.keys():
+                raise Exception('No pressure in operating conditions!')
+
+            if 'temperature' not in operating_conditions.keys():
+                raise Exception('No temperature in operating conditions!')
+
+            # reference for eos
+            reference = self._references.get(eos_model, None)
+
+            # build datasource
+            component_datasource = self.build_datasource(components, reference)
+            # build equation source
+            equation_equationsource = self.build_equationsource(
+                components, reference)
+
+            # pressure [Pa]
+            P = pycuc.to(
+                operating_conditions["pressure"][0], f"{operating_conditions['pressure'][1]} => Pa")
+            # temperature [K]
+            T = pycuc.to(
+                operating_conditions["temperature"][0], f"{operating_conditions['temperature'][1]} => K")
+
+            # init
+            EOSUtilsC = EOSUtils(component_datasource, equation_equationsource)
+
+            # eos root analysis
+            res = EOSUtilsC.eos_root_analysis(P, T, components)
 
             return res
         except Exception as e:

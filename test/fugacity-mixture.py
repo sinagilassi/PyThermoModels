@@ -13,24 +13,24 @@ print(ptdb.__version__)
 # LOAD THERMODB
 # =======================================
 
-# ! CO2
+# ! ethanol
 # thermodb file name
-CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
+EtOH_thermodb_file = os.path.join(os.getcwd(), 'test', 'ethanol.pkl')
 # load
-CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
-print(type(CO2_thermodb))
+EtOH_thermodb = ptdb.load_thermodb(EtOH_thermodb_file)
+print(type(EtOH_thermodb))
 
 # CO2_thermodb
-CO2_thermodb
+EtOH_thermodb
 
-# ! acetylene
+# ! methanol
 # thermodb file name
-acetylene_thermodb_file = os.path.join(os.getcwd(), 'test', 'acetylene.pkl')
+MeOH_thermodb_file = os.path.join(os.getcwd(), 'test', 'methanol.pkl')
 # load
-acetylene_thermodb = ptdb.load_thermodb(acetylene_thermodb_file)
-print(type(acetylene_thermodb))
+MeOH_thermodb = ptdb.load_thermodb(MeOH_thermodb_file)
+print(type(MeOH_thermodb))
 
-acetylene_thermodb
+MeOH_thermodb
 
 # ========================================
 # INITIALIZE FUGACITY OBJECT
@@ -43,19 +43,19 @@ print("fugacity_obj: ", fugacity_obj)
 # THERMODB CONFIGURATION
 # =======================================
 
-# ! CO2
-# add CO2 thermodb
-fugacity_obj.add_thermodb('CO2', CO2_thermodb)
+# ! EtOH
+# add EtOH thermodb
+fugacity_obj.add_thermodb('EtOH', EtOH_thermodb)
 
-# ! acetylene
+# ! MeOH
 # add acetylene thermodb
-fugacity_obj.add_thermodb('acetylene', acetylene_thermodb)
+fugacity_obj.add_thermodb('MeOH', MeOH_thermodb)
 
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(os.getcwd(), 'test', 'thermodb_config.yml')
-fugacity_obj.config_thermodb('acetylene', thermodb_config_file)
-fugacity_obj.config_thermodb('CO2', thermodb_config_file)
+fugacity_obj.config_thermodb('EtOH', thermodb_config_file)
+fugacity_obj.config_thermodb('MeOH', thermodb_config_file)
 
 
 # check thermodb
@@ -63,7 +63,7 @@ print(fugacity_obj.check_thermodb())
 
 
 # =======================================
-# CALCULATE FUGACITY FOR PURE COMPONENT
+# CALCULATE FUGACITY FOR MULTI COMPONENT
 # =======================================
 # model input
 # eos model
@@ -73,18 +73,16 @@ eos_model = 'SRK'
 phase = "VAPOR"
 
 # component list
-comp_list = ["CO2"]
-# required component input
-# MW,Tc,Pc,w,Zc,Vc
+comp_list = ["EtOH", "MeOH"]
 
 # mole fraction
-MoFri = []
+MoFri = [0.75, 0.25]
 
 # temperature [K]
-T = 310
+T = 300
 
 # pressure [Pa]
-P = 8*1e5
+P = 1.2*1e5
 
 # model input
 model_input = {
@@ -98,16 +96,22 @@ model_input = {
     },
 }
 
+# =======================================
+# EOS ROOT ANALYSIS
+# =======================================
+# eos root analysis
+# res = fugacity_obj.check_eos_roots(model_input)
+# pp(res)
+
+# =======================================
+# CHECK REFERENCES
+# =======================================
 # check reference
 # pp(fugacity_obj.fugacity_check_reference(eos_model))
-# eos
-# res = fugacity_obj.fugacity_cal_init(model_input)
-# pp(res)
 
+# =======================================
+# FUGACITY CALCULATION
+# =======================================
 # method 2
-# res = fugacity_obj.fugacity_cal(model_input)
-# pp(res)
-
-# eos root analysis
-res = fugacity_obj.check_eos_roots(model_input)
+res = fugacity_obj.fugacity_cal(model_input)
 pp(res)

@@ -1,5 +1,11 @@
-thermodb:
+THERMODB:
   ALL:
-    Pc: ['GENERAL']['Pc']
-    Tc: ['GENERAL']['Tc']
-    AcFa: ['GENERAL']['AcFa']
+    Pc: ['GENERAL','Pc']
+    Tc: ['GENERAL','Tc']
+    AcFa: ['GENERAL','AcFa']
+    dHf_IG: ['GENERAL','dHf_IG']
+    dSf_IG: ['GENERAL','dSf_IG']
+    dGf_IG: ['GENERAL','dGf_IG']
+    VaPr: ['VAPOR-PRESSURE','VaPr']
+    Cp_IG: ['HEAT-CAPACITY-CONSTANT-PRESSURE-IG','Cp_IG']
+    Cp_LIQ: ['HEAT-CAPACITY-CONSTANT-PRESSURE-LIQ','Cp_LIQ']

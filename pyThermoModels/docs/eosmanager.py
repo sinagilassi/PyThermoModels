@@ -58,6 +58,9 @@ class EOSManager(EOSModels):
             2. T<Tc, P>P*, 1 real root (liquid)
             3. T<Tc, P<P*, 1 real root (superheated vapor)
             4. T>Tc, 1 real root (supercritical fluid varies between `vapor-like` and `liquid-like`)
+
+        ### Hints
+            1. _eos_params updated for single and mixture
         '''
         # SRK params
         _eos_params = []

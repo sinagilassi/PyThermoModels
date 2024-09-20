@@ -3,6 +3,7 @@
 
 # package/module list
 import numpy as np
+import pycuc
 # local
 from ..configs import Tref, R_CONST
 from .eosmanager import EOSManager
@@ -16,8 +17,12 @@ class FugacityCore(EOSManager):
         # components
         self.components = components
         # set
-        self.P = operating_conditions.get("pressure")
-        self.T = operating_conditions.get("temperature")
+        self.P = pycuc.to(
+            operating_conditions["pressure"][0], f"{operating_conditions['pressure'][1]} => Pa")
+        # temperature
+        self.T = pycuc.to(
+            operating_conditions["temperature"][0], f"{operating_conditions['temperature'][1]} => K")
+
         # phase
         self.phase = eos_parms['phase']
         # eos model
@@ -29,6 +34,36 @@ class FugacityCore(EOSManager):
 
         # init
         EOSManager.__init__(self, datasource, equationsource)
+
+    def root_analysis_mode(self):
+        '''
+        Sets root analysis mode based on the phase set in the model input
+
+        Returns
+        -------
+        calculation_mode : int
+            fugacity calculation mode
+        '''
+        try:
+            # calculation mode
+            calculation_mode = -1
+            # check phase
+            if self.phase == 'VAPOR-LIQUID':
+                calculation_mode = 1
+            elif self.phase == 'LIQUID':
+                calculation_mode = 2
+            elif self.phase == 'VAPOR':
+                calculation_mode = 3
+            elif self.phase == 'SUPERCRITICAL':
+                calculation_mode = 2
+            elif self.phase == 'SOLID':
+                calculation_mode = 2
+            else:
+                raise Exception('Invalid phase!')
+
+            return calculation_mode
+        except Exception as e:
+            raise Exception('Setting fugacity calculation mode failed!, ', e)
 
     def fugacity_cal(self, yi: list, solver_method, root_analysis_set):
         '''
@@ -48,7 +83,10 @@ class FugacityCore(EOSManager):
         '''
         try:
             # check
-            if self.phase == 'GAS':
+            if self.phase == 'VAPOR':
+                Zi, _phi, _eos_params = self.gas_fugacity(
+                    yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
+            elif self.phase == 'VAPOR-LIQUID':
                 Zi, _phi, _eos_params = self.gas_fugacity(
                     yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
             elif self.phase == 'LIQUID':
@@ -102,11 +140,6 @@ class FugacityCore(EOSManager):
         solver_method = kwargs.get('solver_method', 'ls')
         root_analysis_set = kwargs.get('root_analysis_set', 1)
 
-        # thermodynamic data
-        thermo_data = self.datasource
-        # thermodynamic functions
-        thermo_fun = self.equationsource
-
         # eos model
         eos_model = self.eos_model
         # mode
@@ -125,12 +158,39 @@ class FugacityCore(EOSManager):
             # Z
             _Zi, _eos_params = self.eos_roots(self.P, self.T, self.components, root_analysis_res,
                                               xi=yi, eos_model=eos_model, solver_method=solver_method, mode=mode)
-            # gas phase (only max root)
-            Zi = _Zi[0]
 
-            # fugacity coefficient (vapor phase)
-            _phi = self.eos_fugacity(self.P, self.T, Zi, _eos_params, self.components,
-                                     yi=yi, eos_model=eos_model, mode=mode)
+            # Zi loop
+            Zis = []
+            # check root analysis res
+            if self.phase == 'VAPOR-LIQUID':
+                # ! liquid
+                _Zi_set = np.min(_Zi)
+                Zis.append(_Zi_set)
+                # ! vapor
+                _Zi_set = np.max(_Zi)
+                Zis.append(_Zi_set)
+            elif self.phase == 'LIQUID':
+                _Zi_set = np.min(_Zi)
+                Zis.append(_Zi_set)
+            elif self.phase == 'VAPOR':
+                _Zi_set = np.max(_Zi)
+                Zis.append(_Zi_set)
+            elif self.phase == 'SUPERCRITICAL':
+                # supercritical fluid
+                raise Exception("supercritical fluid!")
+            else:
+                raise Exception('Invalid root analysis set!')
+
+            # fugacity coefficient
+            _phi = []
+
+            # gas phase (only max root)
+            for Zi in Zis:
+                # fugacity coefficient (vapor phase)
+                _phi_res = self.eos_fugacity(self.P, self.T, Zi, _eos_params, self.components,
+                                             yi=yi, eos_model=eos_model, mode=mode)
+                # save
+                _phi.append(_phi_res)
 
         elif mode == 'single':
             # Z
