@@ -73,18 +73,16 @@ eos_model = 'SRK'
 phase = "VAPOR"
 
 # component list
-comp_list = ["CO2"]
-# required component input
-# MW,Tc,Pc,w,Zc,Vc
+comp_list = ["acetylene"]
 
 # mole fraction
 MoFri = []
 
 # temperature [K]
-T = 310
+T = 250
 
 # pressure [bar]
-P = 8
+P = 10
 
 # model input
 model_input = {
@@ -107,9 +105,10 @@ model_input = {
 # eos
 # ------------------------------------------------
 # method 2
-Phi, Z, _ = fugacity_obj.fugacity_cal(model_input)
+Z, Phi, eos_parms = fugacity_obj.fugacity_cal(model_input)
 pp(Z)
 pp(Phi)
+pp(eos_parms)
 
 
 # ------------------------------------------------

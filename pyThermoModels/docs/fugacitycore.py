@@ -105,7 +105,7 @@ class FugacityCore(EOSManager):
             else:
                 raise Exception('Invalid phase!')
 
-            return _phi, Zi, _eos_params
+            return Zi, _phi, _eos_params
         except Exception as e:
             raise Exception('Fugacity calculation failed!, ', e)
 
@@ -231,31 +231,23 @@ class FugacityCore(EOSManager):
             # check _Zi num
             _Zi_num = len(Zis)
 
-            # check 1 root
-            if _Zi_num == 1:
-                # vapor or liquid phase
+            # vapor, liquid, vapor-liquid phase
+            # set
+            _phi = []
+            # looping through _Zi
+            for i in range(_Zi_num):
+                # gas-liquid phase
                 # fugacity coefficient (vapor phase)
-                _phi = self.eos_fugacity(
-                    self.P, self.T, Zis[0], _eos_params[0], self.components, eos_model=eos_model, mode=mode)
-
-            elif _Zi_num == 2:
-                # vapor-liquid phase
-                # set
-                _phi = []
-                # looping through _Zi
-                for i in range(_Zi_num):
-                    # gas-liquid phase
-                    # fugacity coefficient (vapor phase)
-                    _phi_res = self.eos_fugacity(
-                        self.P, self.T, Zis[i], _eos_params[0], self.components, eos_model=eos_model, mode=mode)
-                    # save
-                    _phi.append(_phi_res)
+                _phi_res = self.eos_fugacity(
+                    self.P, self.T, Zis[i], _eos_params[0], self.components, eos_model=eos_model, mode=mode)
+                # save
+                _phi.append(_phi_res)
 
         else:
             raise Exception("mode must be 'mixture' or 'single'")
 
         # res
-        return _Zi, _phi, _eos_params
+        return Zis, _phi, _eos_params
 
     def liquid_fugacity(self, **kwargs):
         '''

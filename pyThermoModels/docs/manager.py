@@ -172,8 +172,8 @@ class Manager(ThermoDB, ReferenceManager):
 
         Returns
         -------
-        res: list
-            fugacity coefficient (phi), compressibility factor (Z), and eos parms
+        res: tuple
+            compressibility factor (Z), fugacity coefficient (phi), and eos parms
 
         Notes
         -----

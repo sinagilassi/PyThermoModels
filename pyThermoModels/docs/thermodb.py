@@ -239,7 +239,7 @@ class ThermoDB:
             dependent_data_src = reference['DEPENDANT-EQUATIONS']
             dependent_data = []
             # check
-            if dependent_data_src is not None:
+            if dependent_data_src is not None and dependent_data_src != 'None':
                 for item, value in dependent_data_src.items():
                     _item_symbol = value['symbol']
                     dependent_data.append(_item_symbol)
