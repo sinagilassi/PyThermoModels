@@ -155,7 +155,7 @@ class Manager(ThermoDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=None, liquid_fugacity_method='liquid'):
+    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
         '''
         Calculate fugacity
 
@@ -167,13 +167,13 @@ class Manager(ThermoDB, ReferenceManager):
             solver method
         root_analysis_set: int
             root analysis set
-        liquid_fugacity_method: str
-            liquid fugacity method, liquid: Poynting method, eos: Equation of state (lowest Z)
+        liquid_fugacity_calculation_method: str
+            liquid fugacity method, `Poynting`: Poynting method, `EOS`: Equation of state (lowest Z)
 
         Returns
         -------
         res: list
-            compressibility factor (Z), fugacity coefficient (phi), eos parms
+            fugacity coefficient (phi), compressibility factor (Z), and eos parms
 
         Notes
         -----
@@ -280,7 +280,8 @@ class Manager(ThermoDB, ReferenceManager):
             eos_parms = {
                 'phase': phase,
                 'eos-model': eos_model,
-                'mode': calculation_mode
+                'mode': calculation_mode,
+                'liquid-fugacity-calculation-method': liquid_fugacity_calculation_method
             }
 
             # reference for eos

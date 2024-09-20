@@ -83,8 +83,8 @@ MoFri = []
 # temperature [K]
 T = 310
 
-# pressure [Pa]
-P = 8*1e5
+# pressure [bar]
+P = 8
 
 # model input
 model_input = {
@@ -93,21 +93,27 @@ model_input = {
     "components": comp_list,
     "mole-fraction": MoFri,
     "operating_conditions": {
-        "pressure": [P, 'Pa'],
+        "pressure": [P, 'bar'],
         "temperature": [T, 'K'],
     },
 }
 
+# ------------------------------------------------
 # check reference
+# ------------------------------------------------
 # pp(fugacity_obj.fugacity_check_reference(eos_model))
+
+# ------------------------------------------------
 # eos
-# res = fugacity_obj.fugacity_cal_init(model_input)
-# pp(res)
-
+# ------------------------------------------------
 # method 2
-# res = fugacity_obj.fugacity_cal(model_input)
-# pp(res)
+Phi, Z, _ = fugacity_obj.fugacity_cal(model_input)
+pp(Z)
+pp(Phi)
 
+
+# ------------------------------------------------
 # eos root analysis
-res = fugacity_obj.check_eos_roots(model_input)
-pp(res)
+# ------------------------------------------------
+# res = fugacity_obj.check_eos_roots(model_input)
+# pp(res)

@@ -113,5 +113,6 @@ model_input = {
 # FUGACITY CALCULATION
 # =======================================
 # method 2
-res = fugacity_obj.fugacity_cal(model_input)
-pp(res)
+Phi, Z, _ = fugacity_obj.fugacity_cal(model_input)
+pp(Z)
+pp(Phi)
