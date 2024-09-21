@@ -44,7 +44,7 @@ n_butane_thermodb
 # ========================================
 # INITIALIZE FUGACITY OBJECT
 # ========================================
-fugacity_obj = ptm.fugacity()
+fugacity_obj = ptm.fugacity_lib()
 # log
 print("fugacity_obj: ", fugacity_obj)
 
@@ -125,7 +125,7 @@ model_input = {
 
 
 # method 2
-Z, Phi, eos_parms = fugacity_obj.fugacity_cal(
+Z, Phi, eos_parms = fugacity_obj.cal_fugacity_coefficient(
     model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
 pp(Z)
 print('-'*50)

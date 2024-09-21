@@ -35,7 +35,7 @@ MeOH_thermodb
 # ========================================
 # INITIALIZE FUGACITY OBJECT
 # ========================================
-fugacity_obj = ptm.fugacity()
+fugacity_obj = ptm.fugacity_lib()
 # log
 print("fugacity_obj: ", fugacity_obj)
 
@@ -113,6 +113,5 @@ model_input = {
 # FUGACITY CALCULATION
 # =======================================
 # method 2
-Phi, Z, _ = fugacity_obj.fugacity_cal(model_input)
-pp(Z)
-pp(Phi)
+res = fugacity_obj.cal_fugacity_coefficient(model_input)
+pp(res)

@@ -15,7 +15,7 @@ def intro():
     print(_des)
 
 
-def fugacity():
+def fugacity_lib():
     '''
     Initialize fugacity calculation
 

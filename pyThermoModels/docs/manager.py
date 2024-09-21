@@ -15,6 +15,8 @@ class Manager(ThermoDB, ReferenceManager):
 
     _input = {}
     _references = {}
+    # results
+    _results = {}
 
     def __init__(self):
         # init ThermoDB
@@ -155,9 +157,9 @@ class Manager(ThermoDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def fugacity_cal(self, model_input, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
+    def cal_fugacity_coefficient(self, model_input, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
         '''
-        Calculate fugacity
+        Calculate fugacity coefficient
 
         Parameters
         ----------
