@@ -32,6 +32,15 @@ print(type(acetylene_thermodb))
 
 acetylene_thermodb
 
+# ! n-butane
+# thermodb file name
+n_butane_thermodb_file = os.path.join(os.getcwd(), 'test', 'n-butane.pkl')
+# load
+n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
+print(type(n_butane_thermodb))
+
+n_butane_thermodb
+
 # ========================================
 # INITIALIZE FUGACITY OBJECT
 # ========================================
@@ -50,6 +59,10 @@ fugacity_obj.add_thermodb('CO2', CO2_thermodb)
 # ! acetylene
 # add acetylene thermodb
 fugacity_obj.add_thermodb('acetylene', acetylene_thermodb)
+
+# ! n-butane
+# add n-butane thermodb
+fugacity_obj.add_thermodb('n-butane', n_butane_thermodb)
 
 
 # * add thermodb rule
@@ -70,19 +83,19 @@ print(fugacity_obj.check_thermodb())
 eos_model = 'SRK'
 
 # component phase
-phase = "VAPOR"
+phase = "LIQUID"
 
 # component list
-comp_list = ["acetylene"]
+comp_list = ["n-butane"]
 
 # mole fraction
 MoFri = []
 
 # temperature [K]
-T = 250
+T = 350
 
-# pressure [bar]
-P = 10
+# pressure [Pa]
+P = 9.4573*1e5
 
 # model input
 model_input = {
@@ -91,7 +104,7 @@ model_input = {
     "components": comp_list,
     "mole-fraction": MoFri,
     "operating_conditions": {
-        "pressure": [P, 'bar'],
+        "pressure": [P, 'Pa'],
         "temperature": [T, 'K'],
     },
 }
@@ -104,15 +117,34 @@ model_input = {
 # ------------------------------------------------
 # eos
 # ------------------------------------------------
-# method 2
-Z, Phi, eos_parms = fugacity_obj.fugacity_cal(model_input)
-pp(Z)
-pp(Phi)
-pp(eos_parms)
+# method 1
+# res1, res2 = fugacity_obj.fugacity_cal_init(model_input)
+# pp(res1)
+# print('-'*50)
+# pp(res2)
 
+
+# method 2
+Z, Phi, eos_parms = fugacity_obj.fugacity_cal(
+    model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
+pp(Z)
+print('-'*50)
+pp(Phi)
+print('-'*50)
+pp(eos_parms)
+print('-'*50)
 
 # ------------------------------------------------
 # eos root analysis
 # ------------------------------------------------
 # res = fugacity_obj.check_eos_roots(model_input)
 # pp(res)
+
+# ------------------------------------------------
+# thermo lib
+# ------------------------------------------------
+t_lib = ptm.thermo_lib()
+
+# calculate molar volume
+Vm = t_lib.cal_molar_volume(P, T, Z[0])*1e6
+pp(Vm)

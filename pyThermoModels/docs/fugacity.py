@@ -19,8 +19,8 @@ class FugacityClass():
         self.components = components
         self.eosRes = eosRes
         # set
-        self.P = params.get("pressure", 0)
-        self.T = params.get("temperature", 0)
+        self.P = params.get("pressure", 0)[0]
+        self.T = params.get("temperature", 0)[0]
         # eos res
         # compressibility factor
         self.Zs = eosRes['Zs']

@@ -34,7 +34,7 @@ class EOS:
         eosNameSet = self.eosName
         # select method
         selectEOS = {
-            "PENG_ROBINSON": lambda: (a * self.P) / np.power(CONST.R_CONST * self.T, 2),
+            "PR": lambda: (a * self.P) / np.power(CONST.R_CONST * self.T, 2),
             "RK": lambda: (a * self.P) / (np.power(CONST.R_CONST, 2) * np.power(self.T, 2.5)),
             "VDW": lambda: (a * self.P) / np.power(CONST.R_CONST * self.T, 2),
         }
@@ -62,7 +62,7 @@ class EOS:
         selectEOS = {
             "VDW": lambda B: -1 - B,
             "SKR": lambda B: -1,
-            "PENG_ROBINSON": lambda B: -1 + B,
+            "PR": lambda B: -1 + B,
         }
         # res
         res = selectEOS.get(eosNameSet)(B)
@@ -80,7 +80,7 @@ class EOS:
         selectEOS = {
             "VDW": lambda A, B: A,
             "SKR": lambda A, B: A - B - np.power(B, 2),
-            "PENG_ROBINSON": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
+            "PR": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
         }
         # res
         res = selectEOS.get(eosNameSet)(A, B)
@@ -98,7 +98,7 @@ class EOS:
         selectEOS = {
             "VDW": lambda A, B: -A * B,
             "SKR": lambda A, B: -A * B,
-            "PENG_ROBINSON": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
+            "PR": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
         }
         # res
         res = selectEOS.get(eosNameSet)(A, B)

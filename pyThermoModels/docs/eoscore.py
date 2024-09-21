@@ -3,6 +3,7 @@
 
 # import packages/modules
 import numpy as np
+import pycuc
 # internals
 from ..configs import constants as CONST
 from .eos import EOS
@@ -20,8 +21,8 @@ class EOSCore(EOS):
         self.mole_fraction = mole_fraction
         params = operating_conditions
         # set PVT
-        self.P = params.get("pressure", None)
-        self.T = params.get("temperature", None)
+        self.P = params.get("pressure", None)[0]
+        self.T = params.get("temperature", None)[0]
         # check
         if self.P is None or self.T is None:
             raise Exception("P and T are required!")
@@ -48,12 +49,40 @@ class EOSCore(EOS):
             # component data
             componentsData = self.datasource
 
+            # set
+            componentsDataSorted = []
+            # looping through components
+            for key, value in componentsData.items():
+                # ! data source
+                # critical temperature
+                _Tc_val = float(self.datasource[str(key)]['Tc']['value'])
+                _Tc_unit = self.datasource[str(key)]['Tc']['unit']
+                # unit conversion
+                _unit_block = f"{_Tc_unit} => K"
+                _Tc = pycuc.to(_Tc_val, _unit_block)
+
+                # critical pressure
+                _Pc_val = float(self.datasource[str(key)]['Pc']['value'])
+                _Pc_unit = self.datasource[str(key)]['Pc']['unit']
+                # unit conversion
+                _unit_block = f"{_Pc_unit} => Pa"
+                _Pc = pycuc.to(_Pc_val, _unit_block)
+
+                # acentric factor
+                _AcFa_val = float(self.datasource[str(key)]['AcFa']['value'])
+                _AcFa_unit = self.datasource[str(key)]['AcFa']['unit']
+                # unit conversion
+                _AcFa = _AcFa_val
+
+                # save
+                componentsDataSorted.append([_Pc, _Tc, _AcFa])
+
             # sorted data
             # ! Pc [Pa], Tc [K], w [-]
-            componentsDataSorted = [
-                [float(values['Pc']['value']), float(
-                    values['Tc']['value']), float(values['AcFa']['value'])]
-                for item, values in componentsData.items()]
+            # componentsDataSorted = [
+            #     [float(values['Pc']['value']), float(
+            #         values['Tc']['value']), float(values['AcFa']['value'])]
+            #     for item, values in componentsData.items()]
 
             # set a b matrix
             a = np.zeros(self.componentsNo)

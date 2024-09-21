@@ -102,7 +102,7 @@ class Manager(ThermoDB, ReferenceManager):
         '''
         try:
             # eos
-            eos_model = model_input.get('eos-model', 'Peng_Robinson')
+            eos_model = model_input.get('eos-model', 'PR')
             eos_model = eos_model.upper()
             # phase
             phase = model_input.get('phase', 'gas')
@@ -127,7 +127,7 @@ class Manager(ThermoDB, ReferenceManager):
             # ! calculate compressibility factor Z
             # select method
             select_eos_model = {
-                "PENG_ROBINSON": lambda: EOSCoreC._eosPR()
+                "PR": lambda: EOSCoreC._eosPR()
             }
 
             # check
@@ -144,7 +144,7 @@ class Manager(ThermoDB, ReferenceManager):
 
             # select method
             selectFugacity = {
-                "PENG_ROBINSON": lambda x: fugacityC.FugacityPR(x)
+                "PR": lambda x: fugacityC.FugacityPR(x)
             }
 
             # res

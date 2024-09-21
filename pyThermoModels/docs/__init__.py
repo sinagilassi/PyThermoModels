@@ -3,3 +3,4 @@ from .fugacity import FugacityClass
 from .manager import Manager
 from .fugacitycore import FugacityCore
 from .eosutils import EOSUtils
+from .thermolib import ThermoLib

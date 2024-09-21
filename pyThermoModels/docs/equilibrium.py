@@ -7,7 +7,7 @@ import numpy as np
 from scipy import optimize
 # local
 from .eoscore import eosCoreClass
-from PyCTPM.docs.fugacity import FugacityClass
+from .fugacity import FugacityClass
 from PyCTPM.docs.dThermo import calMolarVolume, calVaporPressureV2, calVapourPressure
 
 
