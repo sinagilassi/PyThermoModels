@@ -74,38 +74,44 @@ class FugacityCore(EOSManager):
 
         Parameters
         ----------
-        phase : str
-            phase, default gas
+        yi : list
+            mole fraction of components
+        solver_method : str
+            solver method, default ls
+        root_analysis_set : int
+            root analysis set
 
         Returns
         -------
-        _phi : float
+        Zi : float | list
+            compressibility coefficient
+        phi : float | list
             fugacity
-        _eos_params : dict
+        eos_params : dict
             eos parameters
         '''
         try:
             # check
             if self.phase == 'VAPOR':
-                Zi, _phi, _eos_params = self.gas_fugacity(
+                Zi, phi, eos_params = self.gas_fugacity(
                     yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
             elif self.phase == 'VAPOR-LIQUID':
-                Zi, _phi, _eos_params = self.gas_fugacity(
+                Zi, phi, eos_params = self.gas_fugacity(
                     yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
             elif self.phase == 'LIQUID':
                 # check
                 if self.liquid_fugacity_calculation_method == 'Poynting':
-                    Zi, _phi, _eos_params = self.liquid_fugacity(
+                    Zi, phi, eos_params = self.liquid_fugacity(
                         yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
                 elif self.liquid_fugacity_calculation_method == 'EOS':
-                    Zi, _phi, _eos_params = self.gas_fugacity(
+                    Zi, phi, eos_params = self.gas_fugacity(
                         yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
             elif self.phase == 'SOLID':
-                Zi, _phi, _eos_params = self.solid_fugacity()
+                Zi, phi, eos_params = self.solid_fugacity()
             else:
                 raise Exception('Invalid phase!')
 
-            return Zi, _phi, _eos_params
+            return Zi, phi, eos_params
         except Exception as e:
             raise Exception('Fugacity calculation failed!, ', e)
 
