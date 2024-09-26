@@ -10,7 +10,7 @@ print(ptm.__version__)
 print(ptdb.__version__)
 
 # =======================================
-# LOAD THERMODB
+# ! LOAD THERMODB
 # =======================================
 
 # ! ethanol
@@ -33,7 +33,7 @@ print(type(MeOH_thermodb))
 MeOH_thermodb
 
 # ========================================
-# INITIALIZE FUGACITY OBJECT
+# ! INITIALIZE FUGACITY OBJECT
 # ========================================
 fugacity_obj = ptm.fugacity_lib()
 # log
@@ -63,7 +63,7 @@ print(fugacity_obj.check_thermodb())
 
 
 # =======================================
-# CALCULATE FUGACITY FOR MULTI COMPONENT
+# ! CALCULATE FUGACITY FOR MULTI COMPONENT
 # =======================================
 # model input
 # eos model

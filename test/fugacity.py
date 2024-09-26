@@ -10,7 +10,7 @@ print(ptm.__version__)
 print(ptdb.__version__)
 
 # =======================================
-# LOAD THERMODB
+# ! LOAD THERMODB
 # =======================================
 
 # ! CO2
@@ -42,7 +42,7 @@ print(type(n_butane_thermodb))
 n_butane_thermodb
 
 # ========================================
-# INITIALIZE FUGACITY OBJECT
+# ! INITIALIZE FUGACITY OBJECT
 # ========================================
 fugacity_obj = ptm.fugacity_lib()
 # log
@@ -76,17 +76,17 @@ print(fugacity_obj.check_thermodb())
 
 
 # =======================================
-# CALCULATE FUGACITY FOR PURE COMPONENT
+# ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
 # model input
 # eos model
 eos_model = 'SRK'
 
 # component phase
-phase = "LIQUID"
+phase = "VAPOR"
 
 # component list
-comp_list = ["n-butane"]
+comp_list = ["CO2"]
 
 # mole fraction
 MoFri = []
@@ -125,8 +125,14 @@ model_input = {
 
 
 # method 2
-Z, Phi, eos_parms = fugacity_obj.cal_fugacity_coefficient(
-    model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
+# liquid fugacity calculation method
+# Z, Phi, eos_parms = fugacity_obj.cal_fugacity_coefficient(
+#     model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
+
+# gas fugacity calculation method
+Z, Phi, eos_parms = fugacity_obj.cal_fugacity_coefficient(model_input)
+
+# res
 pp(Z)
 print('-'*50)
 pp(Phi)
@@ -143,8 +149,8 @@ print('-'*50)
 # ------------------------------------------------
 # thermo lib
 # ------------------------------------------------
-t_lib = ptm.thermo_lib()
+# t_lib = ptm.thermo_lib()
 
 # calculate molar volume
-Vm = t_lib.cal_molar_volume(P, T, Z[0])*1e6
-pp(Vm)
+# Vm = t_lib.cal_molar_volume(P, T, Z[0])*1e6
+# pp(Vm)
