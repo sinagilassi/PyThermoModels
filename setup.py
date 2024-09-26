@@ -9,7 +9,7 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
 
 APP_NAME = 'PyThermoModels'
 VERSION = '1.0.0a1'
-DESCRIPTION = 'PyThermoModels is a lightweight and user-friendly Python package for thermodynamic modeling.'
+DESCRIPTION = 'A Python package designed for the calculation of thermodynamic properties using various well-established models.'
 LONG_DESCRIPTION = "PyThermoModels is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties."
 
 # Setting up
@@ -28,7 +28,7 @@ setup(
                        'data/*.yml', 'plugin/*.yml', 'plugin/*.csv']},
     license='MIT',
     install_requires=['pandas', 'pillow', 'requests',
-                      'urllib3', 'matplotlib', 'numpy', 'PyYAML', 'sympy', 'PyThermoDB'],
+                      'urllib3', 'matplotlib', 'numpy', 'PyYAML', 'sympy', 'PyThermoDB', 'PyCUC', 'scipy'],
     keywords=['python', 'chemical engineering', 'thermodynamics',
               'PyThermoDB'],
     classifiers=[
@@ -40,5 +40,5 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.9',
 )
