@@ -73,10 +73,16 @@ eos_model = 'SRK'
 phase = "VAPOR"
 
 # component list
-comp_list = ["EtOH", "MeOH"]
+# comp_list = ["EtOH", "MeOH"]
 
 # mole fraction
-MoFri = [0.75, 0.25]
+# MoFri = [0.75, 0.25]
+
+# feed spec
+N0s = {
+    'EtOH': 0.75,
+    'MeOH': 0.25
+}
 
 # temperature [K]
 T = 300
@@ -88,9 +94,8 @@ P = 1.2*1e5
 model_input = {
     "eos-model": eos_model,
     "phase": phase,
-    "components": comp_list,
-    "mole-fraction": MoFri,
-    "operating_conditions": {
+    "feed-spec": N0s,
+    "operating-conditions": {
         "pressure": [P, 'Pa'],
         "temperature": [T, 'K'],
     },

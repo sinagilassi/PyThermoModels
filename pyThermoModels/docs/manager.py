@@ -244,8 +244,20 @@ class Manager(ThermoDB, ReferenceManager):
             # component number
             component_num = 0
 
-            # component
-            components = model_input["components"]
+            # input
+            feed_spec = model_input.get('feed-spec')
+            # check
+            if feed_spec is None or feed_spec == 'None':
+                raise Exception('Feed specification is not provided!')
+
+            # component list
+            components = []
+            # mole fraction
+            mole_fraction = []
+            # looping through feed spec
+            for key, value in feed_spec.items():
+                components.append(key)
+                mole_fraction.append(value)
 
             # check
             if isinstance(components, list):
@@ -260,9 +272,6 @@ class Manager(ThermoDB, ReferenceManager):
             else:
                 raise Exception('Components list not provided!')
 
-            # mole fraction
-            mole_fraction = model_input["mole-fraction"]
-
             # check if multi
             if calculation_mode == 'mixture':
                 # check
@@ -270,7 +279,7 @@ class Manager(ThermoDB, ReferenceManager):
                     raise Exception('Mole fraction list not provided!')
 
             # operating conditions
-            operating_conditions = model_input["operating_conditions"]
+            operating_conditions = model_input["operating-conditions"]
             # check temperature and pressure
             if 'pressure' not in operating_conditions.keys():
                 raise Exception('No pressure in operating conditions!')
