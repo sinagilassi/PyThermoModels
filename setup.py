@@ -8,7 +8,7 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 APP_NAME = 'PyThermoModels'
-VERSION = '1.0.0a1'
+VERSION = '1.1.0a1'
 DESCRIPTION = 'A Python package designed for the calculation of thermodynamic properties using various well-established models.'
 LONG_DESCRIPTION = "PyThermoModels is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties."
 
