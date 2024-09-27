@@ -283,14 +283,14 @@ class EOSManager(EOSModels):
             else:
                 _phi = 0
 
-            phi = exp(_phi)
+            phi = [exp(_phi)]
 
         elif mode == 'mixture':  # ! mixture
             # component no
             compNo = len(components)
 
             # fugacity coefficient
-            phi = np.zeros(compNo)
+            phi = []
 
             # mixing parameters
             _params_mix = params[-1]
@@ -326,7 +326,7 @@ class EOSManager(EOSModels):
                 elif eos_model == 'RK':
                     _phi = 1
 
-                phi[i] = exp(_phi)
+                phi.append(exp(_phi))
 
         else:
             raise Exception("mode must be 'single' or 'mixture'")

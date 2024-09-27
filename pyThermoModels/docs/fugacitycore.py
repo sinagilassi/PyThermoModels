@@ -83,35 +83,43 @@ class FugacityCore(EOSManager):
 
         Returns
         -------
+        res : dict
+            fugacity result
+
+
+        Notes
+        -----
         Zi : float | list
             compressibility coefficient
         phi : float | list
             fugacity
         eos_params : dict
             eos parameters
+        phi_pack : dict
+            fugacity package
         '''
         try:
             # check
             if self.phase == 'VAPOR':
-                Zi, phi, eos_params = self.gas_fugacity(
+                res = self.gas_fugacity(
                     yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
             elif self.phase == 'VAPOR-LIQUID':
-                Zi, phi, eos_params = self.gas_fugacity(
+                res = self.gas_fugacity(
                     yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
             elif self.phase == 'LIQUID':
                 # check
                 if self.liquid_fugacity_calculation_method == 'Poynting':
-                    Zi, phi, eos_params = self.liquid_fugacity(
+                    res = self.liquid_fugacity(
                         yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
                 elif self.liquid_fugacity_calculation_method == 'EOS':
-                    Zi, phi, eos_params = self.gas_fugacity(
+                    res = self.gas_fugacity(
                         yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
             elif self.phase == 'SOLID':
-                Zi, phi, eos_params = self.solid_fugacity()
+                res = self.solid_fugacity()
             else:
                 raise Exception('Invalid phase!')
 
-            return Zi, phi, eos_params
+            return res
         except Exception as e:
             raise Exception('Fugacity calculation failed!, ', e)
 
@@ -167,6 +175,14 @@ class FugacityCore(EOSManager):
         # vars
         Zi = 0
 
+        # set results
+        _phi_pack = {
+            'VAPOR': {},
+            'LIQUID': {},
+            'SOLID': {},
+            'SUPERCRITICAL': {}
+        }
+
         # check
         if mode == 'mixture':
             # Z
@@ -197,14 +213,38 @@ class FugacityCore(EOSManager):
 
             # fugacity coefficient
             _phi = []
-
-            # gas phase (only max root)
-            for Zi in Zis:
+            # looping through Zis
+            for i in range(len(Zis)):
                 # fugacity coefficient (vapor phase)
-                _phi_res = self.eos_fugacity(self.P, self.T, Zi, _eos_params, self.components,
+                _phi_res = self.eos_fugacity(self.P, self.T, Zis[i], _eos_params, self.components,
                                              yi=yi, eos_model=eos_model, mode=mode)
                 # save
                 _phi.append(_phi_res)
+
+                if len(Zis) == 1:
+                    for j in range(len(_phi_res)):
+                        # pack
+                        _phi_pack[self.phase][self.components[j]] = {
+                            'Zi': Zis[i],
+                            'phi': _phi_res[j],
+                            'mode': self.mode,
+                            'phase': self.phase
+                        }
+                elif len(Zis) == 2:
+                    for j in range(len(_phi_res)):
+                        # pack
+                        # set phase
+                        if i == 0:
+                            _phase = 'LIQUID'
+                        else:
+                            _phase = 'VAPOR'
+                        # set
+                        _phi_pack[_phase][self.components[j]] = {
+                            'Zi': Zis[i],
+                            'phi': _phi_res[j],
+                            'mode': self.mode,
+                            'phase': self.phase
+                        }
 
         elif mode == 'single':
             # Z
@@ -248,12 +288,19 @@ class FugacityCore(EOSManager):
                     self.P, self.T, Zis[i], _eos_params[0], self.components, eos_model=eos_model, mode=mode)
                 # save
                 _phi.append(_phi_res)
+                # pack
+                _phi_pack[self.phase][self.components[i]] = {
+                    'Zi': Zis[i],
+                    'phi': _phi_res,
+                    'mode': self.mode,
+                    'phase': self.phase
+                }
 
         else:
             raise Exception("mode must be 'mixture' or 'single'")
 
         # res
-        return Zis, _phi, _eos_params
+        return Zis, _phi, _eos_params, _phi_pack
 
     def liquid_fugacity(self, **kwargs):
         '''

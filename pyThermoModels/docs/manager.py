@@ -254,7 +254,7 @@ class Manager(ThermoDB, ReferenceManager):
             components = []
             # mole fraction
             mole_fraction = []
-            # looping through feed spec
+            # looping through feed-spec
             for key, value in feed_spec.items():
                 components.append(key)
                 mole_fraction.append(value)
