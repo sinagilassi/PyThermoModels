@@ -37,6 +37,28 @@ def fugacity_lib():
         raise Exception("Calculating the Fugacity failed!, ", e)
 
 
+def activity_lib():
+    '''
+    Initialize activity calculation
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    fugacity: list
+        fugacity for gas/liquid/solid phase
+    '''
+    try:
+        # manager
+        ManagerC = Manager()
+        # return
+        return ManagerC
+    except Exception as e:
+        raise Exception("Calculating the Activity failed!, ", e)
+
+
 def thermo_lib():
     '''
     Initialize thermodynamic calculation library
