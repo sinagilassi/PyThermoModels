@@ -11,7 +11,7 @@ CO2:
     Tc: Tc
     AcFa: AcFa
   EQUATIONS:
-    vapor-pressure: VaPr
+    VAPOR-PRESSURE: VaPr
 acetylene:
   DATA:
     Pc: Pc

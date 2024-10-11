@@ -2,6 +2,7 @@
 from pprint import pprint as pp
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
+import pyThermoLinkDB as ptdblink
 import os
 
 # check version
@@ -21,7 +22,7 @@ CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
 print(type(CO2_thermodb))
 
 # CO2_thermodb
-CO2_thermodb
+pp(CO2_thermodb.check())
 
 # ! acetylene
 # thermodb file name
@@ -48,25 +49,33 @@ fugacity_obj = ptm.fugacity_lib()
 # log
 print("fugacity_obj: ", fugacity_obj)
 
+# ========================================
+# ! CHECK FUGACITY REFERENCE
+# ========================================
+pp(fugacity_obj.fugacity_check_reference('SRK'))
+
 # =======================================
-# THERMODB CONFIGURATION
+# ! THERMODB LINK CONFIGURATION
 # =======================================
+# init thermodb hub
+thub1 = ptdblink.thermodb_hub()
+print(type(thub1))
 
-# ! CO2
-# add CO2 thermodb
-# fugacity_obj.add_thermodb('CO2', CO2_thermodb)
+# add component thermodb
+# thub1.add_thermodb('EtOH', EtOH_thermodb)
+# thub1.add_thermodb('MeOH', MeOH_thermodb)
+thub1.add_thermodb('CO2', CO2_thermodb)
 
-# ! acetylene
-# add acetylene thermodb
-# fugacity_obj.add_thermodb('acetylene', acetylene_thermodb)
+# * add thermodb rule
+thermodb_config_file = os.path.join(
+    os.getcwd(), 'test', 'thermodb_config_link.yml')
+# one component
+# thub1.config_thermodb_rule(thermodb_config_file, name='EtOH')
+# all components
+thub1.config_thermodb_rule(thermodb_config_file, name='ALL')
 
-# ! n-butane
-# add n-butane thermodb
-# fugacity_obj.add_thermodb('n-butane', n_butane_thermodb)
-
-# check thermodb
-# print(fugacity_obj.check_thermodb())
-
+# build datasource & equationsource
+datasource, equationsource = thub1.build()
 
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
@@ -104,13 +113,8 @@ model_input = {
         "pressure": [P, 'Pa'],
         "temperature": [T, 'K'],
     },
-}
-
-# thermo input
-thermo_input = {
-    "CO2": CO2_thermodb,
-    "acetylene": acetylene_thermodb,
-    "n-butane": n_butane_thermodb
+    "datasource": datasource,
+    "equationsource": equationsource
 }
 
 # ------------------------------------------------
@@ -134,16 +138,16 @@ thermo_input = {
 #     model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
 
 # gas fugacity calculation method
-Z, Phi, eos_parms = fugacity_obj.cal_fugacity_coefficient(
-    model_input, thermo_input)
-
+res = fugacity_obj.cal_fugacity_coefficient(
+    model_input)
+pp(res)
 # res
-pp(Z)
-print('-'*50)
-pp(Phi)
-print('-'*50)
-pp(eos_parms)
-print('-'*50)
+# pp(Z)
+# print('-'*50)
+# pp(Phi)
+# print('-'*50)
+# pp(eos_parms)
+# print('-'*50)
 
 # ------------------------------------------------
 # eos root analysis

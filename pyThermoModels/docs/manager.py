@@ -5,13 +5,14 @@ import pycuc
 from .eoscore import EOSCore
 from .fugacity import FugacityClass
 from .thermodb import ThermoDB
+from .thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager
 from .fugacitycore import FugacityCore
 from ..utils import eos_model_name
 from .eosutils import EOSUtils
 
 
-class Manager(ThermoDB, ReferenceManager):
+class Manager(ThermoDB, ThermoLinkDB, ReferenceManager):
 
     _input = {}
     _references = {}
@@ -21,6 +22,7 @@ class Manager(ThermoDB, ReferenceManager):
     def __init__(self):
         # init ThermoDB
         ThermoDB.__init__(self)
+        ThermoLinkDB.__init__(self)
         ReferenceManager.__init__(self)
 
         # reference plugin
@@ -157,7 +159,7 @@ class Manager(ThermoDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def cal_fugacity_coefficient(self, model_input: dict, thermo_input: dict, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
+    def cal_fugacity_coefficient(self, model_input: dict, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
         '''
         Calculate fugacity coefficient for the single and multi-component systems
 
@@ -165,8 +167,6 @@ class Manager(ThermoDB, ReferenceManager):
         ----------
         model_input: dict
             model input
-        thermo_input: dict
-            thermodynamic input
         solver_method: str
             solver method
         root_analysis_set: int
@@ -227,16 +227,10 @@ class Manager(ThermoDB, ReferenceManager):
                     "pressure": [P, 'Pa'],
                     "temperature": [T, 'K'],
                 },
-            }
-
-            # thermo input
-            thermo_input = {
-                "CO2": CO2_thermodb,
-                "acetylene": acetylene_thermodb,
-                "n-butane": n_butane_thermodb
+                "datasource": datasource,
+                "equationsource": equationsource
             }
             ```
-
         '''
         try:
             # eos
@@ -304,13 +298,23 @@ class Manager(ThermoDB, ReferenceManager):
                 'liquid-fugacity-calculation-method': liquid_fugacity_calculation_method
             }
 
+            # datasource
+            datasource = model_input.get('datasource', {})
+            # equationsource
+            equationsource = model_input.get('equationsource', {})
+            # set thermodb link
+            link_status = self.set_thermodb_link(datasource, equationsource)
+            # check
+            if not link_status:
+                raise Exception('Thermodb link failed!')
+
             # reference for eos
             reference = self._references.get(eos_model, None)
 
             # build datasource
-            component_datasource = self.build_datasource(components, reference)
+            component_datasource = self.set_datasource(components, reference)
             # build equation source
-            equation_equationsource = self.build_equationsource(
+            equation_equationsource = self.set_equationsource(
                 components, reference)
 
             # init
