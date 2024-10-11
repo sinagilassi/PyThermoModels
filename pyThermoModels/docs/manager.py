@@ -157,14 +157,16 @@ class Manager(ThermoDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def cal_fugacity_coefficient(self, model_input, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
+    def cal_fugacity_coefficient(self, model_input: dict, thermo_input: dict, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
         '''
-        Calculate fugacity coefficient
+        Calculate fugacity coefficient for the single and multi-component systems
 
         Parameters
         ----------
         model_input: dict
             model input
+        thermo_input: dict
+            thermodynamic input
         solver_method: str
             solver method
         root_analysis_set: int
@@ -225,6 +227,13 @@ class Manager(ThermoDB, ReferenceManager):
                     "pressure": [P, 'Pa'],
                     "temperature": [T, 'K'],
                 },
+            }
+
+            # thermo input
+            thermo_input = {
+                "CO2": CO2_thermodb,
+                "acetylene": acetylene_thermodb,
+                "n-butane": n_butane_thermodb
             }
             ```
 

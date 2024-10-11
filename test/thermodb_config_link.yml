@@ -1,0 +1,43 @@
+# this rule used for setting a component data/equation names
+# component name:
+# DATA:
+#   data symbol defined in TableData: new symbol
+# EQUATIONS:
+#   equation symbol defined in TableEquations: new symbol
+
+CO2:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    vapor-pressure: VaPr
+acetylene:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    VAPOR-PRESSURE: VaPr
+EtOH:
+  DATA:
+    Pc: Pc1
+    Tc: Tc2
+    AcFa: AcFa3
+  EQUATIONS:
+    VAPOR-PRESSURE: VaPr
+MeOH:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    VAPOR-PRESSURE: VaPr
+    HEAT-CAPACITY: Cp_IG
+n-butane:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    VAPOR-PRESSURE: VaPr
