@@ -44,7 +44,7 @@ class Activity():
     def Margules_activity_coefficient(self, xi, Aij):
         '''
         Determines activity coefficient for a `binary system` using the Gibbs
-        excess function defined as a one\\two-parameter Margules equation.
+        excess function defined as a one and two-parameter Margules equation.
 
         Parameters
         ----------
