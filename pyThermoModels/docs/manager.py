@@ -432,3 +432,22 @@ class Manager(ThermoDB, ThermoLinkDB, ReferenceManager):
             return res
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
+
+    def cal_activity_coefficient(self, model_input: dict):
+        '''
+        Calculate activity coefficient 
+
+        Parameters
+        ----------
+        model_input : dict
+            model input dictionary
+
+        Returns
+        -------
+        res : dict
+            activity coefficient 
+        '''
+        try:
+
+        except Exception as e:
+            raise Exception("Activity coefficient calculation failed!", e)

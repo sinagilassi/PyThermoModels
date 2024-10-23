@@ -43,16 +43,16 @@ print(type(n_butane_thermodb))
 n_butane_thermodb
 
 # ========================================
-# ! INITIALIZE FUGACITY OBJECT
+# ! INITIALIZE ACTIVITY OBJECT
 # ========================================
-fugacity_obj = ptm.fugacity_lib()
+activity_obj = ptm.activity_lib()
 # log
-print("fugacity_obj: ", fugacity_obj)
+print("activity_obj: ", activity_obj)
 
 # ========================================
-# ! CHECK FUGACITY REFERENCE
+# ! CHECK ACTIVITY REFERENCE
 # ========================================
-pp(fugacity_obj.fugacity_check_reference('SRK'))
+
 
 # =======================================
 # ! THERMODB LINK CONFIGURATION
@@ -81,11 +81,11 @@ datasource, equationsource = thub1.build()
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
 # model input
-# eos model
-eos_model = 'SRK'
+# activity model
+activity_model = 'Margules'
 
 # component phase
-phase = "VAPOR"
+phase = "LIQUID"
 
 # component list
 # comp_list = ["CO2"]
@@ -106,7 +106,7 @@ P = 9.4573*1e5
 
 # model input
 model_input = {
-    "eos-model": eos_model,
+    "eos-model": activity_model,
     "phase": phase,
     "feed-spec": N0s,
     "operating-conditions": {
