@@ -61,3 +61,42 @@ REFERENCES:
         name: vapor pressure
         symbol: VaPr
         unit: Pa
+  NRTL:
+    ARGS:
+      non-randomness-parameter:
+        name: non-randomness parameter
+        symbol: alpha
+        unit: None
+      binary-interaction-parameter:
+        name: binary interaction parameter
+        symbol: tau
+        unit: None
+      RETURNS:
+        activity-coefficient:
+          name: activity coefficient
+          symbol: AcCo
+          unit: None
+      DEPENDANT-DATA: None
+      DEPENDANT-EQUATIONS: None
+  UNIQUAC:
+    ARGS:
+      volume-parameter:
+        name: volume parameter
+        symbol: r
+        unit: None
+      surface-area-parameter:
+        name: surface area parameter
+        symbol: q
+        unit: None
+      binary-interaction-parameter:
+        name: binary interaction parameter
+        symbol: tau
+        unit: None
+      RETURNS:
+        activity-coefficient:
+          name: activity coefficient
+          symbol: AcCo
+          unit: None
+      DEPENDANT-DATA: None
+      DEPENDANT-EQUATIONS: None
+
