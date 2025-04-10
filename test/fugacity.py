@@ -42,6 +42,22 @@ n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
 print(type(n_butane_thermodb))
 print(n_butane_thermodb.check())
 
+# ! ethanol
+# thermodb file name
+ethanol_thermodb_file = os.path.join(thermodb_dir, 'ethanol-1.pkl')
+# load
+ethanol_thermodb = ptdb.load_thermodb(ethanol_thermodb_file)
+print(type(ethanol_thermodb))
+print(ethanol_thermodb.check())
+
+# ! methanol
+# thermodb file name
+methanol_thermodb_file = os.path.join(thermodb_dir, 'methanol-1.pkl')
+# load
+methanol_thermodb = ptdb.load_thermodb(methanol_thermodb_file)
+print(type(methanol_thermodb))
+print(methanol_thermodb.check())
+
 # ========================================
 # ! INITIALIZE OBJECT
 # ========================================
@@ -57,9 +73,9 @@ thub1 = ptdblink.init()
 print(type(thub1))
 
 # add component thermodb
-# thub1.add_thermodb('EtOH', EtOH_thermodb)
-# thub1.add_thermodb('MeOH', MeOH_thermodb)
 thub1.add_thermodb('CO2', CO2_thermodb)
+thub1.add_thermodb('EtOH', ethanol_thermodb)
+thub1.add_thermodb('MeOH', methanol_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -81,12 +97,6 @@ eos_model = 'SRK'
 
 # component phase
 phase = "VAPOR"
-
-# component list
-# comp_list = ["CO2"]
-
-# mole fraction
-# MoFri = []
 
 # component
 N0s = {
@@ -114,33 +124,30 @@ model_input = {
 # ------------------------------------------------
 # NOTE: check reference
 # ------------------------------------------------
-print(tm.fugacity_check_reference(eos_model))
+res_ = tm.check_fugacity_reference(eos_model)
+print(type(res_))
+print(res_)
 
 # ------------------------------------------------
-# eos
+# NOTE: eos
 # ------------------------------------------------
-# method 1
-# res1, res2 = tm.fugacity_cal_init(model_input)
-# print(res1)
-# print('-'*50)
-# print(res2)
+# NOTE: liquid fugacity calculation method
+res = tm.cal_fugacity(model_name=eos_model, model_input=model_input,
+                      root_analysis_set=1, liquid_fugacity_mode='EOS')
 
+# NOTE: gas fugacity calculation method
+# res = tm.cal_fugacity(
+#     model_name=eos_model, model_input=model_input)
 
-# method 2
-# liquid fugacity calculation method
-# Z, Phi, eos_parms = tm.cal_fugacity_coefficient(
-#     model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
-
-# gas fugacity calculation method
-res = tm.cal_fugacity_coefficient(model_name=eos_model, model_input)
-
-Z, Phi, eos_parms, _ = res
+Z, Phi, eos_parms, phi_parms = res
 # res
 print(Z)
 print('-'*50)
 print(Phi)
 print('-'*50)
 print(eos_parms)
+print('-'*50)
+print(phi_parms)
 print('-'*50)
 
 # ------------------------------------------------

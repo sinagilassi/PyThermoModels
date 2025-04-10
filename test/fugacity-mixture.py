@@ -1,66 +1,66 @@
 # import packages/modules
-from pprint import pprint as pp
+import os
+from rich import print
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
-import os
+import pyThermoLinkDB as ptdblink
 
 # check version
 print(ptm.__version__)
 # check version
 print(ptdb.__version__)
+# check version
+print(ptdblink.__version__)
 
 # =======================================
 # ! LOAD THERMODB
 # =======================================
+# NOTE: thermodb directory
+thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
 
 # ! ethanol
 # thermodb file name
-EtOH_thermodb_file = os.path.join(os.getcwd(), 'test', 'ethanol.pkl')
+EtOH_thermodb_file = os.path.join(thermodb_dir, 'ethanol-1.pkl')
 # load
 EtOH_thermodb = ptdb.load_thermodb(EtOH_thermodb_file)
 print(type(EtOH_thermodb))
-
-# CO2_thermodb
-EtOH_thermodb
+print(EtOH_thermodb.check())
 
 # ! methanol
 # thermodb file name
-MeOH_thermodb_file = os.path.join(os.getcwd(), 'test', 'methanol.pkl')
+MeOH_thermodb_file = os.path.join(thermodb_dir, 'methanol-1.pkl')
 # load
 MeOH_thermodb = ptdb.load_thermodb(MeOH_thermodb_file)
 print(type(MeOH_thermodb))
-
-MeOH_thermodb
+print(MeOH_thermodb.check())
 
 # ========================================
 # ! INITIALIZE FUGACITY OBJECT
 # ========================================
-fugacity_obj = ptm.fugacity_lib()
+tm = ptm.init()
 # log
-print("fugacity_obj: ", fugacity_obj)
+print("tm: ", tm)
 
 # =======================================
-# THERMODB CONFIGURATION
+# SECTION: THERMODB LINK CONFIGURATION
 # =======================================
+# init thermodb hub
+thub1 = ptdblink.init()
+print(type(thub1))
 
-# ! EtOH
-# add EtOH thermodb
-fugacity_obj.add_thermodb('EtOH', EtOH_thermodb)
-
-# ! MeOH
-# add acetylene thermodb
-fugacity_obj.add_thermodb('MeOH', MeOH_thermodb)
-
+# add component thermodb
+thub1.add_thermodb('EtOH', EtOH_thermodb)
+thub1.add_thermodb('MeOH', MeOH_thermodb)
 
 # * add thermodb rule
-thermodb_config_file = os.path.join(os.getcwd(), 'test', 'thermodb_config.yml')
-fugacity_obj.config_thermodb('EtOH', thermodb_config_file)
-fugacity_obj.config_thermodb('MeOH', thermodb_config_file)
+thermodb_config_file = os.path.join(
+    os.getcwd(), 'test', 'thermodb_config_link.yml')
 
+# all components
+thub1.config_thermodb_rule(thermodb_config_file)
 
-# check thermodb
-print(fugacity_obj.check_thermodb())
-
+# build datasource & equationsource
+datasource, equationsource = thub1.build()
 
 # =======================================
 # ! CALCULATE FUGACITY FOR MULTI COMPONENT
@@ -71,12 +71,6 @@ eos_model = 'SRK'
 
 # component phase
 phase = "VAPOR"
-
-# component list
-# comp_list = ["EtOH", "MeOH"]
-
-# mole fraction
-# MoFri = [0.75, 0.25]
 
 # feed spec
 N0s = {
@@ -92,31 +86,37 @@ P = 1.2*1e5
 
 # model input
 model_input = {
-    "eos-model": eos_model,
     "phase": phase,
     "feed-spec": N0s,
     "operating-conditions": {
         "pressure": [P, 'Pa'],
         "temperature": [T, 'K'],
     },
+    "datasource": datasource,
+    "equationsource": equationsource,
 }
 
 # =======================================
 # EOS ROOT ANALYSIS
 # =======================================
 # eos root analysis
-# res = fugacity_obj.check_eos_roots(model_input)
-# pp(res)
+res_ = tm.check_eos_roots(model_name=eos_model, model_input=model_input)
+print(type(res_))
+print(res_)
 
 # =======================================
 # CHECK REFERENCES
 # =======================================
 # check reference
-# pp(fugacity_obj.fugacity_check_reference(eos_model))
+res_ = tm.check_fugacity_reference(eos_model)
+print(type(res_))
+print(res_)
 
 # =======================================
 # FUGACITY CALCULATION
 # =======================================
 # method 2
-res = fugacity_obj.cal_fugacity_coefficient(model_input)
-pp(res)
+res = tm.cal_fugacity(model_name=eos_model, model_input=model_input,
+                      root_analysis_set=1, liquid_fugacity_mode='EOS')
+print(type(res))
+print(res)

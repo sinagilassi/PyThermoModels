@@ -10,7 +10,37 @@ from .eosmanager import EOSManager
 
 
 class FugacityCore(EOSManager):
+    '''
+    Fugacity core class for calculating fugacity using equation of state (EOS) models.
+
+    This class is a subclass of the EOSManager class and provides methods for calculating
+    fugacity coefficients for different phases (vapor, liquid, solid) using various EOS models.
+    '''
+
     def __init__(self, datasource, equationsource, components, operating_conditions, eos_parms):
+        '''
+        Initialize the FugacityCore class.
+
+        Parameters
+        ----------
+        datasource : object
+            Data source object containing thermodynamic data.
+        equationsource : object
+            Equation source object containing thermodynamic equations.
+        components : list
+            List of component names.
+        operating_conditions : dict
+            Dictionary containing operating conditions such as pressure and temperature.
+        eos_parms : dict
+            Dictionary containing EOS parameters such as phase, eos-model, mode, and liquid-fugacity-calculation-method.
+
+        Notes
+        -----
+        1. pressure and temperature are converted to SI units (Pa and K).
+        2. The phase can be 'VAPOR', 'LIQUID', 'VAPOR-LIQUID', 'SUPERCRITICAL', or 'SOLID'.
+        3. The eos-model can be 'SRK', 'PR', or other EOS models.
+        4. The mode can be 'single' or 'mixture'.
+        '''
         # data/equations
         self.datasource = datasource
         self.equationsource = equationsource
@@ -30,7 +60,7 @@ class FugacityCore(EOSManager):
         # mode
         self.mode = eos_parms['mode']
         # liquid fugacity calculation method
-        self.liquid_fugacity_calculation_method = eos_parms['liquid-fugacity-calculation-method']
+        self.liquid_fugacity_calculation_method = eos_parms['liquid-fugacity-mode']
 
         # comp no
         self.componentsNo = len(self.components)
@@ -142,10 +172,14 @@ class FugacityCore(EOSManager):
 
         Returns
         -------
-        _phi : float
-            gas fugacity
+        Zis : list
+            compressibility coefficient
+        _phi : list
+            fugacity
         _eos_params : dict
             eos parameters
+        _phi_pack : dict
+            fugacity package
 
         Notes
         -----

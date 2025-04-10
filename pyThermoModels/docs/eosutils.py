@@ -137,7 +137,7 @@ class EOSUtils:
 
         # looping through components
         for component in components:
-            # ! equation source
+            # NOTE: equation source
             # antoine equations [Pa]
             VaPr_eq = self.equationsource[str(component)]['VaPr']
             # args
@@ -153,11 +153,19 @@ class EOSUtils:
             _VaPr_args['P'] = P
             _VaPr_args['T'] = T
 
-            # execute
-            _VaPr = VaPr_eq.cal(**_VaPr_args)
+            # NOTE: execute
+            _VaPr_res = VaPr_eq.cal(**_VaPr_args)
+            # extract
+            _VaPr_value = _VaPr_res['value']
+            _VaPr_unit = _VaPr_res['unit']
+            # unit conversion
+            # NOTE: unit conversion
+            _unit_block = f"{_VaPr_unit} => Pa"
+            _VaPr = pycuc.to(_VaPr_value, _unit_block)
+            # set
             _vapor_pressure.append(_VaPr)
 
-            # ! data source
+            # NOTE: data source
             # critical temperature
             _Tc_val = self.datasource[str(component)]['Tc']['value']
             _Tc_unit = self.datasource[str(component)]['Tc']['unit']
