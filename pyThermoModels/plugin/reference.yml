@@ -9,12 +9,20 @@ REFERENCES:
         name: pressure
         symbol: P
         unit: Pa
+      phase:
+        name: phase
+        symbol: Ph
+        unit: None
+      feed-specification:
+        name: feed specification
+        symbol: FeSp
+        unit: None
     RETURNS:
       fugacity:
         name: fugacity
         symbol: Fug
         unit: None
-    DEPENDANT-DATA: 
+    DEPENDANT-DATA:
       critical-temperature:
         name: critical temperature
         symbol: Tc
@@ -27,7 +35,7 @@ REFERENCES:
         name: acentric factor
         symbol: AcFa
         unit: None
-    DEPENDANT-EQUATIONS: None 
+    DEPENDANT-EQUATIONS: None
   SRK:
     ARGS:
       temperature:
@@ -38,12 +46,20 @@ REFERENCES:
         name: pressure
         symbol: P
         unit: Pa
+      phase:
+        name: phase
+        symbol: Ph
+        unit: None
+      feed-specification:
+        name: feed specification
+        symbol: FeSp
+        unit: None
     RETURNS:
       fugacity:
         name: fugacity
         symbol: Fug
         unit: None
-    DEPENDANT-DATA: 
+    DEPENDANT-DATA:
       critical-temperature:
         name: critical temperature
         symbol: Tc
@@ -56,7 +72,7 @@ REFERENCES:
         name: acentric factor
         symbol: AcFa
         unit: None
-    DEPENDANT-EQUATIONS: 
+    DEPENDANT-EQUATIONS:
       vapor-pressure:
         name: vapor pressure
         symbol: VaPr

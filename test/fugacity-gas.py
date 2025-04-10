@@ -112,11 +112,13 @@ P = 9.4573*1e5
 # model input
 model_input = {
     "phase": phase,
-    "feed-spec": N0s,
-    "operating-conditions": {
-        "pressure": [P, 'Pa'],
-        "temperature": [T, 'K'],
-    },
+    "feed-specification": N0s,
+    "pressure": [P, 'Pa'],
+    "temperature": [T, 'K'],
+}
+
+# model source
+model_source = {
     "datasource": datasource,
     "equationsource": equationsource
 }
@@ -125,19 +127,21 @@ model_input = {
 # NOTE: check reference
 # ------------------------------------------------
 res_ = tm.check_fugacity_reference(eos_model)
-print(type(res_))
 print(res_)
 
 # ------------------------------------------------
-# NOTE: eos
+# NOTE: eos root analysis
 # ------------------------------------------------
-# NOTE: liquid fugacity calculation method
-res = tm.cal_fugacity(model_name=eos_model, model_input=model_input,
-                      root_analysis_set=1, liquid_fugacity_mode='EOS')
+res = tm.check_eos_roots(
+    model_name=eos_model, model_input=model_input, model_source=model_source)
+print(res)
 
+# ------------------------------------------------
+# NOTE: calculation
+# ------------------------------------------------
 # NOTE: gas fugacity calculation method
-# res = tm.cal_fugacity(
-#     model_name=eos_model, model_input=model_input)
+res = tm.cal_fugacity(
+    model_name=eos_model, model_input=model_input, model_source=model_source)
 
 Z, Phi, eos_parms, phi_parms = res
 # res
@@ -149,18 +153,3 @@ print(eos_parms)
 print('-'*50)
 print(phi_parms)
 print('-'*50)
-
-# ------------------------------------------------
-# eos root analysis
-# ------------------------------------------------
-# res = tm.check_eos_roots(model_input)
-# print(res)
-
-# ------------------------------------------------
-# thermo lib
-# ------------------------------------------------
-# t_lib = ptm.thermo_lib()
-
-# calculate molar volume
-# Vm = t_lib.cal_molar_volume(P, T, Z[0])*1e6
-# print(Vm)

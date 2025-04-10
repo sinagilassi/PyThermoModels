@@ -28,7 +28,7 @@ def roundNum(value, ACCURACY=ROUND_FUN_ACCURACY):
 
 
 def removeDuplicatesList(value):
-    ''' 
+    '''
     Remove duplicates from a list
 
     Parameters

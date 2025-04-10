@@ -227,7 +227,7 @@ class EOSManager(EOSModels):
 
         return np.array(Z), _eos_params
 
-    def eos_fugacity(self, P, T, Z, params, components, yi=[], eos_model="SRK", mode="single"):
+    def eos_fugacity(self, P, T, Z, params, components, yi=[], eos_model: str = "SRK", mode: str = "single"):
         '''
         Determines fugacity coefficient
 
@@ -251,14 +251,14 @@ class EOSManager(EOSModels):
         fugacity : list
             fugacity coefficient
         '''
-        # universal gas constant [J/mol.K]
+        # NOTE: universal gas constant [J/mol.K]
         R = R_CONST
 
-        # molar volume [m^3/mol]
+        # NOTE: molar volume [m^3/mol]
         V = Z*R*T/P
 
-        # ! check
-        if mode == 'single':  # ! single
+        # SECTION: single
+        if mode == 'single':
 
             # model parameters
             sigma = params['sigma']
@@ -285,7 +285,8 @@ class EOSManager(EOSModels):
 
             phi = [exp(_phi)]
 
-        elif mode == 'mixture':  # ! mixture
+        # # SECTION: mixture
+        elif mode == 'mixture':
             # component no
             compNo = len(components)
 

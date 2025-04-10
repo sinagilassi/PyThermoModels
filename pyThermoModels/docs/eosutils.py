@@ -117,10 +117,11 @@ class EOSUtils:
 
         Notes
         -----
-        1. P=P*, 3 real roots
-        2. T<Tc, P>P*, 1 real root (liquid)
-        3. T<Tc, P<P*, 1 real root (superheated vapor)
-        4. T>Tc, 1 real root (supercritical fluid varies between `vapor-like` and `liquid-like`)
+        1. At T < Tc and P = Psat, 3 real roots → smallest is liquid, largest is vapor.
+        2. At T < Tc and P > Psat, EOS may give 1 or 3 roots → use smallest (liquid).
+        3. At T < Tc and P < Psat, EOS may give 1 or 3 roots → use largest (vapor).
+        4. At T = Tc, one real root (critical point) → fluid is at critical state.
+        5. At T > Tc, only 1 real root → fluid is supercritical (vapor-like or liquid-like).
         '''
         # vars
         _vapor_pressure = []
@@ -149,7 +150,8 @@ class EOSUtils:
             # build args
             _VaPr_args = self.build_args(
                 VaPr_args_required, self.datasource[str(component)])
-            # update P and T
+
+            # NOTE: update P and T
             _VaPr_args['P'] = P
             _VaPr_args['T'] = T
 
@@ -195,17 +197,27 @@ class EOSUtils:
             elif T > _Tc:
                 _root_analysis.append(4)
                 _root_no.append("1 real root (supercritical fluid)")
+            elif T == _Tc:
+                _root_analysis.append(5)
+                _root_no.append("1 real root (critical point)")
+            else:
+                raise Exception('Unknown root analysis!')
 
             # res
             _res = {
-                "components": component,
-                "P": P,
-                "T": T,
+                "component_name": component,
+                "pressure": P,
+                "pressure_unit": "Pa",
+                "temperature": T,
+                "temperature_unit": "K",
                 "root": _root_analysis[k],
                 "root-no": _root_no[k],
-                "VaPr": _VaPr,
-                "Tc": _Tc,
-                "Pc": _Pc
+                "vapor_pressure": _VaPr,
+                "vapor_pressure_unit": "Pa",
+                "critical_temperature": _Tc,
+                "critical_temperature_unit": "K",
+                "critical_pressure": _Pc,
+                "critical_pressure_unit": "Pa",
             }
 
             # save

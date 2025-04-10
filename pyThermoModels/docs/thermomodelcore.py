@@ -1,7 +1,7 @@
 # import package/modules
-import pandas as pd
 from typing import Dict, List, Union, Literal, Optional, Tuple
 import pycuc
+import json
 # local
 from .eoscore import EOSCore
 from .fugacity import FugacityClass
@@ -55,7 +55,10 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception('Checking thermodb failed! ', e)
 
-    def check_fugacity_reference(self, eos_model: str, dataframe: bool = False):
+    def check_fugacity_reference(self, eos_model: str,
+                                 res_format: Literal['dict',
+                                                     'json', 'string'] = 'dict'
+                                 ) -> Union[Dict, str]:
         '''
         Check fugacity reference
 
@@ -63,12 +66,12 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         ----------
         eos_model : str
             equation of state name (SRK, PR, etc.)
-        dataframe : bool, optional
-            return dataframe, default False
+        res_format : str
+            result format, `dict`: dictionary, `json`: json format, `string`: string format
 
         Returns
         -------
-        ref : dict
+        res : dict or str
             fugacity reference
         '''
         try:
@@ -85,12 +88,15 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             if not reference:
                 raise Exception('Invalid equation of state name!')
 
-            # check
-            if dataframe:
-                return pd.DataFrame(reference)
-            else:
-                # return
+            # NOTE:
+            if res_format == 'dict':
                 return reference
+            elif res_format == 'json':
+                return json.dumps(reference, indent=4)
+            elif res_format == 'string':
+                return str(reference)
+            else:
+                raise Exception('Invalid result format!')
         except Exception as e:
             raise Exception("Calculating the Fugacity failed!, ", e)
 
@@ -167,6 +173,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
     def cal_fugacity(self,
                      model_name: Literal['SRK', 'PR'],
                      model_input: Dict,
+                     model_source: Dict,
                      solver_method: Literal['ls',
                                             'newton', 'fsolve'] = 'ls',
                      root_analysis_set: Optional[int] = None,
@@ -180,10 +187,16 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             eos model name, `SRK`: Soave-Redlich-Kwong, `PR`: Peng-Robinson,
         model_input: dict
             model input
+                - phase: str, `VAPOR`: vapor phase, `LIQUID`: liquid phase, `VAPOR-LIQUID`: vapor-liquid phase, `SUPERCRITICAL`: supercritical phase
+                - feed-specification: dict, such as `{'CO2': 1.0}` or `{'CO2': 0.5, 'N2': 0.5}`
+                - pressure: list, pressure in SI unit, such as `[1.2*1e5, 'Pa']`
+                - temperature: list, temperature in SI unit, such as `[300, 'K']`
         solver_method: str
             solver method, `ls`: least square method, `newton`: newton method, `fsolve`: fsolve method
+        model_source: dict
+            datasource and equationsource needed for fugacity calculation
         root_analysis_set: Optional[int]
-            root analysis set, `None`: default, `1`: 3 roots (VAPOR-LIQUID), `2`: 1 root (LIQUID), `3`: 1 root (VAPOR), `4`: 1 root (SUPERCRITICAL)
+            root analysis set, `None`: default (calculation performed according to phase provided), `1`: 3 roots (VAPOR-LIQUID), `2`: 1 root (LIQUID), `3`: 1 root (VAPOR), `4`: 1 root (SUPERCRITICAL)
         liquid_fugacity_mode: str
             liquid fugacity method, `Poynting`: Poynting method, `EOS`: Equation of state (lowest Z)
 
@@ -195,15 +208,19 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         Notes
         -----
         ### solver_method:
-            - ls: least square method
-            - newton: newton method
-            - fsolve: fsolve method
+            - `ls`: least square method
+            - `newton`: newton method
+            - `fsolve`: fsolve method
 
         ### root_analysis_set:
             - set [1]: 3 roots (VAPOR-LIQUID)
+                - At `T < Tc` and `P = Psat`, 3 real roots → smallest is liquid, largest is vapor.
             - set [2]: 1 root (LIQUID)
+                - At `T < Tc` and `P > Psat`, EOS may give 1 or 3 roots → use smallest (liquid).
             - set [3]: 1 root (VAPOR)
+                - At `T < Tc` and `P < Psat`, EOS may give 1 or 3 roots → use largest (vapor).
             - set [4]: 1 root (SUPERCRITICAL)
+                - At `T > Tc`, only 1 real root → fluid is supercritical (vapor-like or liquid-like).
 
         Examples
         --------
@@ -235,15 +252,17 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         # model input
         model_input = {
             "phase": phase,
-            "feed-spec": N0s,
-            "operating-conditions": {
-                "pressure": [P, 'Pa'],
-                "temperature": [T, 'K'],
-            },
+            "feed-specification": N0s,
+            "pressure": [P, 'Pa'],
+            "temperature": [T, 'K'],
+        }
+
+        # model source
+        model_source = {
             "datasource": datasource,
             "equationsource": equationsource
         }
-            ```
+        ```
         '''
         try:
             # SECTION: set input parameters
@@ -251,9 +270,12 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             eos_model = model_name.upper()
             eos_model = eos_model_name(eos_model)
 
-            # phase
+            # NOTE: phase
             phase = model_input.get('phase', 'VAPOR')
             phase = phase.upper()
+            # check phase
+            if phase not in ['VAPOR', 'LIQUID', 'VAPOR-LIQUID', 'SUPERCRITICAL']:
+                raise Exception('Invalid phase provided!')
 
             # NOTE: calculation mode
             calculation_mode = 'single'
@@ -261,7 +283,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_num = 0
 
             # input
-            feed_spec = model_input.get('feed-spec')
+            feed_spec = model_input.get('feed-specification', None)
             # check
             if feed_spec is None or feed_spec == 'None':
                 raise Exception('Feed specification is not provided!')
@@ -270,7 +292,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             components = []
             # mole fraction
             mole_fraction = []
-            # looping through feed-spec
+            # looping through feed-specification
             for key, value in feed_spec.items():
                 components.append(key)
                 mole_fraction.append(value)
@@ -294,14 +316,18 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 if len(mole_fraction) != component_num:
                     raise Exception('Mole fraction list not provided!')
 
-            # operating conditions
-            operating_conditions = model_input["operating-conditions"]
-            # check temperature and pressure
-            if 'pressure' not in operating_conditions.keys():
+            # NOTE: check temperature and pressure
+            if 'pressure' not in model_input.keys():
                 raise Exception('No pressure in operating conditions!')
 
-            if 'temperature' not in operating_conditions.keys():
+            if 'temperature' not in model_input.keys():
                 raise Exception('No temperature in operating conditions!')
+
+            # operating conditions
+            operating_conditions = {
+                "pressure": model_input["pressure"],
+                "temperature": model_input["temperature"]
+            }
 
             # NOTE: eos parms
             eos_parms = {
@@ -314,9 +340,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             # SECTION: set datasource and equationsource
             # NOTE: check if datasource and equationsource are provided in model_input
             # datasource
-            datasource = model_input.get('datasource', {})
+            datasource = model_source.get('datasource', {})
             # equationsource
-            equationsource = model_input.get('equationsource', {})
+            equationsource = model_source.get('equationsource', {})
             # set thermodb link
             link_status = self.set_thermodb_link(datasource, equationsource)
             # check
@@ -348,21 +374,33 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def check_eos_roots(self, model_name: Literal['SRK', 'PR'], model_input: Dict):
+    def check_eos_roots(self, model_name: Literal['SRK', 'PR'], model_input: Dict, model_source: Dict) -> List[Dict]:
         '''
-        Check eos roots for the single and multi-component systems.
+        Check eos roots for the single component at different temperature and pressure.
 
         Parameters
         ----------
         model_name: str
             eos model name, `SRK`: Soave-Redlich-Kwong, `PR`: Peng-Robinson,
-        model_input: dict
+        model_input: Dict
             model input
+        model_source: Dict
+            datasource and equationsource needed for fugacity calculation
 
         Returns
         -------
         res: list
             eos root analysis
+
+        Notes
+        -----
+        1. At T < Tc and P = Psat, 3 real roots → smallest is liquid, largest is vapor.
+        2. At T < Tc and P > Psat, EOS may give 1 or 3 roots → use smallest (liquid).
+        3. At T < Tc and P < Psat, EOS may give 1 or 3 roots → use largest (vapor).
+        4. At T = Tc, one real root (critical point) → fluid is at critical state.
+        5. At T > Tc, only 1 real root → fluid is supercritical (vapor-like or liquid-like).
+
+        Pressure and temperature are in SI units (Pa, K), if not provided in the model_input, they are automatically converted.
 
         References
         ----------
@@ -384,7 +422,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_num = 0
 
             # NOTE: feed specification
-            feed_spec = model_input.get('feed-spec')
+            feed_spec = model_input.get('feed-specification')
             # check
             if feed_spec is None or feed_spec == 'None':
                 raise Exception('Feed specification is not provided!')
@@ -393,7 +431,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             components = []
             # mole fraction
             mole_fraction = []
-            # looping through feed-spec
+            # looping through feed-specification
             for key, value in feed_spec.items():
                 components.append(key)
                 mole_fraction.append(value)
@@ -417,21 +455,25 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 if len(mole_fraction) != component_num:
                     raise Exception('Mole fraction list not provided!')
 
-            # NOTE: operating conditions
-            operating_conditions = model_input["operating-conditions"]
-            # check temperature and pressure
-            if 'pressure' not in operating_conditions.keys():
+            # NOTE: check temperature and pressure
+            if 'pressure' not in model_input.keys():
                 raise Exception('No pressure in operating conditions!')
 
-            if 'temperature' not in operating_conditions.keys():
+            if 'temperature' not in model_input.keys():
                 raise Exception('No temperature in operating conditions!')
+
+            # NOTE: operating conditions
+            operating_conditions = {
+                "pressure": model_input["pressure"],
+                "temperature": model_input["temperature"]
+            }
 
             # SECTION: set datasource and equationsource
             # NOTE: check if datasource and equationsource are provided in model_input
             # datasource
-            datasource = model_input.get('datasource', {})
+            datasource = model_source.get('datasource', {})
             # equationsource
-            equationsource = model_input.get('equationsource', {})
+            equationsource = model_source.get('equationsource', {})
             # set thermodb link
             link_status = self.set_thermodb_link(datasource, equationsource)
             # check
