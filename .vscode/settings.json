@@ -9,10 +9,13 @@
         "NRTL",
         "poynting",
         "Psat",
+        "ptdb",
+        "ptdblink",
         "pythermomodels",
         "referencemanager",
         "thermodb",
         "thermodbhub",
+        "UNIQUAC",
         "Vsat"
     ]
 }

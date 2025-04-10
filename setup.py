@@ -8,7 +8,9 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 APP_NAME = 'PyThermoModels'
-VERSION = '1.1.0a1'
+VERSION = '1.2.0'
+AUTHOR = 'Sina Gilassi'
+EMAIL = "<sina.gilassi@gmail.com>"
 DESCRIPTION = 'A Python package designed for the calculation of thermodynamic properties using various well-established models.'
 LONG_DESCRIPTION = "PyThermoModels is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties."
 
@@ -16,8 +18,8 @@ LONG_DESCRIPTION = "PyThermoModels is an open-source Python package designed to 
 setup(
     name=APP_NAME,
     version=VERSION,
-    author="Sina Gilassi",
-    author_email="<sina.gilassi@gmail.com>",
+    author=AUTHOR,
+    author_email=EMAIL,
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
     long_description=long_description,
@@ -27,19 +29,27 @@ setup(
     package_data={'': ['config/*.yml', 'config/*.csv', 'data/*.csv',
                        'data/*.yml', 'plugin/*.yml', 'plugin/*.csv']},
     license='MIT',
-    install_requires=['pandas', 'pillow', 'requests',
-                      'urllib3', 'matplotlib', 'numpy', 'PyYAML', 'sympy', 'PyThermoDB', 'PyCUC', 'scipy'],
-    keywords=['python', 'chemical engineering', 'thermodynamics',
-              'PyThermoDB'],
+    license_files=[],
+    install_requires=['pandas', 'numpy',
+                      'PyYAML', 'PyCUC', 'scipy',
+                      'PyThermoDB', 'PyThermoLinkDB'],
+    extras_require={
+        "plotting": ["matplotlib"],
+    },
+    keywords=[
+        'python', 'chemical-engineering', 'equation-of-state',
+        'thermodynamic-properties', 'activity-coefficient',
+        'thermodynamic-models', 'NRTL', 'UNIQUAC', 'SRK', 'PR'
+    ],
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: Planning",
         "Intended Audience :: Education",
         "Topic :: Scientific/Engineering",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: MIT License",
         "Operating System :: Unix",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.10',
 )

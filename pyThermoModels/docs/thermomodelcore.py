@@ -12,7 +12,7 @@ from ..utils import eos_model_name
 from .eosutils import EOSUtils
 
 
-class Manager(ThermoDB, ThermoLinkDB, ReferenceManager):
+class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
     _input = {}
     _references = {}
@@ -435,7 +435,7 @@ class Manager(ThermoDB, ThermoLinkDB, ReferenceManager):
 
     def cal_activity_coefficient(self, model_input: dict):
         '''
-        Calculate activity coefficient 
+        Calculate activity coefficient
 
         Parameters
         ----------
@@ -445,9 +445,9 @@ class Manager(ThermoDB, ThermoLinkDB, ReferenceManager):
         Returns
         -------
         res : dict
-            activity coefficient 
+            activity coefficient
         '''
         try:
-
+            pass
         except Exception as e:
             raise Exception("Activity coefficient calculation failed!", e)

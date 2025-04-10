@@ -1,13 +1,16 @@
 # import packages/modules
-from pprint import pprint as pp
+import os
+from rich import print
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
-import os
+import pyThermoLinkDB as ptdblink
 
 # check version
 print(ptm.__version__)
 # check version
 print(ptdb.__version__)
+# check version
+print(ptdblink.__version__)
 
 # =======================================
 # ! LOAD THERMODB
@@ -19,9 +22,7 @@ CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
 # load
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
 print(type(CO2_thermodb))
-
-# CO2_thermodb
-CO2_thermodb
+print(CO2_thermodb.check())
 
 # ! acetylene
 # thermodb file name
@@ -29,8 +30,7 @@ acetylene_thermodb_file = os.path.join(os.getcwd(), 'test', 'acetylene.pkl')
 # load
 acetylene_thermodb = ptdb.load_thermodb(acetylene_thermodb_file)
 print(type(acetylene_thermodb))
-
-acetylene_thermodb
+print(acetylene_thermodb.check())
 
 # ! n-butane
 # thermodb file name
@@ -38,42 +38,61 @@ n_butane_thermodb_file = os.path.join(os.getcwd(), 'test', 'n-butane.pkl')
 # load
 n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
 print(type(n_butane_thermodb))
-
-n_butane_thermodb
+print(n_butane_thermodb.check())
 
 # ========================================
-# ! INITIALIZE FUGACITY OBJECT
+# ! INITIALIZE OBJECT
 # ========================================
-fugacity_obj = ptm.fugacity_lib()
+tm = ptm.init()
 # log
-print("fugacity_obj: ", fugacity_obj)
+print("tm: ", tm)
 
 # =======================================
-# THERMODB CONFIGURATION
+# SECTION: THERMODB CONFIGURATION
 # =======================================
+# # ! CO2
+# # add CO2 thermodb
+# tm.add_thermodb('CO2', CO2_thermodb)
 
-# ! CO2
-# add CO2 thermodb
-fugacity_obj.add_thermodb('CO2', CO2_thermodb)
+# # ! acetylene
+# # add acetylene thermodb
+# tm.add_thermodb('acetylene', acetylene_thermodb)
 
-# ! acetylene
-# add acetylene thermodb
-fugacity_obj.add_thermodb('acetylene', acetylene_thermodb)
+# # ! n-butane
+# # add n-butane thermodb
+# tm.add_thermodb('n-butane', n_butane_thermodb)
 
-# ! n-butane
-# add n-butane thermodb
-fugacity_obj.add_thermodb('n-butane', n_butane_thermodb)
 
+# # * add thermodb rule
+# thermodb_config_file = os.path.join(os.getcwd(), 'test', 'thermodb_config.yml')
+# tm.config_thermodb('acetylene', thermodb_config_file)
+# tm.config_thermodb('CO2', thermodb_config_file)
+
+# # check thermodb
+# print(tm.check_thermodb())
+
+# =======================================
+# SECTION: THERMODB LINK CONFIGURATION
+# =======================================
+# init thermodb hub
+thub1 = ptdblink.init()
+print(type(thub1))
+
+# add component thermodb
+# thub1.add_thermodb('EtOH', EtOH_thermodb)
+# thub1.add_thermodb('MeOH', MeOH_thermodb)
+thub1.add_thermodb('CO2', CO2_thermodb)
 
 # * add thermodb rule
-thermodb_config_file = os.path.join(os.getcwd(), 'test', 'thermodb_config.yml')
-fugacity_obj.config_thermodb('acetylene', thermodb_config_file)
-fugacity_obj.config_thermodb('CO2', thermodb_config_file)
+thermodb_config_file = os.path.join(
+    os.getcwd(), 'test', 'thermodb_config_link.yml')
+# one component
+# thub1.config_thermodb_rule(thermodb_config_file, name='EtOH')
+# all components
+thub1.config_thermodb_rule(thermodb_config_file)
 
-
-# check thermodb
-print(fugacity_obj.check_thermodb())
-
+# build datasource & equationsource
+datasource, equationsource = thub1.build()
 
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
@@ -111,44 +130,46 @@ model_input = {
         "pressure": [P, 'Pa'],
         "temperature": [T, 'K'],
     },
+    "datasource": datasource,
+    "equationsource": equationsource
 }
 
 # ------------------------------------------------
 # check reference
 # ------------------------------------------------
-# pp(fugacity_obj.fugacity_check_reference(eos_model))
+# print(tm.fugacity_check_reference(eos_model))
 
 # ------------------------------------------------
 # eos
 # ------------------------------------------------
 # method 1
-# res1, res2 = fugacity_obj.fugacity_cal_init(model_input)
-# pp(res1)
+# res1, res2 = tm.fugacity_cal_init(model_input)
+# print(res1)
 # print('-'*50)
-# pp(res2)
+# print(res2)
 
 
 # method 2
 # liquid fugacity calculation method
-# Z, Phi, eos_parms = fugacity_obj.cal_fugacity_coefficient(
+# Z, Phi, eos_parms = tm.cal_fugacity_coefficient(
 #     model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
 
 # gas fugacity calculation method
-Z, Phi, eos_parms = fugacity_obj.cal_fugacity_coefficient(model_input)
+Z, Phi, eos_parms = tm.cal_fugacity_coefficient(model_input)
 
 # res
-pp(Z)
+print(Z)
 print('-'*50)
-pp(Phi)
+print(Phi)
 print('-'*50)
-pp(eos_parms)
+print(eos_parms)
 print('-'*50)
 
 # ------------------------------------------------
 # eos root analysis
 # ------------------------------------------------
-# res = fugacity_obj.check_eos_roots(model_input)
-# pp(res)
+# res = tm.check_eos_roots(model_input)
+# print(res)
 
 # ------------------------------------------------
 # thermo lib
@@ -157,4 +178,4 @@ print('-'*50)
 
 # calculate molar volume
 # Vm = t_lib.cal_molar_volume(P, T, Z[0])*1e6
-# pp(Vm)
+# print(Vm)
