@@ -1,5 +1,6 @@
 # import package/modules
 import pandas as pd
+from typing import Dict, List, Union, Literal, Optional, Tuple
 import pycuc
 # local
 from .eoscore import EOSCore
@@ -13,6 +14,9 @@ from .eosutils import EOSUtils
 
 
 class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
+    """
+    ThermoModelCore class for thermodynamic model calculations.
+    """
 
     _input = {}
     _references = {}
@@ -159,18 +163,26 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Initializing fugacity calculation failed!, ", e)
 
-    def cal_fugacity_coefficient(self, model_input: dict, solver_method='ls', root_analysis_set=None, liquid_fugacity_calculation_method='Poynting'):
+    def cal_fugacity_coefficient(self,
+                                 model_name: Literal['SRK', 'PR'],
+                                 model_input: Dict,
+                                 solver_method: Literal['ls',
+                                                        'newton', 'fsolve'] = 'ls',
+                                 root_analysis_set: Optional[int] = None,
+                                 liquid_fugacity_calculation_method: Literal['Poynting', 'EOS'] = 'Poynting'):
         '''
         Calculate fugacity coefficient for the single and multi-component systems
 
         Parameters
         ----------
+        model_name: str
+            eos model name, `SRK`: Soave-Redlich-Kwong, `PR`: Peng-Robinson,
         model_input: dict
             model input
         solver_method: str
-            solver method
+            solver method, `ls`: least square method, `newton`: newton method, `fsolve`: fsolve method
         root_analysis_set: int
-            root analysis set
+            root analysis set, `None`: default, `1`: 3 roots (VAPOR-LIQUID), `2`: 1 root (LIQUID), `3`: 1 root (VAPOR), `4`: 1 root (SUPERCRITICAL)
         liquid_fugacity_calculation_method: str
             liquid fugacity method, `Poynting`: Poynting method, `EOS`: Equation of state (lowest Z)
 
@@ -219,7 +231,6 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
             # model input
             model_input = {
-                "eos-model": eos_model,
                 "phase": phase,
                 "components": comp_list,
                 "mole-fraction": MoFri,
@@ -233,16 +244,16 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             ```
         '''
         try:
+            # SECTION: set input parameters
             # eos
-            eos_model = model_input.get('eos-model', 'SRK')
-            eos_model = eos_model.upper()
+            eos_model = model_name.upper()
             eos_model = eos_model_name(eos_model)
 
             # phase
             phase = model_input.get('phase', 'VAPOR')
             phase = phase.upper()
 
-            # calculation mode
+            # NOTE: calculation mode
             calculation_mode = 'single'
             # component number
             component_num = 0
@@ -290,7 +301,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             if 'temperature' not in operating_conditions.keys():
                 raise Exception('No temperature in operating conditions!')
 
-            # eos parms
+            # NOTE: eos parms
             eos_parms = {
                 'phase': phase,
                 'eos-model': eos_model,
@@ -298,6 +309,8 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 'liquid-fugacity-calculation-method': liquid_fugacity_calculation_method
             }
 
+            # SECTION: set datasource and equationsource
+            # NOTE: check if datasource and equationsource are provided in model_input
             # datasource
             datasource = model_input.get('datasource', {})
             # equationsource
@@ -308,7 +321,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             if not link_status:
                 raise Exception('Thermodb link failed!')
 
-            # reference for eos
+            # SECTION: reference for eos
             reference = self._references.get(eos_model, None)
 
             # build datasource
@@ -317,15 +330,15 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             equation_equationsource = self.set_equationsource(
                 components, reference)
 
-            # init
+            # SECTION: init fugacity core
             FugacityCoreC = FugacityCore(
                 component_datasource, equation_equationsource, components, operating_conditions, eos_parms)
 
-            # root analysis mode
+            # SECTION: root analysis mode
             if root_analysis_set is None:
                 root_analysis_set = FugacityCoreC.root_analysis_mode()
 
-            # calculation
+            # SECTION: calculation mode
             res = FugacityCoreC.fugacity_cal(
                 mole_fraction, solver_method=solver_method, root_analysis_set=root_analysis_set)
 

@@ -15,10 +15,12 @@ print(ptdblink.__version__)
 # =======================================
 # ! LOAD THERMODB
 # =======================================
+# NOTE: thermodb directory
+thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
 
 # ! CO2
 # thermodb file name
-CO2_thermodb_file = os.path.join(os.getcwd(), 'test', 'Carbon Dioxide.pkl')
+CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-1.pkl')
 # load
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
 print(type(CO2_thermodb))
@@ -26,7 +28,7 @@ print(CO2_thermodb.check())
 
 # ! acetylene
 # thermodb file name
-acetylene_thermodb_file = os.path.join(os.getcwd(), 'test', 'acetylene.pkl')
+acetylene_thermodb_file = os.path.join(thermodb_dir, 'acetylene-1.pkl')
 # load
 acetylene_thermodb = ptdb.load_thermodb(acetylene_thermodb_file)
 print(type(acetylene_thermodb))
@@ -34,7 +36,7 @@ print(acetylene_thermodb.check())
 
 # ! n-butane
 # thermodb file name
-n_butane_thermodb_file = os.path.join(os.getcwd(), 'test', 'n-butane.pkl')
+n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-1.pkl')
 # load
 n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
 print(type(n_butane_thermodb))
@@ -46,30 +48,6 @@ print(n_butane_thermodb.check())
 tm = ptm.init()
 # log
 print("tm: ", tm)
-
-# =======================================
-# SECTION: THERMODB CONFIGURATION
-# =======================================
-# # ! CO2
-# # add CO2 thermodb
-# tm.add_thermodb('CO2', CO2_thermodb)
-
-# # ! acetylene
-# # add acetylene thermodb
-# tm.add_thermodb('acetylene', acetylene_thermodb)
-
-# # ! n-butane
-# # add n-butane thermodb
-# tm.add_thermodb('n-butane', n_butane_thermodb)
-
-
-# # * add thermodb rule
-# thermodb_config_file = os.path.join(os.getcwd(), 'test', 'thermodb_config.yml')
-# tm.config_thermodb('acetylene', thermodb_config_file)
-# tm.config_thermodb('CO2', thermodb_config_file)
-
-# # check thermodb
-# print(tm.check_thermodb())
 
 # =======================================
 # SECTION: THERMODB LINK CONFIGURATION
@@ -123,7 +101,6 @@ P = 9.4573*1e5
 
 # model input
 model_input = {
-    "eos-model": eos_model,
     "phase": phase,
     "feed-spec": N0s,
     "operating-conditions": {
@@ -135,9 +112,9 @@ model_input = {
 }
 
 # ------------------------------------------------
-# check reference
+# NOTE: check reference
 # ------------------------------------------------
-# print(tm.fugacity_check_reference(eos_model))
+print(tm.fugacity_check_reference(eos_model))
 
 # ------------------------------------------------
 # eos
@@ -155,8 +132,9 @@ model_input = {
 #     model_input, root_analysis_set=1, liquid_fugacity_calculation_method='EOS')
 
 # gas fugacity calculation method
-Z, Phi, eos_parms = tm.cal_fugacity_coefficient(model_input)
+res = tm.cal_fugacity_coefficient(model_name=eos_model, model_input)
 
+Z, Phi, eos_parms, _ = res
 # res
 print(Z)
 print('-'*50)

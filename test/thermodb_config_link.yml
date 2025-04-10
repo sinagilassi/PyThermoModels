@@ -11,33 +11,37 @@ CO2:
     Tc: Tc
     AcFa: AcFa
   EQUATIONS:
-    VAPOR-PRESSURE: VaPr
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
 acetylene:
   DATA:
     Pc: Pc
     Tc: Tc
     AcFa: AcFa
   EQUATIONS:
-    VAPOR-PRESSURE: VaPr
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
 EtOH:
   DATA:
-    Pc: Pc1
-    Tc: Tc2
-    AcFa: AcFa3
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
   EQUATIONS:
-    VAPOR-PRESSURE: VaPr
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
 MeOH:
   DATA:
     Pc: Pc
     Tc: Tc
     AcFa: AcFa
   EQUATIONS:
-    VAPOR-PRESSURE: VaPr
-    HEAT-CAPACITY: Cp_IG
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
 n-butane:
   DATA:
     Pc: Pc
     Tc: Tc
     AcFa: AcFa
   EQUATIONS:
-    VAPOR-PRESSURE: VaPr
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
