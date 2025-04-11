@@ -18,21 +18,17 @@ print(ptdblink.__version__)
 # NOTE: thermodb directory
 thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
 
-# ! ethanol
+# ! N2
 # thermodb file name
-EtOH_thermodb_file = os.path.join(thermodb_dir, 'ethanol-1.pkl')
+N2_thermodb_file = os.path.join(thermodb_dir, 'nitrogen-1.pkl')
 # load
-EtOH_thermodb = ptdb.load_thermodb(EtOH_thermodb_file)
-print(type(EtOH_thermodb))
-print(EtOH_thermodb.check())
+N2_thermodb = ptdb.load_thermodb(N2_thermodb_file)
 
-# ! methanol
+# ! methane
 # thermodb file name
-MeOH_thermodb_file = os.path.join(thermodb_dir, 'methanol-1.pkl')
+CH4_thermodb_file = os.path.join(thermodb_dir, 'methane-1.pkl')
 # load
-MeOH_thermodb = ptdb.load_thermodb(MeOH_thermodb_file)
-print(type(MeOH_thermodb))
-print(MeOH_thermodb.check())
+CH4_thermodb = ptdb.load_thermodb(CH4_thermodb_file)
 
 # ========================================
 # ! INITIALIZE FUGACITY OBJECT
@@ -49,8 +45,8 @@ thub1 = ptdblink.init()
 print(type(thub1))
 
 # add component thermodb
-thub1.add_thermodb('EtOH', EtOH_thermodb)
-thub1.add_thermodb('MeOH', MeOH_thermodb)
+thub1.add_thermodb('N2', N2_thermodb)
+thub1.add_thermodb('CH4', CH4_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -74,49 +70,59 @@ phase = "VAPOR"
 
 # feed spec
 N0s = {
-    'EtOH': 0.75,
-    'MeOH': 0.25
+    'N2': 0.40,
+    'CH4': 0.60
 }
 
 # temperature [K]
-T = 300
+T = 200
 
-# pressure [Pa]
-P = 1.2*1e5
+# pressure [bar]
+P = 30
 
 # model input
 model_input = {
     "phase": phase,
-    "feed-spec": N0s,
-    "operating-conditions": {
-        "pressure": [P, 'Pa'],
-        "temperature": [T, 'K'],
-    },
+    "feed-specification": N0s,
+    "pressure": [P, 'bar'],
+    "temperature": [T, 'K'],
+}
+
+# model source
+model_source = {
     "datasource": datasource,
-    "equationsource": equationsource,
+    "equationsource": equationsource
 }
 
 # =======================================
-# EOS ROOT ANALYSIS
+# ! EOS ROOT ANALYSIS
 # =======================================
 # eos root analysis
-res_ = tm.check_eos_roots(model_name=eos_model, model_input=model_input)
-print(type(res_))
+res_ = tm.check_eos_roots(model_name=eos_model,
+                          model_input=model_input, model_source=model_source)
 print(res_)
 
 # =======================================
-# CHECK REFERENCES
+# ! CHECK REFERENCES
 # =======================================
 # check reference
 res_ = tm.check_fugacity_reference(eos_model)
-print(type(res_))
 print(res_)
 
 # =======================================
-# FUGACITY CALCULATION
+# ! FUGACITY CALCULATION
 # =======================================
 # method 2
-res = tm.cal_fugacity(model_name=eos_model, model_input=model_input,
-                      root_analysis_set=1, liquid_fugacity_mode='EOS')
-print(type(res))
-print(res)
+res = tm.cal_fugacity(model_name=eos_model,
+                      model_input=model_input, model_source=model_source)
+Z, Phi, eos_parms, phi_parms = res
+# res
+print("Z")
+print(Z)
+print('-'*50)
+print(f"Phi: {Phi}")
+print('-'*50)
+# print(eos_parms)
+# print('-'*50)
+print(phi_parms)
+print('-'*50)

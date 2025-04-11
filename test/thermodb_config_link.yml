@@ -45,3 +45,27 @@ n-butane:
   EQUATIONS:
     vapor-pressure: VaPr
     heat-capacity: Cp_IG
+1-butene:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
+N2:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
+CH4:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG

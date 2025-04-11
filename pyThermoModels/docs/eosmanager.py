@@ -5,6 +5,7 @@
 import numpy as np
 from scipy import optimize
 from math import pow, exp, log, sqrt
+from typing import List, Dict
 # local
 from .eosmodels import EOSModels
 from ..configs import R_CONST
@@ -21,7 +22,8 @@ class EOSManager(EOSModels):
     def __call__(self):
         pass
 
-    def eos_roots(self, P, T, components, root_analysis, xi=[], eos_model="SRK", solver_method="ls", mode="single"):
+    def eos_roots(self, P: float, T: float, components: List[str], root_analysis: int,
+                  xi=[], eos_model: str = "SRK", solver_method: str = "ls", mode: str = "single"):
         '''
         Estimates fugacity coefficient at fixed temperature and pressure through finding Z (lowest: for liquid, largest: for vapor)
 
@@ -105,7 +107,6 @@ class EOSManager(EOSModels):
         Z = []
         _bound = guess_no*[(0, 0)]
         fZ_cost = np.zeros(guess_no)
-        _x0_min = 1e-6
         k = 0
 
         # functions
@@ -113,10 +114,10 @@ class EOSManager(EOSModels):
         fpZ = None  # eos_equation_prime
         fp2Z = None  # eos_equation_prime2
 
-        # ! method selection
-        if solver_method == 'ls':  # *** least-square ***
-
-            if _root_0 == 1:  # 3 roots
+        # SECTION: *** least-square ***
+        if solver_method == 'ls':
+            # NOTE: check root analysis
+            if _root_0 == 1:  # ! 3 roots (vapor-liquid)
                 # initial guess
                 zGuess, steps = np.linspace(-2, 2, guess_no, retstep=True)
 
@@ -130,7 +131,7 @@ class EOSManager(EOSModels):
                         _bound[k] = (0.5, 2)
                         k += 1
 
-            elif _root_0 == 2:  # 1 root (liquid)
+            elif _root_0 == 2:  # ! 1 root (liquid)
                 # initial guess
                 zGuess, steps = np.linspace(-2, 0.5, guess_no, retstep=True)
 
@@ -139,7 +140,7 @@ class EOSManager(EOSModels):
                     _bound[k] = (-2, 0.5)
                     k += 1
 
-            elif _root_0 == 3:  # 1 root (vapor)
+            elif _root_0 == 3:  # ! 1 root (vapor)
                 # initial guess
                 zGuess, steps = np.linspace(0.5, 2, guess_no, retstep=True)
 
@@ -148,7 +149,7 @@ class EOSManager(EOSModels):
                     _bound[k] = (0.5, 2)
                     k += 1
 
-            elif _root_0 == 4:  # 1 root (superheat)
+            elif _root_0 == 4:  # ! 1 root (superheat)
                 # initial guess
                 zGuess, steps = np.linspace(-2, 2, guess_no, retstep=True)
 
@@ -157,10 +158,13 @@ class EOSManager(EOSModels):
                     _bound[k] = (-2, 2)
                     k += 1
 
+            else:
+                raise Exception("root analysis failed!")
+
             # set
             k = 0
 
-            # find Z
+            # SECTION: find Z
             for item in zGuess:
                 _x0 = item
                 # least-square
@@ -189,17 +193,21 @@ class EOSManager(EOSModels):
             _Z_min = np.min(_zList)
             _Z_max = np.max(_zList)
 
-            if _root_0 == 1:  # 3 roots
+            # SECTION: check roots
+            if _root_0 == 1:  # ! 3 roots
                 Z.append(_Z_min)
                 Z.append(_Z_max)
-            elif _root_0 == 2:  # 1 root (liquid)
+            elif _root_0 == 2:  # ! 1 root (liquid)
                 Z.append(_Z_min)
-            elif _root_0 == 3:  # 1 root (vapor)
+            elif _root_0 == 3:  # ! 1 root (vapor)
                 Z.append(_Z_max)
-            elif _root_0 == 4:  # 1 root (superheat)
+            elif _root_0 == 4:  # ! 1 root (superheat)
                 Z.append(_Z_max)
+            else:
+                raise Exception("root analysis failed!")
 
-        elif solver_method == 'newton':  # *** newton method ***
+        # SECTION: *** newton method ***
+        elif solver_method == 'newton':
             # initial guess
             zGuess, steps = np.linspace(1e-5, 2, guess_no, retstep=True)
 
@@ -211,7 +219,8 @@ class EOSManager(EOSModels):
                 zList[k] = _res
                 k += 1
 
-        elif solver_method == 'fsolve':  # *** fsolve method ***
+        # SECTION: *** fsolve method ***
+        elif solver_method == 'fsolve':
             # initial guess
             zGuess, steps = np.linspace(1e-5, 2, guess_no, retstep=True)
 
@@ -225,9 +234,10 @@ class EOSManager(EOSModels):
                 # set
                 k += 1
 
+        # res
         return np.array(Z), _eos_params
 
-    def eos_fugacity(self, P, T, Z, params, components, yi=[], eos_model: str = "SRK", mode: str = "single"):
+    def eos_fugacity(self, P: float, T: float, Z, params, components: List, yi=[], eos_model: str = "SRK", mode: str = "single"):
         '''
         Determines fugacity coefficient
 

@@ -177,7 +177,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                      solver_method: Literal['ls',
                                             'newton', 'fsolve'] = 'ls',
                      root_analysis_set: Optional[int] = None,
-                     liquid_fugacity_mode: Literal['Poynting', 'EOS'] = 'Poynting'):
+                     liquid_fugacity_mode: Literal['EOS'] = 'EOS'):
         '''
         Starts calculating fugacity for the single and multi-component systems
 
@@ -198,7 +198,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         root_analysis_set: Optional[int]
             root analysis set, `None`: default (calculation performed according to phase provided), `1`: 3 roots (VAPOR-LIQUID), `2`: 1 root (LIQUID), `3`: 1 root (VAPOR), `4`: 1 root (SUPERCRITICAL)
         liquid_fugacity_mode: str
-            liquid fugacity method, `Poynting`: Poynting method, `EOS`: Equation of state (lowest Z)
+            liquid fugacity method, `Poynting`: Poynting method (soon), `EOS`: Equation of state (lowest Z)
 
         Returns
         -------

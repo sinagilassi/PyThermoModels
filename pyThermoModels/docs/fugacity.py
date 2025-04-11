@@ -11,7 +11,7 @@ from .thermo import RackettEquation
 class FugacityClass():
     '''
     Fugacity calculation in gas, liquid, and solid phases using an EOS, \
-    for a liquid phase, the Poynting correction factor is used 
+    for a liquid phase, the Poynting correction factor is used
     '''
 
     def __init__(self, compData, components, eosRes, params):
@@ -132,7 +132,7 @@ class FugacityClass():
                 as liquids are fairly incompressible for Tr<0.9, the molar-volume is assumed to be constant
 
         hint:
-            mode: 
+            mode:
                 Poynting equation is not chosen
                 equation of state is used (default=False)
             vapor_pressure: vapor pressure at which saturated fugacity is calculated for Poynting equation
@@ -196,7 +196,12 @@ class FugacityClass():
 
     def calSaturatedLiquidVolume(self, Vc):
         '''
-        estimate saturated liquid volume using the Rackett equation
+        Estimate saturated liquid volume using the Rackett equation
+
+        Parameters
+        ----------
+        Vc : float
+            critical molar volume [m^3/mol]
         '''
         try:
             # component data

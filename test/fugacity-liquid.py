@@ -108,7 +108,7 @@ N0s = {
 # temperature [K]
 T = 250
 
-# pressure [Pa]
+# pressure [MPa]
 P = 2
 
 # model input
@@ -142,7 +142,7 @@ print(res)
 # ------------------------------------------------
 # NOTE: liquid fugacity calculation method
 res = tm.cal_fugacity(model_name=eos_model, model_input=model_input,
-                      model_source=model_source, liquid_fugacity_mode="Poynting")
+                      model_source=model_source)
 
 # NOTE: gas fugacity calculation method
 # res = tm.cal_fugacity(
@@ -150,26 +150,11 @@ res = tm.cal_fugacity(model_name=eos_model, model_input=model_input,
 
 Z, Phi, eos_parms, phi_parms = res
 # res
-print(Z)
+print(f"Z: {Z}")
 print('-'*50)
-print(Phi)
+print(f"Phi: {Phi}")
 print('-'*50)
-print(eos_parms)
-print('-'*50)
-print(phi_parms)
-print('-'*50)
-
-# ------------------------------------------------
-# eos root analysis
-# ------------------------------------------------
-# res = tm.check_eos_roots(model_input)
-# print(res)
-
-# ------------------------------------------------
-# thermo lib
-# ------------------------------------------------
-# t_lib = ptm.thermo_lib()
-
-# calculate molar volume
-# Vm = t_lib.cal_molar_volume(P, T, Z[0])*1e6
-# print(Vm)
+# print(eos_parms)
+# print('-'*50)
+# print(phi_parms)
+# print('-'*50)

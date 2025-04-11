@@ -23,40 +23,36 @@ thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
 CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-1.pkl')
 # load
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
-print(type(CO2_thermodb))
-print(CO2_thermodb.check())
 
 # ! acetylene
 # thermodb file name
 acetylene_thermodb_file = os.path.join(thermodb_dir, 'acetylene-1.pkl')
 # load
 acetylene_thermodb = ptdb.load_thermodb(acetylene_thermodb_file)
-print(type(acetylene_thermodb))
-print(acetylene_thermodb.check())
 
 # ! n-butane
 # thermodb file name
 n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-1.pkl')
 # load
 n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
-print(type(n_butane_thermodb))
-print(n_butane_thermodb.check())
 
 # ! ethanol
 # thermodb file name
 ethanol_thermodb_file = os.path.join(thermodb_dir, 'ethanol-1.pkl')
 # load
 ethanol_thermodb = ptdb.load_thermodb(ethanol_thermodb_file)
-print(type(ethanol_thermodb))
-print(ethanol_thermodb.check())
 
 # ! methanol
 # thermodb file name
 methanol_thermodb_file = os.path.join(thermodb_dir, 'methanol-1.pkl')
 # load
 methanol_thermodb = ptdb.load_thermodb(methanol_thermodb_file)
-print(type(methanol_thermodb))
-print(methanol_thermodb.check())
+
+# 1-butene
+# thermodb file name
+butene_thermodb_file = os.path.join(thermodb_dir, '1-butene-1.pkl')
+# load
+butene_thermodb = ptdb.load_thermodb(butene_thermodb_file)
 
 # ========================================
 # ! INITIALIZE OBJECT
@@ -76,6 +72,8 @@ print(type(thub1))
 thub1.add_thermodb('CO2', CO2_thermodb)
 thub1.add_thermodb('EtOH', ethanol_thermodb)
 thub1.add_thermodb('MeOH', methanol_thermodb)
+thub1.add_thermodb('acetylene', acetylene_thermodb)
+thub1.add_thermodb('1-butene', butene_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -91,6 +89,9 @@ datasource, equationsource = thub1.build()
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
+# NOTE:
+# Example 10.9, Introduction to Chemical Engineering Thermodynamics
+
 # model input
 # eos model
 eos_model = 'SRK'
@@ -100,21 +101,21 @@ phase = "VAPOR"
 
 # component
 N0s = {
-    "CO2": 1.0
+    "1-butene": 1.0
 }
 
-# temperature [K]
-T = 350
+# temperature
+T = 200
 
-# pressure [Pa]
-P = 9.4573*1e5
+# pressure
+P = 70
 
 # model input
 model_input = {
     "phase": phase,
     "feed-specification": N0s,
-    "pressure": [P, 'Pa'],
-    "temperature": [T, 'K'],
+    "pressure": [P, 'bar'],
+    "temperature": [T, 'C'],
 }
 
 # model source
@@ -126,15 +127,15 @@ model_source = {
 # ------------------------------------------------
 # NOTE: check reference
 # ------------------------------------------------
-res_ = tm.check_fugacity_reference(eos_model)
-print(res_)
+# res_ = tm.check_fugacity_reference(eos_model)
+# print(res_)
 
 # ------------------------------------------------
 # NOTE: eos root analysis
 # ------------------------------------------------
-res = tm.check_eos_roots(
-    model_name=eos_model, model_input=model_input, model_source=model_source)
-print(res)
+# res = tm.check_eos_roots(
+#     model_name=eos_model, model_input=model_input, model_source=model_source)
+# print(res)
 
 # ------------------------------------------------
 # NOTE: calculation
@@ -145,11 +146,12 @@ res = tm.cal_fugacity(
 
 Z, Phi, eos_parms, phi_parms = res
 # res
+print("Z")
 print(Z)
 print('-'*50)
-print(Phi)
+print(f"Phi: {Phi}")
 print('-'*50)
-print(eos_parms)
-print('-'*50)
+# print(eos_parms)
+# print('-'*50)
 print(phi_parms)
 print('-'*50)
