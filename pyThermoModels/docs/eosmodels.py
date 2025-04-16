@@ -148,7 +148,7 @@ class EOSModels:
         elif method == 'vdW':
             alpha = eos_params[method]['alpha']
         else:
-            alpha = -1
+            raise Exception("Unknown equation of state method!")
 
         # a
         a = psi*alpha*pow(R, 2)*pow(Tc, 2)/(Pc)

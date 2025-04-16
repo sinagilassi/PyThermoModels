@@ -291,7 +291,7 @@ class EOSManager(EOSModels):
                 _phi = (Z-1) - log(Z-B) - (alpha/(b*R*T*(sigma-epsilon))) * \
                     log((Z+sigma*B)/(Z+epsilon*B))
             else:
-                _phi = 0
+                raise Exception("eos_model must be 'vdW', 'RK', 'SRK' or 'PR'")
 
             phi = [exp(_phi)]
 
@@ -336,6 +336,9 @@ class EOSManager(EOSModels):
 
                 elif eos_model == 'RK':
                     _phi = 1
+
+                else:
+                    raise Exception("eos_model must be 'SRK' or 'RK'")
 
                 phi.append(exp(_phi))
 
