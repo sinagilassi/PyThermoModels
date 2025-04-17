@@ -48,7 +48,7 @@ methanol_thermodb_file = os.path.join(thermodb_dir, 'methanol-1.pkl')
 # load
 methanol_thermodb = ptdb.load_thermodb(methanol_thermodb_file)
 
-# 1-butene
+# ! 1-butene
 # thermodb file name
 butene_thermodb_file = os.path.join(thermodb_dir, '1-butene-1.pkl')
 # load
@@ -87,6 +87,13 @@ thub1.config_thermodb_rule(thermodb_config_file)
 # build datasource & equationsource
 datasource, equationsource = thub1.build()
 
+# ------------------------------------------------
+# ! THERMODYNAMIC PROPERTIES
+# ------------------------------------------------
+# vapor pressure
+VaPr = equationsource['CO2']['VaPr'].cal(T=304)
+print(VaPr)
+
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
@@ -98,22 +105,22 @@ datasource, equationsource = thub1.build()
 eos_model = 'SRK'
 
 # component phase
-phase = "VAPOR"
+# phase = "VAPOR"
 
 # component
 component = "CO2"
 
 # temperature
-T = 250
+T = 304
 
 # pressure
-P = 8
+P = 50
 
 # model input
 model_input = {
-    "phase": phase,
+    # "phase": phase,
     "component": "CO2",
-    "pressure": [P, 'bar'],
+    "pressure": [VaPr['value'], VaPr['unit']],
     "temperature": [T, 'K'],
 }
 

@@ -66,6 +66,9 @@ class FugacityCore(EOSManager):
         # comp no
         self.componentsNo = len(self.components)
 
+        # root_analysis_set
+        self.root_analysis_set = self.root_analysis_mode(self.phase)
+
         # init
         EOSManager.__init__(self, datasource, equationsource)
 
@@ -125,7 +128,7 @@ class FugacityCore(EOSManager):
         except Exception as e:
             raise Exception('Setting fugacity calculation mode failed!, ', e)
 
-    def fugacity_cal(self, yi: list, solver_method, root_analysis_set):
+    def fugacity_cal(self, yi: list, solver_method: str):
         '''
         Calculate fugacity
 
@@ -135,8 +138,6 @@ class FugacityCore(EOSManager):
             mole fraction of components
         solver_method : str
             solver method, default ls
-        root_analysis_set : int
-            root analysis set
 
         Returns
         -------
@@ -157,24 +158,33 @@ class FugacityCore(EOSManager):
         try:
             # check
             if self.phase == 'VAPOR':
+                # SECTION: vapor
                 res = self.gas_fugacity(
-                    yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
+                    yi=yi, solver_method=solver_method,
+                    root_analysis_set=self.root_analysis_set)
             elif self.phase == 'VAPOR-LIQUID':
+                # SECTION: vapor-liquid
                 res = self.gas_fugacity(
-                    yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
+                    yi=yi, solver_method=solver_method,
+                    root_analysis_set=self.root_analysis_set)
             elif self.phase == 'LIQUID':
-                # check
+                # SECTION: liquid
+                # NOTE: check liquid fugacity calculation method
                 if self.liquid_fugacity_calculation_method == 'Poynting':
                     res = self.liquid_fugacity(
-                        yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
+                        yi=yi, solver_method=solver_method,
+                        root_analysis_set=self.root_analysis_set)
                 elif self.liquid_fugacity_calculation_method == 'EOS':
                     res = self.gas_fugacity(
-                        yi=yi, solver_method=solver_method, root_analysis_set=root_analysis_set)
+                        yi=yi, solver_method=solver_method,
+                        root_analysis_set=self.root_analysis_set)
             elif self.phase == 'SOLID':
+                # SECTION: solid
                 res = self.solid_fugacity()
             else:
                 raise Exception('Invalid phase!')
 
+            # res
             return res
         except Exception as e:
             raise Exception('Fugacity calculation failed!, ', e)
@@ -362,6 +372,9 @@ class FugacityCore(EOSManager):
                 else:
                     raise Exception('Invalid root analysis set!')
         elif mode == 'single':  # SECTION: check mode
+            # NOTE: component
+            component_ = self.components[0]
+
             # NOTE: find roots
             _Zi, _eos_params = self.eos_roots(
                 self.P, self.T, self.components, root_analysis_res,
@@ -371,6 +384,9 @@ class FugacityCore(EOSManager):
             Zis = []
             # phase loop
             phases = []
+            #
+            _phi_pack = {}
+            _phi_pack[component_] = {}
 
             # NOTE: check phase
             if self.phase == 'VAPOR-LIQUID':
@@ -426,7 +442,7 @@ class FugacityCore(EOSManager):
                 # _phi_comp[self.components[i]] = _phi_res
 
                 # pack
-                _phi_pack[phases[i]][self.components[0]] = {
+                res__ = {
                     "temperature": self.T,
                     "temperature_unit": "K",
                     "pressure": self.P,
@@ -444,6 +460,10 @@ class FugacityCore(EOSManager):
                     'mode': (self.mode).upper(),
                     'phase': self.phase
                 }
+
+                # NOTE: save
+                _phi_pack[component_][phases[i]] = res__
+
         else:
             raise Exception("mode must be 'mixture' or 'single'")
 

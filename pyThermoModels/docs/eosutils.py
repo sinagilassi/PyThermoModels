@@ -3,6 +3,7 @@
 
 # import packages/modules
 from math import exp
+from typing import List, Dict, Any, Union
 import pycuc
 # local
 from ..configs import R_CONST
@@ -93,7 +94,9 @@ class EOSUtils:
         # res
         return res
 
-    def eos_root_analysis(self, P, T, components):
+    def eos_root_analysis(self, P: float, T: float,
+                          components: List[str],
+                          tolerance: float = 1e-3) -> Dict[str, Dict[str, float | int | str]]:
         '''
         Determine root numbers for each component
 
@@ -103,12 +106,10 @@ class EOSUtils:
             pressure [Pa]
         T : float
             temperature [K]
-        components : list
+        components : list[str]
             list of components
-        thermo_data : dict
-            thermodynamic data
-        thermo_fun : dict
-            thermodynamic functions
+        tol : float
+            tolerance to compare values
 
         Returns
         -------
@@ -117,130 +118,135 @@ class EOSUtils:
 
         Notes
         -----
-        1. At T < Tc and P = Psat, 3 real roots → smallest is liquid, largest is vapor.
-        2. At T < Tc and P > Psat, EOS may give 1 or 3 roots → use smallest (liquid).
-        3. At T < Tc and P < Psat, EOS may give 1 or 3 roots → use largest (vapor).
+        The following rules are used to determine the number of roots for a given temperature and pressure:
+
+        1. At T < Tc and P = Psat, 3 real roots → smallest is liquid, largest is vapor (`vapor-liquid`).
+        2. At T < Tc and P > Psat, EOS may give 1 or 3 roots → use smallest (`liquid`).
+        3. At T < Tc and P < Psat, EOS may give 1 or 3 roots → use largest (`vapor`).
         4. At T = Tc, one real root (critical point) → fluid is at critical state.
-        5. At T > Tc, only 1 real root → fluid is supercritical (vapor-like or liquid-like).
+        5. At T > Tc, only 1 real root → fluid is supercritical (`vapor-like` or `liquid-like`).
         '''
-        # vars
-        _vapor_pressure = []
-        _critical_temperature = []
-        _critical_pressure = []
-        _root_analysis = []
-        _root_no = []
-
-        # res
-        res = []
-
-        # phase
-        phase = ""
-
-        # set
-        k = 0
-
-        # looping through components
-        for component in components:
-            # NOTE: equation source
-            # antoine equations [Pa]
-            VaPr_eq = self.equationsource[str(component)]['VaPr']
-            # args
-            VaPr_args = VaPr_eq.args
-            # check args (SI)
-            VaPr_args_required = self.check_args(
-                VaPr_args, self.datasource[str(component)])
-
-            # build args
-            _VaPr_args = self.build_args(
-                VaPr_args_required, self.datasource[str(component)])
-
-            # NOTE: update P and T
-            _VaPr_args['P'] = P
-            _VaPr_args['T'] = T
-
-            # NOTE: execute
-            _VaPr_res = VaPr_eq.cal(**_VaPr_args)
-            # extract
-            _VaPr_value = _VaPr_res['value']
-            _VaPr_unit = _VaPr_res['unit']
-            # unit conversion
-            # NOTE: unit conversion
-            _unit_block = f"{_VaPr_unit} => Pa"
-            _VaPr = pycuc.to(_VaPr_value, _unit_block)
-            # set
-            _vapor_pressure.append(_VaPr)
-
-            # NOTE: data source
-            # critical temperature
-            _Tc_val = self.datasource[str(component)]['Tc']['value']
-            _Tc_unit = self.datasource[str(component)]['Tc']['unit']
-            # unit conversion
-            _unit_block = f"{_Tc_unit} => K"
-            _Tc = pycuc.to(_Tc_val, _unit_block)
-            _critical_temperature.append(_Tc)
-
-            # critical pressure
-            _Pc_val = self.datasource[str(component)]['Pc']['value']
-            _Pc_unit = self.datasource[str(component)]['Pc']['unit']
-            # unit conversion
-            _unit_block = f"{_Pc_unit} => Pa"
-            _Pc = pycuc.to(_Pc_val, _unit_block)
-            _critical_pressure.append(_Pc)
-
-            # check
-            if P == _VaPr and T < _Tc:
-                _root_analysis.append(1)
-                _root_no.append("3 real roots")
-                # set phase
-                phase = "VAPOR-LIQUID"
-            elif P >= _VaPr and T < _Tc:
-                _root_analysis.append(2)
-                _root_no.append("1 real root (liquid)")
-                # set phase
-                phase = "LIQUID"
-            elif P <= _VaPr and T < _Tc:
-                _root_analysis.append(3)
-                _root_no.append("1 real root (vapor)")
-                # set phase
-                phase = "VAPOR"
-            elif T > _Tc:
-                _root_analysis.append(4)
-                _root_no.append("1 real root (supercritical fluid)")
-                # set phase
-                phase = "SUPERCRITICAL"
-            elif T == _Tc:
-                _root_analysis.append(5)
-                _root_no.append("1 real root (critical point)")
-                # set phase
-                phase = "CRITICAL"
-            else:
-                raise Exception('Unknown root analysis!')
+        try:
+            # vars
+            _vapor_pressure = []
+            _critical_temperature = []
+            _critical_pressure = []
+            _root_analysis = []
+            _root_no = []
 
             # res
-            _res = {
-                "component_name": component,
-                "pressure": P,
-                "pressure_unit": "Pa",
-                "temperature": T,
-                "temperature_unit": "K",
-                "root": _root_analysis[k],
-                "root-no": _root_no[k],
-                "phase": phase,
-                "vapor_pressure": _VaPr,
-                "vapor_pressure_unit": "Pa",
-                "critical_temperature": _Tc,
-                "critical_temperature_unit": "K",
-                "critical_pressure": _Pc,
-                "critical_pressure_unit": "Pa",
-            }
+            res = {}
 
-            # save
-            res.append(_res)
+            # phase
+            phase = ""
 
             # set
-            k += 1
+            k = 0
 
-        return res
+            # looping through components
+            for component in components:
+                # NOTE: equation source
+                # antoine equations [Pa]
+                VaPr_eq = self.equationsource[str(component)]['VaPr']
+                # args
+                VaPr_args = VaPr_eq.args
+                # check args (SI)
+                VaPr_args_required = self.check_args(
+                    VaPr_args, self.datasource[str(component)])
+
+                # build args
+                _VaPr_args = self.build_args(
+                    VaPr_args_required, self.datasource[str(component)])
+
+                # NOTE: update P and T
+                _VaPr_args['P'] = P
+                _VaPr_args['T'] = T
+
+                # NOTE: execute
+                _VaPr_res = VaPr_eq.cal(**_VaPr_args)
+                # extract
+                _VaPr_value = _VaPr_res['value']
+                _VaPr_unit = _VaPr_res['unit']
+                # unit conversion
+                # NOTE: unit conversion
+                _unit_block = f"{_VaPr_unit} => Pa"
+                _VaPr = pycuc.to(_VaPr_value, _unit_block)
+                # set
+                _vapor_pressure.append(_VaPr)
+
+                # NOTE: data source
+                # critical temperature
+                _Tc_val = self.datasource[str(component)]['Tc']['value']
+                _Tc_unit = self.datasource[str(component)]['Tc']['unit']
+                # unit conversion
+                _unit_block = f"{_Tc_unit} => K"
+                _Tc = pycuc.to(_Tc_val, _unit_block)
+                _critical_temperature.append(_Tc)
+
+                # critical pressure
+                _Pc_val = self.datasource[str(component)]['Pc']['value']
+                _Pc_unit = self.datasource[str(component)]['Pc']['unit']
+                # unit conversion
+                _unit_block = f"{_Pc_unit} => Pa"
+                _Pc = pycuc.to(_Pc_val, _unit_block)
+                _critical_pressure.append(_Pc)
+
+                # check
+                if abs(P - _VaPr) < tol and T < _Tc:
+                    _root_analysis.append(1)
+                    _root_no.append("3 real roots")
+                    # set phase
+                    phase = "VAPOR-LIQUID"
+                elif P >= _VaPr and T < _Tc:
+                    _root_analysis.append(2)
+                    _root_no.append("1 real root (liquid)")
+                    # set phase
+                    phase = "LIQUID"
+                elif P <= _VaPr and T < _Tc:
+                    _root_analysis.append(3)
+                    _root_no.append("1 real root (vapor)")
+                    # set phase
+                    phase = "VAPOR"
+                elif T > _Tc:
+                    _root_analysis.append(4)
+                    _root_no.append("1 real root (supercritical fluid)")
+                    # set phase
+                    phase = "SUPERCRITICAL"
+                elif T == _Tc:
+                    _root_analysis.append(5)
+                    _root_no.append("1 real root (critical point)")
+                    # set phase
+                    phase = "CRITICAL"
+                else:
+                    raise Exception('Unknown root analysis!')
+
+                # res
+                _res = {
+                    "component_name": component,
+                    "pressure": P,
+                    "pressure_unit": "Pa",
+                    "temperature": T,
+                    "temperature_unit": "K",
+                    "root": _root_analysis[k],
+                    "root-no": _root_no[k],
+                    "phase": phase,
+                    "vapor_pressure": _VaPr,
+                    "vapor_pressure_unit": "Pa",
+                    "critical_temperature": _Tc,
+                    "critical_temperature_unit": "K",
+                    "critical_pressure": _Pc,
+                    "critical_pressure_unit": "Pa",
+                }
+
+                # save
+                res[str(component)] = _res
+
+                # set
+                k += 1
+
+            return res
+        except Exception as e:
+            raise Exception('analyzing roots failed!, ', e)
 
     def check_args(self, args, component_datasource):
         '''
