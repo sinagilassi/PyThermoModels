@@ -74,6 +74,7 @@ thub1.add_thermodb('EtOH', ethanol_thermodb)
 thub1.add_thermodb('MeOH', methanol_thermodb)
 thub1.add_thermodb('acetylene', acetylene_thermodb)
 thub1.add_thermodb('1-butene', butene_thermodb)
+thub1.add_thermodb('n-butane', n_butane_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -100,22 +101,20 @@ eos_model = 'SRK'
 phase = "VAPOR"
 
 # component
-N0s = {
-    "1-butene": 1.0
-}
+component = "CO2"
 
 # temperature
-T = 200
+T = 250
 
 # pressure
-P = 70
+P = 8
 
 # model input
 model_input = {
     "phase": phase,
-    "feed-specification": N0s,
+    "component": "CO2",
     "pressure": [P, 'bar'],
-    "temperature": [T, 'C'],
+    "temperature": [T, 'K'],
 }
 
 # model source
@@ -133,9 +132,9 @@ model_source = {
 # ------------------------------------------------
 # NOTE: eos root analysis
 # ------------------------------------------------
-# res = tm.check_eos_roots(
-#     model_name=eos_model, model_input=model_input, model_source=model_source)
-# print(res)
+res = tm.check_eos_roots_single_component(
+    model_name=eos_model, model_input=model_input, model_source=model_source)
+print(res)
 
 # ------------------------------------------------
 # NOTE: calculation

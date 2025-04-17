@@ -97,6 +97,9 @@ class EOSModels:
         # universal gas constant [J/mol.K]
         R = R_CONST
 
+        # NOTE: eos parameters
+        # Reference: Introduction to Chemical Engineering Thermodynamics (2018)
+        # Table 3.1: Parameter Assignments for Equations of State
         eos_params = {
             "vdW": {
                 "sigma": 0,
@@ -150,11 +153,13 @@ class EOSModels:
         else:
             raise Exception("Unknown equation of state method!")
 
-        # a
+        # SECTION: Determination of Equation-of-State Parameters (page 98)
+        # a(T)
         a = psi*alpha*pow(R, 2)*pow(Tc, 2)/(Pc)
         # b
         b = omega*R*Tc/(Pc)
 
+        # SECTION: Roots of the Generic Cubic Equation of State (page 99)
         # beta
         beta0 = b*(P)/(R*T)
         beta1 = omega*(Pr/Tr)
@@ -162,8 +167,17 @@ class EOSModels:
         q0 = a/(b*R*T)
         q1 = psi*alpha/(omega*Tr)
 
+        # NOTE: Chemical and engineering thermodynamics, Sandler
         # B
         B = b*(P)/(R*T)
+        # A
+        A = 0
+        if method == 'vdW' or method == 'RK' or method == 'PR':
+            A = a*(P)/pow(R*T, 2)
+        elif method == 'SRK':
+            A = a*(P)/(pow(R, 2)*pow(T, 2.5))
+        else:
+            raise Exception("Unknown equation of state method!")
 
         # res
         res = {
@@ -180,6 +194,7 @@ class EOSModels:
             "q0": q0,
             "beta": beta1,
             "q": q1,
+            "A": A,
             "B": B,
             "P": P,
             "T": T
@@ -230,7 +245,7 @@ class EOSModels:
 
     def eos_mixing_rule(self, xi, params_list, k=[]):
         '''
-        Mixing rule to determine mixture a and b
+        Mixing rule to determine mixture a and b parameters
 
         Parameters
         ----------
@@ -247,6 +262,13 @@ class EOSModels:
             mixing b
         aij : numpy array
             mixing a[i,j]
+
+        Notes
+        -----
+        Based on Van der Waals Mixing Rules (Classical Quadratic Mixing Rules)
+
+        - aij, bij are the pure component attraction parameters
+        - kj is the binary interaction parameter (BIP), which accounts for deviations from ideal mixing
         '''
         # record no
         rNo = len(params_list)
@@ -266,6 +288,7 @@ class EOSModels:
             ai[i] = params_list[i]['a']
             bi[i] = params_list[i]['b']
 
+        # NOTE: Attraction parameter
         # amix
         aij = np.zeros((rNo, rNo))
         for i in range(rNo):
@@ -277,6 +300,7 @@ class EOSModels:
         _xiaij_1 = np.sum(_xiaij_0, axis=1)
         amix = np.dot(xi, _xiaij_1)
 
+        # NOTE: Covolume parameter
         # bmix
         bmix = np.dot(xi, bi)
 

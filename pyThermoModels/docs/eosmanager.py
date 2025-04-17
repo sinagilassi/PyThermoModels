@@ -76,6 +76,7 @@ class EOSManager(EOSModels):
         # root analysis (case no:1,2,3,4)
         _root = root_analysis['root']
 
+        # NOTE: check root analysis
         if mode == 'mixture':
             # mole fraction
             xi = np.array(xi)

@@ -69,7 +69,33 @@ class FugacityCore(EOSManager):
         # init
         EOSManager.__init__(self, datasource, equationsource)
 
-    def root_analysis_mode(self):
+    @property
+    def phase(self):
+        '''
+        Phase of the system.
+
+        Returns
+        -------
+        phase : str
+            phase of the system (VAPOR, LIQUID, VAPOR-LIQUID, SUPERCRITICAL, SOLID)
+        '''
+        return self._phase
+
+    @phase.setter
+    def phase(self, value):
+        '''
+        Set the phase of the system.
+
+        Parameters
+        ----------
+        value : str
+            phase of the system (VAPOR, LIQUID, VAPOR-LIQUID, SUPERCRITICAL, SOLID)
+        '''
+        if value not in ['VAPOR', 'LIQUID', 'VAPOR-LIQUID', 'SUPERCRITICAL', 'SOLID']:
+            raise ValueError("Invalid phase!")
+        self._phase = value
+
+    def root_analysis_mode(self, phase: str):
         '''
         Sets root analysis mode based on the phase set in the model input
 
@@ -82,15 +108,15 @@ class FugacityCore(EOSManager):
             # calculation mode
             calculation_mode = -1
             # check phase
-            if self.phase == 'VAPOR-LIQUID':
+            if phase == 'VAPOR-LIQUID':
                 calculation_mode = 1
-            elif self.phase == 'LIQUID':
+            elif phase == 'LIQUID':
                 calculation_mode = 2
-            elif self.phase == 'VAPOR':
+            elif phase == 'VAPOR':
                 calculation_mode = 3
-            elif self.phase == 'SUPERCRITICAL':
+            elif phase == 'SUPERCRITICAL':
                 calculation_mode = 2
-            elif self.phase == 'SOLID':
+            elif phase == 'SOLID':
                 calculation_mode = 2
             else:
                 raise Exception('Invalid phase!')
@@ -206,13 +232,23 @@ class FugacityCore(EOSManager):
         root_analysis_res = {}
         root_analysis_res['root'] = [root_analysis_set]
 
-        # set results
-        _phi_pack = {
-            'VAPOR': {},
-            'LIQUID': {},
-            'SOLID': {},
-            'SUPERCRITICAL': {}
-        }
+        # SECTION: set results
+        _phi_pack = {}
+
+        # check
+        if self.phase == 'VAPOR':
+            _phi_pack['VAPOR'] = {}
+        elif self.phase == 'LIQUID':
+            _phi_pack['LIQUID'] = {}
+        elif self.phase == 'SOLID':
+            _phi_pack['SOLID'] = {}
+        elif self.phase == 'SUPERCRITICAL':
+            _phi_pack['SUPERCRITICAL'] = {}
+        elif self.phase == 'VAPOR-LIQUID':
+            _phi_pack['VAPOR'] = {}
+            _phi_pack['LIQUID'] = {}
+        else:
+            raise Exception('Invalid phase!')
 
         # Zi loop
         Zis = []
@@ -284,7 +320,7 @@ class FugacityCore(EOSManager):
                         }
 
                         # NOTE: save phi_comp
-                        _phi_comp[self.components[j]] = _phi_res[j]
+                        # _phi_comp[self.components[j]] = _phi_res[j]
 
                     # NOTE: save Zis_comp
                     mixture_comp = "-".join(self.components)
@@ -322,7 +358,7 @@ class FugacityCore(EOSManager):
                         # NOTE: save Zis_comp
                         _Zis_comp[self.components[j]] = [Zis[i]]
                         # NOTE: save phi_comp
-                        _phi_comp[self.components[j]] = _phi_res[j]
+                        # _phi_comp[self.components[j]] = _phi_res[j]
                 else:
                     raise Exception('Invalid root analysis set!')
         elif mode == 'single':  # SECTION: check mode
@@ -333,9 +369,12 @@ class FugacityCore(EOSManager):
 
             # Zi loop
             Zis = []
+            # phase loop
+            phases = []
 
             # NOTE: check phase
             if self.phase == 'VAPOR-LIQUID':
+                # check root note: 2 phases (liquid and vapor)
                 # min and max Zi
                 _Zi_set = [float(np.min(_Zi)), float(np.max(_Zi))]
                 # NOTE: *** liquid ***
@@ -344,18 +383,24 @@ class FugacityCore(EOSManager):
                 Zis.append(_Zi_set[1])
                 # save
                 _Zis_comp[self.components[0]] = [float(x) for x in _Zi_set]
+                # set phase
+                phases = ['LIQUID', 'VAPOR']
             elif self.phase == 'LIQUID':
                 # NOTE: *** liquid ***
                 _Zi_set = float(np.min(_Zi))
                 Zis.append(_Zi_set)
                 # save
                 _Zis_comp[self.components[0]] = [float(_Zi_set)]
+                # set
+                phases = ['LIQUID']
             elif self.phase == 'VAPOR':
                 # NOTE: *** vapor ***
                 _Zi_set = float(np.max(_Zi))
                 Zis.append(_Zi_set)
                 # save
                 _Zis_comp[self.components[0]] = [float(_Zi_set)]
+                # set
+                phases = ['VAPOR']
             elif self.phase == 'SUPERCRITICAL':
                 # supercritical fluid
                 raise Exception("supercritical fluid!")
@@ -372,16 +417,16 @@ class FugacityCore(EOSManager):
 
             # looping through _Zi
             for i in range(_Zi_num):
-                # NOTE:gas-liquid phase
+                # NOTE: gas-liquid phase
                 # ! fugacity coefficient (vapor phase)
                 _phi_res = self.eos_fugacity(
                     self.P, self.T, Zis[i], _eos_params[0], self.components, eos_model=eos_model, mode=mode)
                 # save
                 _phi.append(_phi_res)
-                _phi_comp[self.components[i]] = _phi_res
+                # _phi_comp[self.components[i]] = _phi_res
 
                 # pack
-                _phi_pack[self.phase][self.components[i]] = {
+                _phi_pack[phases[i]][self.components[0]] = {
                     "temperature": self.T,
                     "temperature_unit": "K",
                     "pressure": self.P,

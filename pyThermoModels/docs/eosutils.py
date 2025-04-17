@@ -133,6 +133,9 @@ class EOSUtils:
         # res
         res = []
 
+        # phase
+        phase = ""
+
         # set
         k = 0
 
@@ -188,18 +191,28 @@ class EOSUtils:
             if P == _VaPr and T < _Tc:
                 _root_analysis.append(1)
                 _root_no.append("3 real roots")
+                # set phase
+                phase = "VAPOR-LIQUID"
             elif P >= _VaPr and T < _Tc:
                 _root_analysis.append(2)
                 _root_no.append("1 real root (liquid)")
+                # set phase
+                phase = "LIQUID"
             elif P <= _VaPr and T < _Tc:
                 _root_analysis.append(3)
                 _root_no.append("1 real root (vapor)")
+                # set phase
+                phase = "VAPOR"
             elif T > _Tc:
                 _root_analysis.append(4)
                 _root_no.append("1 real root (supercritical fluid)")
+                # set phase
+                phase = "SUPERCRITICAL"
             elif T == _Tc:
                 _root_analysis.append(5)
                 _root_no.append("1 real root (critical point)")
+                # set phase
+                phase = "CRITICAL"
             else:
                 raise Exception('Unknown root analysis!')
 
@@ -212,6 +225,7 @@ class EOSUtils:
                 "temperature_unit": "K",
                 "root": _root_analysis[k],
                 "root-no": _root_no[k],
+                "phase": phase,
                 "vapor_pressure": _VaPr,
                 "vapor_pressure_unit": "Pa",
                 "critical_temperature": _Tc,
