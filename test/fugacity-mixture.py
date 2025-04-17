@@ -61,6 +61,10 @@ datasource, equationsource = thub1.build()
 # =======================================
 # ! CALCULATE FUGACITY FOR MULTI COMPONENT
 # =======================================
+# NOTE: Reference
+# Example 10.7 page 378 in Introduction to Chemical Engineering Thermodynamics
+# by J.M. Smith, H.C. Van Ness, M.M. Abbott
+
 # model input
 # eos model
 eos_model = 'SRK'
@@ -82,7 +86,6 @@ P = 30
 
 # model input
 model_input = {
-    "phase": phase,
     "feed-specification": N0s,
     "pressure": [P, 'bar'],
     "temperature": [T, 'K'],
@@ -98,23 +101,24 @@ model_source = {
 # ! EOS ROOT ANALYSIS
 # =======================================
 # eos root analysis
-res_ = tm.check_eos_roots(model_name=eos_model,
-                          model_input=model_input, model_source=model_source)
-print(res_)
+# res_ = tm.check_eos_roots_multi_component(model_name=eos_model,
+#                                           model_input=model_input,
+#                                           model_source=model_source)
+# print(res_)
 
 # =======================================
 # ! CHECK REFERENCES
 # =======================================
 # check reference
-res_ = tm.check_fugacity_reference(eos_model)
-print(res_)
+# res_ = tm.check_fugacity_reference(eos_model)
+# print(res_)
 
 # =======================================
 # ! FUGACITY CALCULATION
 # =======================================
 # method 2
-res = tm.cal_fugacity(model_name=eos_model,
-                      model_input=model_input, model_source=model_source)
+res = tm.cal_fugacity_mixture(model_name=eos_model,
+                              model_input=model_input, model_source=model_source)
 Z, Phi, eos_parms, phi_parms = res
 # res
 print("Z")

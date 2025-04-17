@@ -2,6 +2,7 @@
 # ----------
 
 # import packages/modules
+import numpy as np
 from math import exp
 from typing import List, Dict, Any, Union
 import pycuc
@@ -96,7 +97,8 @@ class EOSUtils:
 
     def eos_root_analysis(self, P: float, T: float,
                           components: List[str],
-                          tolerance: float = 1e-3) -> Dict[str, Dict[str, float | int | str]]:
+                          tolerance: float = 1e-3,
+                          **kwargs) -> Dict[str, Dict[str, float | int | str]]:
         '''
         Determine root numbers for each component
 
@@ -108,7 +110,7 @@ class EOSUtils:
             temperature [K]
         components : list[str]
             list of components
-        tol : float
+        tolerance : float
             tolerance to compare values
 
         Returns
@@ -127,7 +129,17 @@ class EOSUtils:
         5. At T > Tc, only 1 real root → fluid is supercritical (`vapor-like` or `liquid-like`).
         '''
         try:
-            # vars
+            # NOTE: bubble and dew point
+            # bubble point (liquid) and dew point (vapor) calculations are not implemented in this version
+            bubble_point_pressure_mode = kwargs.get(
+                'bubble_point_pressure_mode', None)
+            dew_point_pressure_mode = kwargs.get(
+                'dew_point_pressure_mode', None)
+
+            # NOTE: mole-fraction
+            mole_fraction = kwargs.get('mole_fraction', None)
+
+            # NOTE: vars
             _vapor_pressure = []
             _critical_temperature = []
             _critical_pressure = []
@@ -192,7 +204,16 @@ class EOSUtils:
                 _critical_pressure.append(_Pc)
 
                 # check
-                if abs(P - _VaPr) < tol and T < _Tc:
+                # equality check
+                pressure_equality_value = _VaPr - P
+                temperature_equality_value = _Tc - T
+                # check
+                pressure_equality_check = abs(
+                    pressure_equality_value) < tolerance
+                temperature_equality_check = abs(
+                    temperature_equality_value) < tolerance
+
+                if pressure_equality_check and T < _Tc:  # ! P == _VaPr
                     _root_analysis.append(1)
                     _root_no.append("3 real roots")
                     # set phase
@@ -212,7 +233,7 @@ class EOSUtils:
                     _root_no.append("1 real root (supercritical fluid)")
                     # set phase
                     phase = "SUPERCRITICAL"
-                elif T == _Tc:
+                elif temperature_equality_check:  # ! T == _Tc
                     _root_analysis.append(5)
                     _root_no.append("1 real root (critical point)")
                     # set phase
@@ -236,6 +257,11 @@ class EOSUtils:
                     "critical_temperature_unit": "K",
                     "critical_pressure": _Pc,
                     "critical_pressure_unit": "Pa",
+                    "tolerance": tolerance,
+                    "vapor_pressure_check": pressure_equality_value,
+                    "temperature_equality_value": temperature_equality_value,
+                    "pressure_equality_check": pressure_equality_check,
+                    "temperature_equality_check": temperature_equality_check,
                 }
 
                 # save
@@ -243,6 +269,61 @@ class EOSUtils:
 
                 # set
                 k += 1
+
+            # SECTION: calculate bubble and dew point pressure
+            if bubble_point_pressure_mode is not None and dew_point_pressure_mode is not None:
+                # mixture
+                mixture = " | ".join(components)
+                # input
+                Xi = np.array(mole_fraction)
+                Yi = np.array(mole_fraction)
+                VaPri = np.array(_vapor_pressure)
+
+                # NOTE: bubble point pressure calculation
+                BuPoPr = float(Xi@VaPri)
+
+                # NOTE: dew point pressure calculation
+                DePoPr = float(Yi@(1/VaPri))
+
+                # NOTE: compare with system pressure
+                if P > BuPoPr:
+                    # set phase
+                    phase = "LIQUID"
+                elif P < DePoPr:
+                    # set phase
+                    phase = "VAPOR"
+                elif P > DePoPr and P < BuPoPr:
+                    # set phase
+                    phase = "VAPOR-LIQUID"
+                elif abs(P - BuPoPr) < tolerance:
+                    # set phase
+                    phase = "Bubble Point (start of boiling)"
+                elif abs(P - DePoPr) < tolerance:
+                    # set phase
+                    phase = "Dew Point (start of condensation)"
+                else:
+                    raise Exception('Unknown root analysis!')
+
+                # res
+                res_ = {
+                    "component_name": mixture,
+                    "pressure": P,
+                    "pressure_unit": "Pa",
+                    "temperature": T,
+                    "temperature_unit": "K",
+                    "bubble_pressure": BuPoPr,
+                    "bubble_pressure_unit": "Pa",
+                    "dew_point_pressure": DePoPr,
+                    "dew_point_pressure_unit": "Pa",
+                    "bubble_point_temperature": T,
+                    "bubble_point_temperature_unit": "K",
+                    "dew_point_temperature": T,
+                    "dew_point_temperature_unit": "K",
+                    "phase": phase,
+                }
+
+                # save
+                res['mixture'] = res_
 
             return res
         except Exception as e:

@@ -269,8 +269,8 @@ class FugacityCore(EOSManager):
         # SECTION: check mode
         if mode == 'mixture':
             # Z
-            _Zi, _eos_params = self.eos_roots(self.P, self.T, self.components, root_analysis_res,
-                                              xi=yi, eos_model=eos_model, solver_method=solver_method, mode=mode)
+            _Zi, _eos_params, _eos_params_comp = self.eos_roots(self.P, self.T, self.components, root_analysis_res,
+                                                                xi=yi, eos_model=eos_model, solver_method=solver_method, mode=mode)
 
             # Zi loop
             Zis = []
@@ -302,7 +302,7 @@ class FugacityCore(EOSManager):
             for i in range(len(Zis)):
                 # ! fugacity coefficient (vapor phase)
                 _phi_res = self.eos_fugacity(self.P, self.T, Zis[i], _eos_params, self.components,
-                                             yi=yi, eos_model=eos_model, mode=mode)
+                                             yi=yi, eos_model=eos_model, mode=mode, params_comp=_eos_params_comp)
                 # save
                 _phi.append(_phi_res)
 
@@ -376,7 +376,7 @@ class FugacityCore(EOSManager):
             component_ = self.components[0]
 
             # NOTE: find roots
-            _Zi, _eos_params = self.eos_roots(
+            _Zi, _eos_params, _eos_params_comp = self.eos_roots(
                 self.P, self.T, self.components, root_analysis_res,
                 eos_model=eos_model, solver_method=solver_method, mode=mode)
 
@@ -458,7 +458,8 @@ class FugacityCore(EOSManager):
                         'symbol': 'phi'
                     },
                     'mode': (self.mode).upper(),
-                    'phase': self.phase
+                    'phase': self.phase,
+                    'eos_model': eos_model,
                 }
 
                 # NOTE: save
@@ -576,7 +577,7 @@ class FugacityCore(EOSManager):
             # looping through components
             for i in range(compNo):
                 # NOTE: find roots
-                _Zi, _eos_params = self.eos_roots(
+                _Zi, _eos_params, _eos_params_comp = self.eos_roots(
                     self.P, self.T, self.components, root_analysis_res, self.datasource, eos_model=eos_model, solver_method=solver_method, mode=mode)
 
                 # NOTE: check root analysis res

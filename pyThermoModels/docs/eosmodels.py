@@ -9,11 +9,92 @@ import pycuc
 from ..configs import R_CONST
 
 
-class EOSModels:
+class EOSModels():
     # init
     def __init__(self, datasource, equationsource):
         self.datasource = datasource
         self.equationsource = equationsource
+
+    def eos_parameter_selection(self, method: str):
+        '''
+        Determine the parameters of equation of states
+
+        Parameters
+        ----------
+        P : float
+            pressure [Pa]
+        T : float
+            temperature [K]
+        method : str
+            equation of state model, default SRK
+
+        Returns
+        -------
+        res : dict
+            equation of state parameters
+                1. method: str
+                2. sigma: float
+                3. epsilon: float
+                4. omega: float
+                5. psi: float
+                6. alpha: float
+        '''
+        try:
+            # NOTE: eos parameters
+            # Reference: Introduction to Chemical Engineering Thermodynamics (2018)
+            # Table 3.1: Parameter Assignments for Equations of State
+            eos_params = {
+                "vdW": {
+                    "sigma": 0,
+                    "epsilon": 0,
+                    "omega": 0.12500,
+                    'psi': 0.42188,
+                    'alpha': 1,
+                },
+                "RK": {
+                    "sigma": 1,
+                    "epsilon": 0,
+                    "omega": 0.08664,
+                    'psi': 0.42748,
+                    'alpha': lambda x: x**-0.50,
+                },
+                "SRK": {
+                    "sigma": 1,
+                    "epsilon": 0,
+                    "omega": 0.08664,
+                    'psi': 0.42748,
+                    'alpha': lambda Tr, omega: pow(1+(0.480+1.574*omega-0.176*(omega**2))*(1-pow(Tr, 0.5)), 2)
+                },
+                "PR": {
+                    "sigma": 1+sqrt(2),
+                    "epsilon": 1-sqrt(2),
+                    "omega": 0.07780,
+                    'psi': 0.45724,
+                    'alpha': lambda Tr, omega: pow(1+(0.37464+1.54226*omega-0.26992*(omega**2))*(1-pow(Tr, 0.5)), 2)
+                },
+            }
+
+            # model parameters
+            sigma = eos_params[method]['sigma']
+            epsilon = eos_params[method]['epsilon']
+            omega = eos_params[method]['omega']
+            psi = eos_params[method]['psi']
+            alpha = eos_params[method]['alpha']
+
+            # save
+            res = {
+                "method": method,
+                "sigma": sigma,
+                "epsilon": epsilon,
+                "omega": omega,
+                "psi": psi,
+                "alpha": alpha,
+            }
+
+            # res
+            return res
+        except Exception as e:
+            raise Exception(f"Error in eos_parameter_estimation: {e}")
 
     def eos_parameters(self, P, T, component_name, method="SRK"):
         '''
@@ -37,7 +118,8 @@ class EOSModels:
 
         References
         ----------
-        1. Introduction to Chemical Engineering Thermodynamics (2018)
+        The method is taken from Introduction to Chemical Engineering Thermodynamics (2018), Determination of Equation-of-State Parameters (page 98)
+        and Roots of the Generic Cubic Equation of State (page 99)
 
         Notes
         -----
@@ -49,7 +131,7 @@ class EOSModels:
         - VaPr: vapor parameters [Pa]
         - MW: molecular weights [g/mol]
         '''
-        # set component datasource
+        # SECTION: set component datasource
         component_datasource = self.datasource.get(component_name, {})
 
         # check
@@ -68,7 +150,7 @@ class EOSModels:
             },
         }
 
-        # get component parameters
+        # SECTION: get component parameters
         for item, value in component_datasource.items():
             # val unit checking
             _val = float(value['value'])
@@ -94,48 +176,18 @@ class EOSModels:
         Pc = params['Pc']['value']
         Tc = params['Tc']['value']
 
-        # universal gas constant [J/mol.K]
+        # NOTE: universal gas constant [J/mol.K]
         R = R_CONST
 
-        # NOTE: eos parameters
-        # Reference: Introduction to Chemical Engineering Thermodynamics (2018)
-        # Table 3.1: Parameter Assignments for Equations of State
-        eos_params = {
-            "vdW": {
-                "sigma": 0,
-                "epsilon": 0,
-                "omega": 0.12500,
-                'psi': 0.42188,
-                'alpha': 1,
-            },
-            "RK": {
-                "sigma": 1,
-                "epsilon": 0,
-                "omega": 0.08664,
-                'psi': 0.42748,
-                'alpha': lambda x: x**-0.50,
-            },
-            "SRK": {
-                "sigma": 1,
-                "epsilon": 0,
-                "omega": 0.08664,
-                'psi': 0.42748,
-                'alpha': lambda Tr, omega: pow(1+(0.480+1.574*omega-0.176*(omega**2))*(1-pow(Tr, 0.5)), 2)
-            },
-            "PR": {
-                "sigma": 1+sqrt(2),
-                "epsilon": 1-sqrt(2),
-                "omega": 0.07780,
-                'psi': 0.45724,
-                'alpha': lambda Tr, omega: pow(1+(0.37464+1.54226*omega-0.26992*(omega**2))*(1-pow(Tr, 0.5)), 2)
-            },
-        }
+        # SECTION: EOS Parameters selection
+        eos_parameter_selection_ = self.eos_parameter_selection(method)
 
-        # model parameters
-        sigma = eos_params[method]['sigma']
-        epsilon = eos_params[method]['epsilon']
-        omega = eos_params[method]['omega']
-        psi = eos_params[method]['psi']
+        # NOTE: model parameters
+        sigma = eos_parameter_selection_['sigma']
+        epsilon = eos_parameter_selection_['epsilon']
+        omega = eos_parameter_selection_['omega']
+        psi = eos_parameter_selection_['psi']
+        alpha = eos_parameter_selection_['alpha']
 
         # Tr
         Tr = T/Tc
@@ -143,13 +195,13 @@ class EOSModels:
         Pr = P/Pc
 
         # alpha
-        alpha = -1
+        # NOTE: alpha function
         if method == "SRK" or method == 'PR':
-            alpha = eos_params[method]['alpha'](Tr, omega)
+            alpha = alpha(Tr, omega)
         elif method == 'RK':
-            alpha = eos_params[method]['alpha'](Tr)
+            alpha = alpha(Tr)
         elif method == 'vdW':
-            alpha = eos_params[method]['alpha']
+            alpha = alpha
         else:
             raise Exception("Unknown equation of state method!")
 
@@ -181,6 +233,8 @@ class EOSModels:
 
         # res
         res = {
+            "eos-model": method,
+            "component": component_name,
             "sigma": sigma,
             "epsilon": epsilon,
             "omega": omega,
@@ -203,7 +257,8 @@ class EOSModels:
         # res
         return res
 
-    def eos_parameters_mixture(self, P, T, params, amix, bmix, aij):
+    def eos_parameters_mixture(self, P, T, amix, bmix, aij,
+                               mixture_name: str, eos_model: str):
         '''
         Updates the single params with mixing value of a and b
 
@@ -213,35 +268,75 @@ class EOSModels:
             system pressure [Pa]
         T : float
             system temperature [K]
-        params : dict
-            parameters
         amix : float
             mixing a factor
         bmix : float
             mixing b factor
         aij : float
             mixing a[i,j]
+        mixture_name : str
+            name of the mixture
+        eos_model : str
+            equation of state model
+
+        Returns
+        -------
+        params : dict
+            equation of state parameters
         '''
-        # universal gas constant [J/mol.K]
-        R = R_CONST
+        try:
+            # res
+            params = {}
 
-        # update
-        params['a'] = amix
-        params['b'] = bmix
+            # universal gas constant [J/mol.K]
+            R = R_CONST
 
-        # beta
-        beta1 = bmix*(P)/(R*T)
-        params['beta'] = beta1
+            # update
+            params['amix'] = amix
+            params['bmix'] = bmix
 
-        # q
-        q1 = amix/(bmix*R*T)
-        params['q'] = q1
+            # beta
+            # beta1 = bmix*(P)/(R*T)
+            # params['beta'] = beta1
 
-        # aij *** new key ***
-        params['aij'] = aij
+            # q
+            # q1 = amix/(bmix*R*T)
+            # params['q'] = q1
 
-        # res
-        return params
+            # aij *** new key ***
+            params['aij'] = aij
+
+            # NOTE: check method
+            # A
+            if eos_model == 'vdW' or eos_model == 'RK' or eos_model == 'PR':
+                # A
+                A = amix*(P)/pow(R*T, 2)
+            elif eos_model == 'SRK':
+                # A
+                A = amix*(P)/(pow(R, 2)*pow(T, 2.5))
+            else:
+                raise Exception("Unknown equation of state method!")
+
+            params['A'] = A
+
+            # B
+            B = bmix*(P)/(R*T)
+            params['B'] = B
+
+            # method
+            params['eos-model'] = eos_model
+            # mixture name
+            params['component'] = mixture_name
+
+            # NOTE: eos parameters
+            params['alpha'] = self.eos_alpha(B, eos_model)
+            params['beta'] = self.eos_beta(A, B, eos_model)
+            params['gamma'] = self.eos_gamma(A, B, eos_model)
+
+            # res
+            return params
+        except Exception as e:
+            raise Exception(f"Error in eos_parameters_mixture: {e}")
 
     def eos_mixing_rule(self, xi, params_list, k=[]):
         '''
@@ -307,6 +402,45 @@ class EOSModels:
         # res
         return amix, bmix, aij
 
+    def eos_alpha(self, B, eosNameSet):
+        """ calculate alpha in f(Z) """
+        # select eos
+        selectEOS = {
+            "VDW": lambda B: -1 - B,
+            "SRK": lambda B: -1,
+            "PR": lambda B: -1 + B,
+        }
+        # res
+        res = selectEOS.get(eosNameSet)(B)
+        # return
+        return res
+
+    def eos_beta(self, A, B, eosNameSet):
+        """ calculate parameter beta """
+        # select eos
+        selectEOS = {
+            "VDW": lambda A, B: A,
+            "SRK": lambda A, B: A - B - np.power(B, 2),
+            "PR": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
+        }
+        # res
+        res = selectEOS.get(eosNameSet)(A, B)
+        # return
+        return res
+
+    def eos_gamma(self, A, B, eosNameSet):
+        """ calculate parameter gamma """
+        # select eos
+        selectEOS = {
+            "VDW": lambda A, B: -A * B,
+            "SRK": lambda A, B: -A * B,
+            "PR": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
+        }
+        # res
+        res = selectEOS.get(eosNameSet)(A, B)
+        # return
+        return res
+
     def eos_equation(self, x, params):
         '''
         Build a polynomial 3rd degree
@@ -361,3 +495,26 @@ class EOSModels:
         fZ = a0*(x**3) + a1*(x**2) + a2*(x) - a3
 
         return fZ
+
+    def eos_equation_mixture(self, x, params):
+        """
+        Build a polynomial 3rd degree
+
+        Parameters
+        ----------
+        x : float
+            variable
+        params : dict
+            parameters
+
+        Returns
+        -------
+        fZ : float
+            function
+        """
+        # print(data)
+        alpha, beta, gamma = params['alpha'], params['beta'], params['gamma']
+
+        # set
+        fZSet = x**3 + alpha*(x**2) + beta*x + gamma
+        return fZSet

@@ -22,8 +22,12 @@ class EOSManager(EOSModels):
     def __call__(self):
         pass
 
-    def eos_roots(self, P: float, T: float, components: List[str], root_analysis: int,
-                  xi=[], eos_model: str = "SRK", solver_method: str = "ls", mode: str = "single"):
+    def eos_roots(self, P: float, T: float,
+                  components: List[str],
+                  root_analysis: int,
+                  xi=[], eos_model: str = "SRK",
+                  solver_method: str = "ls",
+                  mode: str = "single"):
         '''
         Estimates fugacity coefficient at fixed temperature and pressure through finding Z (lowest: for liquid, largest: for vapor)
 
@@ -52,6 +56,8 @@ class EOSManager(EOSModels):
             fugacity coefficient
         _eos_params : dict
             equation of state parameters
+        _eos_params_comp : dict
+            equation of state parameters for each component
 
         Notes
         -----
@@ -66,31 +72,40 @@ class EOSManager(EOSModels):
         '''
         # SRK params
         _eos_params = []
+        _eos_params_comp = {}
 
+        # SECTION: eos parameters for each component
         for component in components:
             # build eos params
             _params = self.eos_parameters(P, T, component, method=eos_model)
-            _params['eos-model'] = eos_model
-            _eos_params.append(_params)
 
-        # root analysis (case no:1,2,3,4)
+            # save eos params
+            _eos_params.append(_params)
+            # update component params
+            _eos_params_comp[component] = _params
+
+        # NOTE: root analysis (case no:1,2,3,4)
         _root = root_analysis['root']
 
         # NOTE: check root analysis
         if mode == 'mixture':
+            # mixture name
+            mixture_name = " | ".join(components)
+
             # mole fraction
             xi = np.array(xi)
 
             # mixture a and b
             amix, bmix, aij = self.eos_mixing_rule(xi, _eos_params)
-            # log
-            # print(aij)
 
             # new params *** mixture ***
             _params_mixture = self.eos_parameters_mixture(
-                P, T, _eos_params[0], amix, bmix, aij)
+                P, T, amix, bmix, aij, mixture_name, eos_model)
+            # set
             _eos_params.append(_params_mixture)
+            _eos_params_comp['mixture'] = _params_mixture
 
+        # check mode
         if mode == 'single':
             # SRK params
             _eos_params_0 = _eos_params[0]
@@ -110,8 +125,15 @@ class EOSManager(EOSModels):
         fZ_cost = np.zeros(guess_no)
         k = 0
 
-        # functions
-        fZ = self.eos_equation  # SRK_equation
+        # SECTION: functions
+        if mode == 'single':
+            fZ = self.eos_equation  # SRK_equation
+        elif mode == 'mixture':
+            fZ = self.eos_equation_mixture
+        else:
+            raise Exception("mode must be 'single' or 'mixture'")
+
+        # NOTE: fZ prime and second
         fpZ = None  # eos_equation_prime
         fp2Z = None  # eos_equation_prime2
 
@@ -236,9 +258,15 @@ class EOSManager(EOSModels):
                 k += 1
 
         # res
-        return np.array(Z), _eos_params
+        return np.array(Z), _eos_params, _eos_params_comp
 
-    def eos_fugacity(self, P: float, T: float, Z, params, components: List, yi=[], eos_model: str = "SRK", mode: str = "single"):
+    def eos_fugacity(self, P: float, T: float, Z,
+                     params,
+                     components: List,
+                     yi=[],
+                     eos_model: str = "SRK",
+                     mode: str = "single",
+                     **kwargs):
         '''
         Determines fugacity coefficient
 
@@ -250,18 +278,28 @@ class EOSManager(EOSModels):
             temperature [K]
         Z : list
             compressibility factor
+        params : list
+            equation of state parameters
         components : list
             list of components
-        root_analysis : dict
-            root analysis
         yi : list
             mole fraction of components
+        eos_model : str
+            equation of state model, default SRK
+        mode : str
+            mode, default single
+        **kwargs : dict
+            additional parameters
+            - params_comp: dict
 
         Returns
         -------
         fugacity : list
             fugacity coefficient
         '''
+        # NOTE: load params component
+        params_comp = kwargs.get('params_comp', None)
+
         # NOTE: universal gas constant [J/mol.K]
         R = R_CONST
 
@@ -335,7 +373,11 @@ class EOSManager(EOSModels):
                         (a_mix*b/(R*T*(b_mix**2))) * \
                         (log((V+b_mix)/V) - (b_mix/(V+b_mix)))
 
-                elif eos_model == 'RK':
+                elif eos_model == 'PR':
+                    # terms
+                    term_1 = (b/b_mix)*(Z-1)
+                    term_2 = log(Z - ((b_mix*P)/(R*T)))
+                    term_3 = (a_mix)
                     _phi = 1
 
                 else:

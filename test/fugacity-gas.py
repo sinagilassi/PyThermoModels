@@ -102,25 +102,25 @@ print(VaPr)
 
 # model input
 # eos model
-eos_model = 'SRK'
+eos_model = 'PR'
 
 # component phase
-# phase = "VAPOR"
+phase = "VAPOR"
 
 # component
-component = "CO2"
+component = "n-butane"
 
 # temperature
-T = 304
+T = 350
 
 # pressure
-P = 50
+P = 9.453800
 
 # model input
 model_input = {
     # "phase": phase,
-    "component": "CO2",
-    "pressure": [VaPr['value'], VaPr['unit']],
+    "component": component,
+    "pressure": [P, 'bar'],
     "temperature": [T, 'K'],
 }
 

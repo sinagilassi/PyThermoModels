@@ -116,7 +116,7 @@ class EOS:
     # find fZ root
     def findRootfZ(self, alpha, beta, gamma):
         '''
-        roots 
+        roots
 
             1. P=P*, 3 real roots
             2. T<Tc, P>P*, 1 real root (liquid)
@@ -153,8 +153,8 @@ class EOS:
 
     # k[i,j]
     def kijFill(self):
-        """ 
-            interaction parameter should be taken from experimental data, otherwise have to set to zero! 
+        """
+        Interaction parameter should be taken from experimental data, otherwise have to set to zero!
         """
         # components number
         componentsNo = self.componentNoSet()
@@ -276,7 +276,7 @@ class EOS:
         while universal gas constant [J/mol.K]
 
         output:
-            b: PR constant [m^3/mol]  
+            b: PR constant [m^3/mol]
         '''
         res = (0.07779607 * CONST.R_CONST * Tc) / Pc
         return res
@@ -311,7 +311,7 @@ class EOS:
         while universal gas constant [J/mol.K]
 
         output:
-            b: constant [m^3/mol]  
+            b: constant [m^3/mol]
         '''
         return (CONST.R_CONST/8)*(Tc/Pc)
 
