@@ -481,7 +481,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
         ### root_analysis_set:
             - set [1]: 3 roots (VAPOR-LIQUID)
-                - At `T < Tc` and `P = Psat`, 3 real roots → smallest is liquid, largest is vapor.
+                - At `T < Tc` and `P = Psat`, 3 real roots → smallest is liquid, largest is vapor (vapor-liquid).
             - set [2]: 1 root (LIQUID)
                 - At `T < Tc` and `P > Psat`, EOS may give 1 or 3 roots → use smallest (liquid).
             - set [3]: 1 root (VAPOR)

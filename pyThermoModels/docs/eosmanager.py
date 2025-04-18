@@ -87,7 +87,7 @@ class EOSManager(EOSModels):
         # NOTE: root analysis (case no:1,2,3,4)
         _root = root_analysis['root']
 
-        # NOTE: check root analysis
+        # SECTION: check root analysis
         if mode == 'mixture':
             # mixture name
             mixture_name = " | ".join(components)
@@ -336,57 +336,259 @@ class EOSManager(EOSModels):
 
         # # SECTION: mixture
         elif mode == 'mixture':
-            # component no
-            compNo = len(components)
-
-            # fugacity coefficient
-            phi = []
-
-            # mixing parameters
-            _params_mix = params[-1]
-            beta_min = _params_mix['beta']
-            q_mix = _params_mix['q']
-            a_mix = _params_mix['a']
-            b_mix = _params_mix['b']
-            B_mix = _params_mix['B']
-            aij = _params_mix['aij']
-
-            for i in range(compNo):
-                _params_i = params[i]
-
-                # model parameters
-                sigma = _params_i['sigma']
-                epsilon = _params_i['epsilon']
-                omega = _params_i['omega']
-                psi = _params_i['psi']
-                alpha = _params_i['alpha']
-                beta = _params_i['beta']
-                q = _params_i['q']
-                a = _params_i['a']
-                b = _params_i['b']
-                B = _params_i['B']
-
+            # NOTE: check model
+            if eos_model == "SRK":
                 # fugacity coefficient
-                if eos_model == "SRK":
-                    # from book
-                    _phi = log(V/(V-b_mix)) - (2*np.dot(yi, aij[i, :])/(R*T*b_mix))*log((V+b_mix)/V) + (b/(V-b_mix)) - log((P)*V/(R*T)) + \
-                        (a_mix*b/(R*T*(b_mix**2))) * \
-                        (log((V+b_mix)/V) - (b_mix/(V+b_mix)))
-
-                elif eos_model == 'PR':
-                    # terms
-                    term_1 = (b/b_mix)*(Z-1)
-                    term_2 = log(Z - ((b_mix*P)/(R*T)))
-                    term_3 = (a_mix)
-                    _phi = 1
-
-                else:
-                    raise Exception("eos_model must be 'SRK' or 'RK'")
-
-                phi.append(exp(_phi))
-
+                phi = self.SRK(P, T, Z, params, components, yi)
+            elif eos_model == "RK":
+                # fugacity coefficient
+                phi = self.RK(P, T, Z, params, components, yi)
+            elif eos_model == "PR":
+                # fugacity coefficient
+                phi = self.PR(P, T, Z, params, components, yi)
+            else:
+                raise Exception(f"{eos_model} not available!")
         else:
             raise Exception("mode must be 'single' or 'mixture'")
 
         # res
         return phi
+
+    def SRK(self,
+            P: float,
+            T: float,
+            Z: float,
+            params,
+            components: List,
+            yi):
+        """
+        Calculate fugacity coefficients for each component in a vapor mixture using the SRK EOS.
+
+        Parameters
+        ----------
+        P : float
+            Pressure of the system [Pa].
+        T : float
+            Temperature of the system [K].
+        Z : float
+            Compressibility factor of the system.
+        params : list
+            List of dictionaries containing the EOS parameters for each component.
+        components : list
+            List of component names.
+        yi : list
+            Mole fractions of each component in the vapor phase.
+
+        Returns
+        -------
+        phi : list
+            Fugacity coefficients for each component in the vapor phase.
+        """
+        try:
+            # component number
+            N = len(components)
+
+            # fugacity coefficient
+            phi = []
+
+            # SECTION: mixing parameters
+            _params_mix = params[-1]
+            # mix parameters
+            A = _params_mix['A']
+            B = _params_mix['B']
+            # required parameters
+            a = _params_mix['amix']
+            b = _params_mix['bmix']
+            aij = _params_mix['aij']  # array
+
+            # SECTION: component parameters
+            ai = []
+            bi = []
+            # looping through components
+            for i in range(N):
+                # select component parameters
+                # NOTE: load params component
+                _params_i = params[i]
+                # required parameters
+                ai_ = _params_i['a']
+                bi_ = _params_i['b']
+                # set
+                ai.append(ai_)
+                bi.append(bi_)
+
+            for i in range(N):
+                # fugacity coefficient
+                sum_aij = yi@aij[i, :]
+
+                # term 2
+                ln_phi = (bi[i] / b) * (Z - 1) - np.log(Z - B) \
+                    - (A / B) * (2 * sum_aij / a -
+                                 bi[i] / b) * np.log(1 + B / Z)
+
+                res_ = np.exp(ln_phi)
+                phi.append(res_)
+
+            return phi
+        except Exception as e:
+            raise Exception(f"Error in srk_fugacity_coefficients: {e}") from e
+
+    def PR(self,
+            P: float,
+            T: float,
+            Z: float,
+            params,
+            components: List,
+            yi):
+        """
+        Calculate fugacity coefficients for each component in a vapor mixture using the PR EOS.
+
+        Parameters
+        ----------
+        P : float
+            Pressure of the system [Pa].
+        T : float
+            Temperature of the system [K].
+        Z : float
+            Compressibility factor of the system.
+        params : list
+            List of dictionaries containing the EOS parameters for each component.
+        components : list
+            List of component names.
+        yi : list
+            Mole fractions of each component in the vapor phase.
+
+        Returns
+        -------
+        phi : list
+            Fugacity coefficients for each component in the vapor phase.
+        """
+        try:
+            # component number
+            N = len(components)
+
+            # fugacity coefficient
+            phi = []
+
+            # SECTION: mixing parameters
+            _params_mix = params[-1]
+            # mix parameters
+            A = _params_mix['A']
+            B = _params_mix['B']
+            # required parameters
+            a = _params_mix['amix']
+            b = _params_mix['bmix']
+            aij = _params_mix['aij']  # array
+
+            # SECTION: component parameters
+            ai = []
+            bi = []
+            # looping through components
+            for i in range(N):
+                # select component parameters
+                # NOTE: load params component
+                _params_i = params[i]
+                # required parameters
+                ai_ = _params_i['a']
+                bi_ = _params_i['b']
+                # set
+                ai.append(ai_)
+                bi.append(bi_)
+
+            for i in range(N):
+                # fugacity coefficient
+                sum_aij = yi@aij[i, :]
+
+                # term 2
+                ln_phi = (bi[i]/b)*(Z - 1) - np.log(Z - B) \
+                    - (A / (2 * np.sqrt(2) * B)) * (2 * sum_aij / a - bi[i]/b) \
+                    * np.log((Z + (1 + np.sqrt(2)) * B) / (Z + (1 - np.sqrt(2)) * B))
+
+                res_ = np.exp(ln_phi)
+                phi.append(res_)
+
+            return phi
+        except Exception as e:
+            raise Exception(f"Error in pr_fugacity_coefficients: {e}") from e
+
+    def RK(self,
+            P: float,
+            T: float,
+            Z: float,
+            params,
+            components: List,
+            yi):
+        """
+        Calculate fugacity coefficients for each component in a vapor mixture using the RK EOS.
+
+        Parameters
+        ----------
+        P : float
+            Pressure of the system [Pa].
+        T : float
+            Temperature of the system [K].
+        Z : float
+            Compressibility factor of the system.
+        params : list
+            List of dictionaries containing the EOS parameters for each component.
+        components : list
+            List of component names.
+        yi : list
+            Mole fractions of each component in the vapor phase.
+
+        Returns
+        -------
+        phi : list
+            Fugacity coefficients for each component in the vapor phase.
+        """
+        try:
+            # NOTE: universal gas constant [J/mol.K]
+            R = R_CONST
+            # NOTE: molar volume [m^3/mol]
+            Vm = Z*R*T/P
+
+            # component number
+            N = len(components)
+
+            # fugacity coefficient
+            phi = []
+
+            # SECTION: mixing parameters
+            _params_mix = params[-1]
+            # mix parameters
+            A = _params_mix['A']
+            B = _params_mix['B']
+            # required parameters
+            a = _params_mix['amix']
+            b = _params_mix['bmix']
+            aij = _params_mix['aij']  # array
+
+            # SECTION: component parameters
+            ai = []
+            bi = []
+            # looping through components
+            for i in range(N):
+                # select component parameters
+                # NOTE: load params component
+                _params_i = params[i]
+                # required parameters
+                ai_ = _params_i['a']
+                bi_ = _params_i['b']
+                # set
+                ai.append(ai_)
+                bi.append(bi_)
+
+            for i in range(N):
+                # fugacity coefficient
+                sum_aij = yi@aij[i, :]
+
+                # term 2
+                ln_phi = (bi[i]/b)*(Z - 1) - np.log(Z - B) \
+                    - (a / (b * R * T**1.5)) * (2 * sum_aij / a - bi[i]/b) \
+                    * np.log((Vm + b) / Vm)
+
+                res_ = np.exp(ln_phi)
+                phi.append(res_)
+
+            return phi
+        except Exception as e:
+            raise Exception(f"Error in pr_fugacity_coefficients: {e}") from e

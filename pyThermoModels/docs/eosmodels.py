@@ -296,12 +296,12 @@ class EOSModels():
             params['bmix'] = bmix
 
             # beta
-            # beta1 = bmix*(P)/(R*T)
-            # params['beta'] = beta1
+            beta1 = bmix*(P)/(R*T)
+            params['beta1'] = beta1
 
             # q
-            # q1 = amix/(bmix*R*T)
-            # params['q'] = q1
+            q1 = amix/(bmix*R*T)
+            params['q'] = q1
 
             # aij *** new key ***
             params['aij'] = aij
