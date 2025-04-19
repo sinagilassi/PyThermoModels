@@ -69,3 +69,11 @@ CH4:
   EQUATIONS:
     vapor-pressure: VaPr
     heat-capacity: Cp_IG
+C2H6:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG

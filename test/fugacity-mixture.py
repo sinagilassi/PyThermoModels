@@ -30,6 +30,12 @@ CH4_thermodb_file = os.path.join(thermodb_dir, 'methane-1.pkl')
 # load
 CH4_thermodb = ptdb.load_thermodb(CH4_thermodb_file)
 
+# ! ethane
+# thermodb file name
+C2H6_thermodb_file = os.path.join(thermodb_dir, 'ethane-1.pkl')
+# load
+C2H6_thermodb = ptdb.load_thermodb(C2H6_thermodb_file)
+
 # ========================================
 # ! INITIALIZE FUGACITY OBJECT
 # ========================================
@@ -47,6 +53,7 @@ print(type(thub1))
 # add component thermodb
 thub1.add_thermodb('N2', N2_thermodb)
 thub1.add_thermodb('CH4', CH4_thermodb)
+thub1.add_thermodb('C2H6', C2H6_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -68,26 +75,32 @@ datasource, equationsource = thub1.build()
 
 # model input
 # eos model
-eos_model = 'PR'
+eos_model = 'SRK'
 
 # component phase
 phase = "VAPOR"
 
+# ! example 1
 # feed spec
 N0s = {
     'N2': 0.40,
     'CH4': 0.60,
 }
-
 # temperature [K]
 T = 200
 # pressure [bar]
 P = 30
 
+# ! example 2
+# # feed spec
+N0s = {
+    'CH4': 0.35,
+    'C2H6': 0.65,
+}
 # # temperature [K]
-# T = 100
-# # pressure [MPa]
-# P = 0.4119
+T = 373.15
+# # pressure [bar]
+P = 30
 
 # model input
 model_input = {
