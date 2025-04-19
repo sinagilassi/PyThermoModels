@@ -75,8 +75,8 @@ phase = "VAPOR"
 
 # feed spec
 N0s = {
-    'N2': 0.50,
-    'CH4': 0.50
+    'N2': 0.40,
+    'CH4': 0.60,
 }
 
 # temperature [K]
@@ -92,7 +92,7 @@ P = 30
 # model input
 model_input = {
     "feed-specification": N0s,
-    "pressure": [P, 'MPa'],
+    "pressure": [P, 'bar'],
     "temperature": [T, 'K'],
 }
 
