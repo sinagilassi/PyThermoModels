@@ -7,6 +7,7 @@ import math
 # ! eos names
 PENG_ROBINSON = "PR"
 SOAVE_REDLICH_KWONG = "SRK"
+REDLICH_KWONG = "RK"
 VAN_DER_WAALS = "VDW"
 
 # ! vle models

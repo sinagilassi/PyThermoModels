@@ -5,6 +5,7 @@
         "eoscore",
         "eosmanager",
         "equationsource",
+        "ftol",
         "Margules",
         "NRTL",
         "poynting",
@@ -18,6 +19,7 @@
         "thermodb",
         "thermodbhub",
         "UNIQUAC",
-        "Vsat"
+        "Vsat",
+        "xtol"
     ]
 }

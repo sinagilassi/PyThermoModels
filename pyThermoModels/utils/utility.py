@@ -5,7 +5,7 @@
 import numpy as np
 # internal
 from ..configs import ROUND_FUN_ACCURACY
-from ..configs import PENG_ROBINSON, SOAVE_REDLICH_KWONG, VAN_DER_WAALS
+from ..configs import PENG_ROBINSON, SOAVE_REDLICH_KWONG, VAN_DER_WAALS, REDLICH_KWONG
 
 
 def roundNum(value, ACCURACY=ROUND_FUN_ACCURACY):
@@ -86,6 +86,13 @@ def eos_model_name(model_name):
 
             elif model_name == 'VDW':
                 model_name_set = VAN_DER_WAALS
+
+            # RK
+            elif model_name == 'REDLICH_KWONG' or model_name == 'REDLICH-KWONG':
+                model_name_set = REDLICH_KWONG
+
+            elif model_name == 'RK':
+                model_name_set = REDLICH_KWONG
 
             else:
                 raise Exception('Invalid equation of state name!')

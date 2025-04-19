@@ -101,13 +101,13 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Calculating the Fugacity failed!, ", e)
 
     def cal_fugacity(self,
-                     model_name: Literal['SRK', 'PR', 'VdW'],
+                     model_name: Literal['SRK', 'PR', 'RK', 'VdW'],
                      model_input: Dict,
                      model_source: Dict,
                      solver_method: Literal['ls',
-                                            'newton', 'fsolve'] = 'ls',
-                     liquid_fugacity_mode: Literal['EOS'] = 'EOS',
-                     **kwargs) -> Tuple:
+                                            'newton', 'fsolve', 'root'] = 'ls',
+                     liquid_fugacity_mode: Literal['EOS', 'Poynting'] = 'EOS',
+                     **kwargs) -> Dict:
         '''
         Starts calculating fugacity for the single component
 
@@ -118,14 +118,16 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson
                 - `VdW`: Van der Waals
+                - `RK`: Redlich-Kwong
         model_input: dict
             model input
                 - `phase` (Optional): str, `VAPOR`: vapor phase, `LIQUID`: liquid phase, `VAPOR-LIQUID`: vapor-liquid phase, `SUPERCRITICAL`: supercritical phase
                 - `pressure`: list, pressure and a unit, such as `[1.2*1e5, 'Pa']`
                 - `temperature`: list, temperature and a unit, such as `[300, 'K']`
         solver_method: str
-            solver method,
-                - `ls`: least square method
+            solver method as:
+                - `ls`: least square method (default)
+                - `root`: root method
                 - `newton`: newton method
                 - `fsolve`: fsolve method
         model_source: dict
@@ -142,8 +144,8 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
         Returns
         -------
-        res: tuple
-            compressibility factor (Z), fugacity coefficient (phi), eos parameters, and fugacity parameters
+        res: Dict
+            results of fugacity calculation
 
         Notes
         -----
@@ -151,6 +153,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             - `ls`: least square method
             - `newton`: newton method
             - `fsolve`: fsolve method
+            - `root`: root method (default)
 
         ### root_analysis_set:
 
@@ -202,7 +205,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
         # fugacity calculation
         res = tm.cal_fugacity(
-            model_name=eos_model, model_input=model_input, model_source=model_source)
+            model_name=eos_model,
+            model_input=model_input,
+            model_source=model_source)
         ```
         '''
         try:
@@ -318,7 +323,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def check_eos_roots_single_component(self,
-                                         model_name: Literal['SRK', 'PR', 'VdW'],
+                                         model_name: Literal['SRK', 'PR', 'VdW', 'RK'],
                                          model_input: Dict,
                                          model_source: Dict,
                                          **kwargs) -> Dict:
@@ -328,12 +333,20 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         Parameters
         ----------
         model_name: str
-            eos model name, `SRK`: Soave-Redlich-Kwong, `PR`: Peng-Robinson,
+            eos model name,
+                - `SRK`: Soave-Redlich-Kwong
+                - `PR`: Peng-Robinson
+                - `RK`: Redlich-Kwong
+                - `VdW`: Van der Waals
         model_input: Dict
             model input as:
                 - component: str, component name
-                - phase: Optional[str], `VAPOR`: vapor phase, `LIQUID`: liquid phase, `VAPOR-LIQUID`: vapor-liquid phase, `SUPERCRITICAL`: supercritical phase
-                - pressure: list, pressure and unit, such as `[1.2*1e5, 'Pa']`
+                - phase: Optional[str] as:
+                    1. `VAPOR`: vapor phase,
+                    2. `LIQUID`: liquid phase,
+                    3. `VAPOR-LIQUID`: vapor-liquid phase,
+                    4. `SUPERCRITICAL`: supercritical phase
+                - pressure: list, pressure and unit, such as `[1.2, 'Pa']`
                 - temperature: list, temperature and unit, such as `[300, 'K']`
         model_source: Dict
             datasource and equationsource needed for fugacity calculation as:
@@ -438,20 +451,25 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def cal_fugacity_mixture(self,
-                             model_name: Literal['SRK', 'PR'],
+                             model_name: Literal['SRK', 'PR', 'RK', 'VdW'],
                              model_input: Dict,
                              model_source: Dict,
                              solver_method: Literal['ls',
-                                                    'newton', 'fsolve'] = 'ls',
-                             root_analysis_set: Optional[int] = None,
-                             liquid_fugacity_mode: Literal['EOS'] = 'EOS'):
+                                                    'newton', 'fsolve', 'root'] = 'ls',
+                             liquid_fugacity_mode: Literal['EOS',
+                                                           'Poynting'] = 'EOS',
+                             **kwargs) -> Dict:
         '''
         Starts calculating fugacity for the single and multi-component systems
 
         Parameters
         ----------
         model_name: str
-            eos model name, `SRK`: Soave-Redlich-Kwong, `PR`: Peng-Robinson,
+            eos model name,
+                - `SRK`: Soave-Redlich-Kwong
+                - `PR`: Peng-Robinson
+                - `RK`: Redlich-Kwong
+                - `VdW`: Van der Waals
         model_input: dict
             model input
                 - phase: str, `VAPOR`: vapor phase, `LIQUID`: liquid phase, `VAPOR-LIQUID`: vapor-liquid phase, `SUPERCRITICAL`: supercritical phase
@@ -459,18 +477,27 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 - pressure: list, pressure in SI unit, such as `[1.2*1e5, 'Pa']`
                 - temperature: list, temperature in SI unit, such as `[300, 'K']`
         solver_method: str
-            solver method, `ls`: least square method, `newton`: newton method, `fsolve`: fsolve method
+            solver method as:
+                - `ls`: least square method (default)
+                - `root`: root method
+                - `newton`: newton method
+                - `fsolve`: fsolve method
         model_source: dict
             datasource and equationsource needed for fugacity calculation
-        root_analysis_set: Optional[int]
-            root analysis set, `None`: default (calculation performed according to phase provided), `1`: 3 roots (VAPOR-LIQUID), `2`: 1 root (LIQUID), `3`: 1 root (VAPOR), `4`: 1 root (SUPERCRITICAL)
+                - datasource: dict, datasource for the component (`generated by PyThermoDB`)
+                - equationsource: dict, equationsource for the component (`generated by PyThermoDB`)
         liquid_fugacity_mode: str
-            liquid fugacity method, `Poynting`: Poynting method (soon), `EOS`: Equation of state (lowest Z)
+            liquid fugacity method as:
+                - `Poynting`: Poynting method (soon),
+                - `EOS`: Equation of state (lowest Z)
+        **kwargs: Optional[Dict]
+            additional arguments
+                - tolerance: float, tolerance for the calculation (default: 1e-1)
 
         Returns
         -------
-        res: tuple
-            compressibility factor (Z), fugacity coefficient (phi), eos parameters, and fugacity parameters
+        res: Dict
+            results of fugacity calculation
 
         Notes
         -----
@@ -532,6 +559,10 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         ```
         '''
         try:
+            # SECTION: keywords
+            # tolerance
+            tolerance = kwargs.get('tolerance', 1e-1)
+
             # SECTION: set input parameters
             # eos
             eos_model = model_name.upper()
@@ -656,11 +687,12 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def check_eos_roots_multi_component(self,
-                                        model_name: Literal['SRK', 'PR'],
+                                        model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
                                         model_input: Dict,
                                         model_source: Dict,
                                         bubble_point_pressure_mode: Literal["Raoult"] = "Raoult",
-                                        dew_point_pressure_mode: Literal["Raoult"] = "Raoult") -> List[Dict]:
+                                        dew_point_pressure_mode: Literal["Raoult"] = "Raoult",
+                                        **kwargs) -> List[Dict]:
         '''
         Check eos roots for the multi-components at different temperature and pressure. To do so, the bubble point and dew point pressure are calculated using Raoult's law. Assuming that the mixture is ideal, the bubble point pressure is equal to the vapor pressure of the component at the bubble point temperature. The dew point pressure is equal to the vapor pressure of the component at the dew point temperature.
 
@@ -670,8 +702,13 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             eos model name,
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson,
+                - `RK`: Redlich-Kwong
+                - `VdW`: Van der Waals
         model_input: Dict
             model input
+                - feed-specification: dict, such as `{'CO2': 1.0}` or `{'CO2': 0.5, 'N2': 0.5}`
+                - pressure: list, pressure and unit, such as `[1.2*1e5, 'Pa']`
+                - temperature: list, temperature and unit, such as `[300, 'K']`
         model_source: Dict
             datasource and equationsource needed for fugacity calculation
                 datasource: dict, datasource for the component (`generated by PyThermoDB`)
@@ -706,6 +743,10 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
         '''
         try:
+            # SECTION: keywords
+            # tolerance
+            tolerance = kwargs.get('tolerance', 1e-1)
+
             # SECTION: set input parameters
             # NOTE: eos model
             eos_model = model_name.upper()
@@ -795,10 +836,11 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             res = EOSUtilsC.eos_root_analysis(P,
                                               T,
                                               components,
+                                              tolerance=tolerance,
                                               bubble_point_pressure_mode=bubble_point_pressure_mode,
                                               dew_point_pressure_mode=dew_point_pressure_mode,
                                               mole_fraction=mole_fraction)
-
+            # res
             return res
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)

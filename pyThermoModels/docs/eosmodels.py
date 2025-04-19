@@ -496,6 +496,51 @@ class EOSModels():
 
         return fZ
 
+    def eos_equation_coefficient(self, params):
+        '''
+        Build a list of coefficients for the cubic equation
+
+        Parameters
+        ----------
+        params : dict
+            parameters
+
+        Returns
+        -------
+        list
+              coefficients of the cubic equation
+
+        Notes
+        -----
+        params:
+        - sigma:
+        - epsilon:
+        - omega:
+        - psi:
+        - Tr:
+        - Pr:
+        - alpha:
+        - a:
+        - b:
+        - beta:
+        - q:
+        - P:
+        - T:
+        '''
+        # model parameters
+        sigma = params['sigma']
+        epsilon = params['epsilon']
+        beta = params['beta']
+        q = params['q']
+
+        # function coefficient
+        a0 = 1
+        a1 = (sigma+epsilon)*beta - (1+beta)
+        a2 = beta*(q + epsilon*sigma*beta - (1+beta)*(sigma+epsilon))
+        a3 = (beta**2)*(q + (1+beta)*epsilon*sigma)
+
+        return [a0, a1, a2, a3]
+
     def eos_equation_mixture(self, x, params):
         """
         Build a polynomial 3rd degree
@@ -518,3 +563,22 @@ class EOSModels():
         # set
         fZSet = x**3 + alpha*(x**2) + beta*x + gamma
         return fZSet
+
+    def eos_equation_coefficient_mixture(self, params):
+        """
+        Build a list of coefficients for the cubic equation
+
+        Parameters
+        ----------
+        params : dict
+            parameters
+
+        Returns
+        -------
+        list
+            coefficients of the cubic equation
+        """
+        # print(data)
+        alpha, beta, gamma = params['alpha'], params['beta'], params['gamma']
+
+        return [1, alpha, beta, gamma]

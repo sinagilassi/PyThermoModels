@@ -62,32 +62,37 @@ datasource, equationsource = thub1.build()
 # ! CALCULATE FUGACITY FOR MULTI COMPONENT
 # =======================================
 # NOTE: Reference
-# Example 10.7 page 378 in Introduction to Chemical Engineering Thermodynamics
+# Example 10.7 (page 378) in Introduction to Chemical Engineering Thermodynamics
 # by J.M. Smith, H.C. Van Ness, M.M. Abbott
+# Example 15.2 (page 587) in Introductory Chemical Engineering Thermodynamics
 
 # model input
 # eos model
-eos_model = 'SRK'
+eos_model = 'PR'
 
 # component phase
 phase = "VAPOR"
 
 # feed spec
 N0s = {
-    'N2': 0.40,
-    'CH4': 0.60
+    'N2': 0.50,
+    'CH4': 0.50
 }
 
 # temperature [K]
 T = 200
-
 # pressure [bar]
 P = 30
+
+# # temperature [K]
+# T = 100
+# # pressure [MPa]
+# P = 0.4119
 
 # model input
 model_input = {
     "feed-specification": N0s,
-    "pressure": [P, 'bar'],
+    "pressure": [P, 'MPa'],
     "temperature": [T, 'K'],
 }
 
@@ -98,15 +103,6 @@ model_source = {
 }
 
 # =======================================
-# ! EOS ROOT ANALYSIS
-# =======================================
-# eos root analysis
-# res_ = tm.check_eos_roots_multi_component(model_name=eos_model,
-#                                           model_input=model_input,
-#                                           model_source=model_source)
-# print(res_)
-
-# =======================================
 # ! CHECK REFERENCES
 # =======================================
 # check reference
@@ -114,19 +110,19 @@ model_source = {
 # print(res_)
 
 # =======================================
+# ! EOS ROOT ANALYSIS
+# =======================================
+# eos root analysis
+res_ = tm.check_eos_roots_multi_component(model_name=eos_model,
+                                          model_input=model_input,
+                                          model_source=model_source)
+print(res_)
+
+# =======================================
 # ! FUGACITY CALCULATION
 # =======================================
-# method 2
+# calculate fugacity
 res = tm.cal_fugacity_mixture(model_name=eos_model,
-                              model_input=model_input, model_source=model_source)
-Z, Phi, eos_parms, phi_parms = res
-# res
-print("Z")
-print(Z)
-print('-'*50)
-print(f"Phi: {Phi}")
-print('-'*50)
-# print(eos_parms)
-# print('-'*50)
-print(phi_parms)
-print('-'*50)
+                              model_input=model_input,
+                              model_source=model_source)
+print(res)

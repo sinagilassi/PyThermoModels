@@ -283,7 +283,7 @@ class EOSUtils:
                 BuPoPr = float(Xi@VaPri)
 
                 # NOTE: dew point pressure calculation
-                DePoPr = float(Yi@(1/VaPri))
+                DePoPr = float(1/(Yi@(1/VaPri)))
 
                 # NOTE: compare with system pressure
                 if P > BuPoPr:

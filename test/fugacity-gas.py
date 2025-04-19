@@ -98,30 +98,38 @@ print(VaPr)
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
 # NOTE:
+# Example 3.9 (page 100), Introduction to Chemical Engineering Thermodynamics
+# by J.M. Smith, H.C. Van Ness, M.M. Abbott
+
 # Example 10.9, Introduction to Chemical Engineering Thermodynamics
+
 
 # model input
 # eos model
-eos_model = 'PR'
+eos_model = 'SRK'
 
 # component phase
 phase = "VAPOR"
 
 # component
 component = "n-butane"
-
-# temperature
+# temperature [K]
 T = 350
+# pressure bar
+P = 9.653800
 
-# pressure
-P = 9.453800
+component = "1-butene"
+# temperature [C]
+T = 200
+# pressure bar
+P = 70
 
 # model input
 model_input = {
     # "phase": phase,
     "component": component,
     "pressure": [P, 'bar'],
-    "temperature": [T, 'K'],
+    "temperature": [T, 'C'],
 }
 
 # model source
@@ -140,7 +148,9 @@ model_source = {
 # NOTE: eos root analysis
 # ------------------------------------------------
 res = tm.check_eos_roots_single_component(
-    model_name=eos_model, model_input=model_input, model_source=model_source)
+    model_name=eos_model,
+    model_input=model_input,
+    model_source=model_source)
 print(res)
 
 # ------------------------------------------------
@@ -148,16 +158,7 @@ print(res)
 # ------------------------------------------------
 # NOTE: gas fugacity calculation method
 res = tm.cal_fugacity(
-    model_name=eos_model, model_input=model_input, model_source=model_source)
-
-Z, Phi, eos_parms, phi_parms = res
-# res
-print("Z")
-print(Z)
-print('-'*50)
-print(f"Phi: {Phi}")
-print('-'*50)
-# print(eos_parms)
-# print('-'*50)
-print(phi_parms)
-print('-'*50)
+    model_name=eos_model,
+    model_input=model_input,
+    model_source=model_source)
+print(res)
