@@ -4,9 +4,10 @@
 # import packages/modules
 import numpy as np
 from math import pow, exp, log, sqrt
+from typing import Optional, List, Dict, Union
 import pycuc
 # local
-from ..configs import R_CONST
+from ..configs import R_CONST, PREDEFINED_PARAMETERS
 
 
 class EOSModels():
@@ -257,7 +258,7 @@ class EOSModels():
         # res
         return res
 
-    def eos_parameters_mixture(self, P, T, amix, bmix, aij,
+    def eos_parameters_mixture(self, P, T, amix, bmix, aij, A_mix, B_mix,
                                mixture_name: str, eos_model: str):
         '''
         Updates the single params with mixing value of a and b
@@ -274,6 +275,10 @@ class EOSModels():
             mixing b factor
         aij : float
             mixing a[i,j]
+        A_mix : float
+            mixing A factor
+        B_mix : float
+            mixing B factor
         mixture_name : str
             name of the mixture
         eos_model : str
@@ -318,10 +323,12 @@ class EOSModels():
                 raise Exception("Unknown equation of state method!")
 
             params['A'] = A
+            params['A_mix'] = A_mix
 
             # B
             B = bmix*(P)/(R*T)
             params['B'] = B
+            params['B_mix'] = B_mix
 
             # method
             params['eos-model'] = eos_model
@@ -351,9 +358,9 @@ class EOSModels():
 
         Returns
         -------
-        amix : float
+        a_mix : float
             mixing a
-        bmix : float
+        b_mix : float
             mixing b
         aij : numpy array
             mixing a[i,j]
@@ -374,33 +381,80 @@ class EOSModels():
         else:
             kij = k
 
-        # ai/bi
+        # ai,bi, Ai,Bi
         ai = np.zeros(rNo)
         bi = np.zeros(rNo)
+        Ai = np.zeros(rNo)
+        Bi = np.zeros(rNo)
 
         # extract data
         for i in range(rNo):
             ai[i] = params_list[i]['a']
             bi[i] = params_list[i]['b']
+            Ai[i] = params_list[i]['A']
+            Bi[i] = params_list[i]['B']
+
+        # NOTE: Attraction parameter amix
+        a_ij = self.__aij(ai, kij)
+        A_ij = self.__aij(Ai, kij)
+
+        # NOTE: Calculate a_mix
+        a_mix = 0.0
+        A_mix = 0.0
+
+        # looping through the matrix
+        for i in range(rNo):
+            for j in range(rNo):
+                a_mix += xi[i] * xi[j] * a_ij[i, j]
+                A_mix += xi[i] * xi[j] * A_ij[i, j]
+
+        # NOTE: Covolume parameter
+        # bmix
+        b_mix = np.dot(xi, bi)
+        # Bmix
+        B_mix = np.dot(xi, Bi)
+
+        # res
+        return a_mix, b_mix, a_ij, A_mix, B_mix
+
+    def __aij(self, ai: np.ndarray, k: Optional[np.ndarray] = None):
+        '''
+        calculate aij for mixture using Van der Waals mixing rules
+
+        Parameters
+        ----------
+        ai : numpy array
+            1D array of pure component attraction parameter (a), default is empty
+        k : numpy array, optional
+            2D array of binary interaction parameter (BIP), default is empty
+
+        Returns
+        -------
+        aij : numpy array
+            mixing aij[i,j]
+        '''
+        # record no
+        rNo = len(ai)
+
+        # NOTE: binary interaction parameter (BIP) with a symmetric property
+        # ki
+        if k is None:
+            kij = np.zeros((rNo, rNo))
+        else:
+            kij = k
 
         # NOTE: Attraction parameter
-        # amix
+        # aij
         aij = np.zeros((rNo, rNo))
+
+        # looping through the matrix
         for i in range(rNo):
             for j in range(rNo):
                 if i != j:
                     aij[i, j] = (1-kij[i, j])*sqrt(ai[i]*ai[j])
 
-        _xiaij_0 = xi*aij
-        _xiaij_1 = np.sum(_xiaij_0, axis=1)
-        amix = np.dot(xi, _xiaij_1)
-
-        # NOTE: Covolume parameter
-        # bmix
-        bmix = np.dot(xi, bi)
-
         # res
-        return amix, bmix, aij
+        return aij
 
     def eos_alpha(self, B, eosNameSet):
         """ calculate alpha in f(Z) """
@@ -408,6 +462,7 @@ class EOSModels():
         selectEOS = {
             "VDW": lambda B: -1 - B,
             "SRK": lambda B: -1,
+            "RK": lambda B: -1,
             "PR": lambda B: -1 + B,
         }
         # res
@@ -421,6 +476,7 @@ class EOSModels():
         selectEOS = {
             "VDW": lambda A, B: A,
             "SRK": lambda A, B: A - B - np.power(B, 2),
+            "RK": lambda A, B: A - B - np.power(B, 2),
             "PR": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
         }
         # res
@@ -434,6 +490,7 @@ class EOSModels():
         selectEOS = {
             "VDW": lambda A, B: -A * B,
             "SRK": lambda A, B: -A * B,
+            "RK": lambda A, B: -A * B,
             "PR": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
         }
         # res

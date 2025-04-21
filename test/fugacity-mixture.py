@@ -75,7 +75,7 @@ datasource, equationsource = thub1.build()
 
 # model input
 # eos model
-eos_model = 'SRK'
+eos_model = 'PR'
 
 # component phase
 phase = "VAPOR"
@@ -137,5 +137,5 @@ print(res_)
 # calculate fugacity
 res = tm.cal_fugacity_mixture(model_name=eos_model,
                               model_input=model_input,
-                              model_source=model_source)
+                              model_source=model_source, solver_method='ls')
 print(res)

@@ -36,3 +36,8 @@ Tstp = 273.15
 
 # reference temperature
 Tref = Tstp + 25.00
+
+# predefined parameters
+PREDEFINED_PARAMETERS = {
+    "kij": []
+}

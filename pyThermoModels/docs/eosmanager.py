@@ -102,11 +102,14 @@ class EOSManager(EOSModels):
             xi = np.array(xi)
 
             # mixture a and b
-            amix, bmix, aij = self.eos_mixing_rule(xi, _eos_params)
+            amix, bmix, aij, A_mix, B_mix = self.eos_mixing_rule(
+                xi, _eos_params)
 
             # new params *** mixture ***
             _params_mixture = self.eos_parameters_mixture(
-                P, T, amix, bmix, aij, mixture_name, eos_model)
+                P, T, amix, bmix, aij,
+                A_mix, B_mix,
+                mixture_name, eos_model)
             # set
             _eos_params.append(_params_mixture)
             _eos_params_comp['mixture'] = _params_mixture
@@ -537,6 +540,9 @@ class EOSManager(EOSModels):
             # component number
             N = len(components)
 
+            # mole fraction
+            yi = np.array(yi)
+
             # fugacity coefficient
             phi = []
 
@@ -545,6 +551,8 @@ class EOSManager(EOSModels):
             # mix parameters
             A = _params_mix['A']
             B = _params_mix['B']
+            A_mix = _params_mix['A_mix']
+            B_mix = _params_mix['B_mix']
             # required parameters
             a = _params_mix['amix']
             b = _params_mix['bmix']
@@ -615,6 +623,9 @@ class EOSManager(EOSModels):
             # component number
             N = len(components)
 
+            # mole fraction
+            yi = np.array(yi)
+
             # fugacity coefficient
             phi = []
 
@@ -623,6 +634,8 @@ class EOSManager(EOSModels):
             # mix parameters
             A = _params_mix['A']
             B = _params_mix['B']
+            A_mix = _params_mix['A_mix']
+            B_mix = _params_mix['B_mix']
             # required parameters
             a = _params_mix['amix']
             b = _params_mix['bmix']
