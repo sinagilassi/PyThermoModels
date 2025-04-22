@@ -72,7 +72,7 @@ class NRTL:
             raise TypeError("components must be a list")
 
         # SECTION: Assign the parameters to instance variables
-        self.darasource = datasource
+        self.datasource = datasource
         self.equationsource = equationsource
         self.components = [components.strip() for components in components]
 
@@ -81,6 +81,19 @@ class NRTL:
         self.comp_num = len(components)
         # idx
         self.comp_idx = {components[i]: i for i in range(self.comp_num)}
+
+    def __repr__(self) -> str:
+        return """
+        The NRTL (`Non-Random Two-Liquid`) model - a thermodynamic framework used to describe the behavior of mixtures,
+        particularly in the context of phase equilibria and activity coefficients.
+
+        The NRTL model relies on several key parameters to describe the interactions between components in a mixture. These parameters are:
+        - Δg_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
+        - α_ij (non-randomness parameter): represents the non-randomness of the mixture [dimensionless].
+        - τ_ij (binary interaction parameter): represents the interaction energy between two molecules of different components [dimensionless].
+
+        Universal gas constant (R) is defined as 8.314 J/mol/K.
+        """
 
     def to_ij(self, data: TableMatrixData, prop_symbol: str,
               symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
@@ -800,15 +813,92 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in cal_Gij: {str(e)}")
 
-    def calculate_activity_coefficients(self, mole_fraction: Dict[str, float],
-                                        tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                        alpha_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                        calculation_mode: Literal['V1',
-                                                                  'V2'] = 'V1',
-                                        symbol_delimiter: Literal["|",
-                                                                  "_"] = "|",
-                                        message: Optional[str] = None,
-                                        res_format: Literal['dict', 'str', 'json'] = 'dict') -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
+    def cal(self,
+            model_input: Dict,
+            calculation_mode: Literal['V1', 'V2'] = 'V1',
+            symbol_delimiter: Literal["|", "_"] = "|",
+            message: Optional[str] = None,
+            res_format: Literal['dict', 'str', 'json'] = 'dict',
+            **kwargs):
+        '''
+        Calculate activity coefficients for a multi-component mixture using the NRTL model.
+
+        Parameters
+        ----------
+        model_input: Dict
+            Dictionary of model input values where keys are parameter names and values are their respective values.
+                - `mole_fraction`: Dict[str, float]
+                    Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
+                - `tau_ij`: TableMatrixData | np.ndarray | Dict[str, float]
+                    Interaction parameters (tau_ij) between component i and j.
+                - `alpha_ij`: TableMatrixData | np.ndarray | Dict[str, float]
+                    Non-randomness parameters (alpha_ij) between component i and j.
+        calculation_mode: Literal['V1', 'V2']
+            Mode of calculation. If 'V1', use the first version of the NRTL model. If 'V2', use the second version.
+        symbol_delimiter: Literal["|", "_"]
+            Delimiter for the component id. Default is "|".
+        message: Optional[str]
+            Message to be displayed. Default is None.
+        res_format: Literal['dict', 'str', 'json']
+            Format of the result. Default is 'dict'.
+        **kwargs: Optional
+            Additional keyword arguments for the calculation.
+
+        Returns
+        -------
+        res: Dict[str, float | Dict]
+            Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+
+        Examples
+        --------
+        >>> model_input = {
+        ...     'mole_fraction': {'A': 0.5, 'B': 0.5},
+        ...     'tau_ij': np.array([[0, 1], [1, 0]]),
+        ...     'alpha_ij': np.array([[0, 0.5], [0.5, 0]])
+        ... }
+        >>> calculation_mode = 'V1'
+        >>> message = 'Calculating activity coefficients'
+        >>> result = cal(model_input, calculation_mode, message)
+        >>> print(result)
+        '''
+        try:
+            # SECTION: check
+            if not isinstance(model_input, dict):
+                raise TypeError("model_input must be dict")
+
+            # SECTION: check keys
+            required_keys = [
+                'mole_fraction', 'tau_ij', 'alpha_ij']
+            for key in required_keys:
+                if key not in model_input:
+                    raise KeyError(f"{key} is required in model_input")
+
+            # SECTION: get values
+            mole_fraction = model_input['mole_fraction']
+            tau_ij_data = model_input['tau_ij']
+            alpha_ij_data = model_input['alpha_ij']
+
+            # SECTION: calculate activity coefficients
+            return self.__calculate_activity_coefficients(
+                mole_fraction=mole_fraction,
+                tau_ij_data=tau_ij_data,
+                alpha_ij_data=alpha_ij_data,
+                calculation_mode=calculation_mode,
+                symbol_delimiter=symbol_delimiter,
+                message=message,
+                res_format=res_format
+            )
+        except Exception as e:
+            raise Exception(f"Error in launch_calculation: {str(e)}")
+
+    def __calculate_activity_coefficients(self,
+                                          mole_fraction: Dict[str, float],
+                                          tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
+                                          alpha_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
+                                          calculation_mode: Literal['V1', 'V2'],
+                                          symbol_delimiter: Literal["|", "_"],
+                                          message: Optional[str],
+                                          res_format: Literal['dict', 'str', 'json']) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
         """
         Calculate activity coefficients for a multicomponent mixture using the NRTL model.
 
@@ -929,9 +1019,13 @@ class NRTL:
             else:
                 raise ValueError("calculation_mode not supported!")
 
+            # set the activity coefficients float
+            AcCo_i = [float(AcCo_i[i]) for i in range(comp_num)]
+
             # SECTION
             # init the activity coefficients
-            AcCo_i_comp = {components[i]: AcCo_i[i] for i in range(comp_num)}
+            AcCo_i_comp = {components[i]: float(
+                AcCo_i[i]) for i in range(comp_num)}
 
             # SECTION: prepare result
             # input values
@@ -1157,7 +1251,7 @@ class NRTL:
             # SECTION: set result format
             res = {
                 "property_name": "Excess Molar Gibbs Free Energy",
-                "value": gE_RT,
+                "value": float(gE_RT),
                 "unit": 1,
                 "symbol": "ExMoGiFrEn",
                 'message': message

@@ -2,6 +2,7 @@
 import os
 from rich import print
 import pyThermoModels as ptm
+from pyThermoModels import NRTL, UNIQUAC
 import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
 
@@ -26,13 +27,6 @@ thermodb_nrtl_1 = ptdb.load_thermodb(nrtl_path)
 # check
 print(thermodb_nrtl_1.check())
 
-# ========================================
-# ! INITIALIZE PYTHERMOMODELS
-# ========================================
-tm = ptm.init()
-# log
-print("tm: ", tm)
-
 # =======================================
 # SECTION: THERMODB LINK CONFIGURATION
 # =======================================
@@ -54,35 +48,31 @@ thub1.config_thermodb_rule(thermodb_config_file)
 datasource, equationsource = thub1.build()
 
 # =======================================
-# ! CALCULATE ACTIVITY
+# NOTE: INITIALIZE ACTIVITY
 # =======================================
 # SECTION: configure activity model
+# components
+components = ['ethanol', 'butyl-methyl-ether']
+
 # model input
 activity_model = 'NRTL'
-
-# NOTE: Example: Ethanol-Butyl-Methyl-Ether
-# feed spec
-N0s = {
-    'ethanol': 0.4,
-    'butyl-methyl-ether': 0.6
-}
-# # temperature [K]
-T = 373.15
-# # pressure [bar]
-P = 30
-
-# SECTION: model input
-model_input = {
-    "feed-specification": N0s,
-    "pressure": [P, 'bar'],
-    "temperature": [T, 'K'],
-}
 
 # SECTION: model source
 model_source = {
     "datasource": datasource,
     "equationsource": equationsource
 }
+
+# activity model
+activity = ptm.activity(
+    components=components,
+    model_name=activity_model,
+    model_source=model_source,)
+print(activity)
+
+# select nrtl
+activity_nrtl = activity.nrtl
+print(activity_nrtl)
 
 # =======================================
 # NOTE CHECK REFERENCES
@@ -91,11 +81,64 @@ model_source = {
 # res_ = tm.check_activity_reference(activity_model)
 # print(res_)
 
-# =======================================
+# ========================================
 # NOTE ACTIVITY CALCULATION
-# =======================================
-# calculate fugacity
-res = tm.cal_activity(model_name=activity_model,
-                      model_input=model_input,
-                      model_source=model_source)
-print(res)
+# ========================================
+# NOTE: Example: Ethanol-Butyl-Methyl-Ether
+
+# feed spec
+mole_fraction = {
+    'ethanol': 0.4,
+    'butyl-methyl-ether': 0.6
+}
+
+# NOTE: non-randomness parameters
+non_randomness_parameters = thermodb_nrtl_1.select('non-randomness-parameters')
+print(type(non_randomness_parameters))
+
+# dg_ij
+dg_ij = non_randomness_parameters.ijs(
+    f"dg | {components[0]} | {components[1]}")
+print(type(dg_ij))
+print(dg_ij)
+
+# alpha_ij
+alpha_ij = non_randomness_parameters.ijs(
+    f"alpha | {components[0]} | {components[1]}")
+print(type(alpha_ij))
+print(alpha_ij)
+
+# NOTE: operating conditions
+# temperature [K]
+T = 323.15
+# pressure [bar]
+P = 30
+
+# NOTE: calculate the interaction parameter matrix (tau_ij)
+tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(temperature=T, dg_ij=dg_ij)
+print(f"tau_ij: {tau_ij}")
+print(f"tau_ij_comp: {tau_ij_comp}")
+
+# SECTION: model input
+model_input = {
+    "mole_fraction": mole_fraction,
+    "tau_ij": tau_ij,
+    "alpha_ij": alpha_ij
+}
+
+# NOTE: calculate activity
+res_, others_ = activity_nrtl.cal(model_input=model_input)
+print(res_)
+
+# print the results
+print(f"res_1: {res_}")
+G_ij = others_['G_ij']
+print(f"G_ij: {G_ij}")
+print("-" * 50)
+
+# excess gibbs free energy
+# method 1
+gibbs_energy = activity_nrtl.excess_gibbs_free_energy(
+    mole_fraction=mole_fraction, G_ij=G_ij, tau_ij=tau_ij)
+print(f"excess gibbs free energy method 1: {gibbs_energy}")
+print("-" * 50)

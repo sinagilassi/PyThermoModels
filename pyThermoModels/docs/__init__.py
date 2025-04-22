@@ -5,3 +5,5 @@ from .fugacitycore import FugacityCore
 from .eosutils import EOSUtils
 from .thermolib import ThermoLib
 from .activitycore import ActivityCore
+from .nrtl import NRTL
+from .uniquac import UNIQUAC
