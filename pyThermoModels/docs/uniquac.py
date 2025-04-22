@@ -11,28 +11,37 @@ from pyThermoDB import (
 )
 
 
-class NRTL:
+class UNIQUAC:
     """
-    The NRTL (`Non-Random Two-Liquid`) model - a thermodynamic framework used to describe the behavior of mixtures,
-    particularly in the context of phase equilibria and activity coefficients.
+    The UNIQUAC (`Universal Quasi-Chemical`) model - a thermodynamic framework used to describe the behavior of mixtures,
+    particularly in the context of phase equilibria and activity coefficients
 
-    The NRTL model relies on several key parameters to describe the interactions between components in a mixture. These parameters are:
-    - Δg_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
-    - α_ij (non-randomness parameter): represents the non-randomness of the mixture [dimensionless].
+    To apply the UNIQUAC model, you'll need the following parameters:
+
+    **Pure Component Parameters**
+    - r_i (volume parameter): represents the volume of a molecule in the mixture.
+    - q_i (surface area parameter): represents the surface area of a molecule in the mixture.
+
+    **Binary Interaction Parameters**
+    - Δu_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
     - τ_ij (binary interaction parameter): represents the interaction energy between two molecules of different components [dimensionless].
 
     Universal gas constant (R) is defined as 8.314 J/mol/K.
+
+    Z is a constant used in the model, default value is 10.0.
     """
 
     # universal gas constant [J/mol/K]
     R_CONST = 8.314
+    # constant
+    Z = 10.0
 
     def __init__(self,
                  components: List[str],
                  datasource: Dict = {},
                  equationsource: Dict = {}):
         '''
-        Initialize the NRTL (`Non-Random Two-Liquid`) model used to calculate activity coefficients in liquid mixtures.
+        Initialize the activity model, UNIQUAC (`Universal Quasi-Chemical`) used to calculate activity coefficients in liquid mixtures.
 
         Parameters
         ----------
@@ -51,12 +60,28 @@ class NRTL:
 
         Notes
         -----
-        The NRTL model needs the following parameters:
+        The model needs the following parameters:
         - datasource: Data source for the model
         - equationsource: Equation source for the model
         - components: List of component names in the mixture
 
         The component names define the order of the parameters in the model. The first component in the list is component 1, the second is component 2, and so on.
+
+        Universal gas constant is defined as 8.314 J/mol/K.
+
+        Z is a constant used in the model, default value is 10.0.
+
+        UNIQUAC model parameters are defined as:
+        - dU_ij: Interaction energy parameter [J/mol]
+        - tau_ij: Interaction parameter [dimensionless]
+
+        The tau_ij equation is defined as:
+        - tau_ij = exp(-dU_ij / (R * T))
+        - tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T
+        - tau_ij = exp(a_ij + b_ij/T)
+
+        The dU_ij equation is defined as:
+        - dU_ij = a_ij + b_ij * T + c_ij * T^2
         '''
         # SECTION:
         # Check datasource
@@ -102,13 +127,9 @@ class NRTL:
             Parameter matrix (numpy array).
         dict_ij : dict
             Dictionary of parameters where keys are component pairs and values are their respective values.
-
-        Notes
-        -----
-        1.
         """
         try:
-            # NOTE: check dg_ij is TableMatrixData
+            # NOTE: check dU_ij is TableMatrixData
             if not isinstance(data, TableMatrixData):
                 raise TypeError("dict_ij_src must be TableMatrixData")
 
@@ -145,6 +166,49 @@ class NRTL:
 
             # res
             return mat_ij, dict_ij
+        except Exception as e:
+            raise Exception(f"Error in extraction data: {str(e)}")
+
+    def to_i(self, data: Dict[str, float]):
+        """
+        Convert data to numpy array with respect to component id.
+
+        Parameters
+        ----------
+        data : Dict[str, float]
+            Parameter dictionary where keys are component names and values are their respective values.
+
+        Returns
+        -------
+        data_i : np.ndarray
+            Parameter array (numpy array) with respect to component id.
+        """
+        try:
+            # NOTE: check
+            if not isinstance(data, dict):
+                raise TypeError("data must be dict")
+
+            # Get the number of components
+            comp_num = self.comp_num
+
+            # Initialize
+            data_i = np.zeros(comp_num)
+
+            # Set the interaction energy parameter matrix
+            for i in range(comp_num):
+                # check if the component id is in the data dictionary
+                if self.components[i] not in data:
+                    raise KeyError(
+                        f"Component {self.components[i]} not found in data dictionary")
+
+                # val
+                val = data[self.components[i]]
+
+                # to matrix
+                data_i[i] = val
+
+            # res
+            return data_i
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
@@ -198,14 +262,55 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_matrix_ij(self, data: Dict[str, float], symbol_delimiter: Literal["|", "_"] = "|") -> np.ndarray:
+    def to_dict_i(self, data: List[float] | np.ndarray) -> Dict[str, float]:
+        """
+        Convert to dictionary (dict_i) according to the component id.
+
+        Parameters
+        ----------
+        data : List[float] | np.ndarray
+            Parameter list or numpy 1d array with respect to component id.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for the component id. Default is "|".
+
+        Returns
+        -------
+        dict_i : Dict[str, float]
+            Dictionary of parameters where keys are component pairs and values are their respective values.
+        """
+        try:
+            # NOTE: check
+            if not isinstance(data, np.ndarray) and not isinstance(data, list):
+                raise TypeError("data must be numpy array or list")
+
+            # Get the number of components
+            comp_num = self.comp_num
+
+            # Initialize
+            dict_i = {}
+
+            # Set the interaction energy parameter matrix
+            for i in range(comp_num):
+                # val
+                val = data[i]
+
+                # to dict
+                key_ = self.components[i].strip()
+                dict_i[key_] = val
+
+            # res
+            return dict_i
+        except Exception as e:
+            raise Exception(f"Error in extraction data: {str(e)}")
+
+    def to_matrix_ij(self, data: Dict[str, float] | List[float], symbol_delimiter: Literal["|", "_"] = "|") -> np.ndarray:
         """
         Convert to matrix (mat_ij) according to `the component id`.
 
         Parameters
         ----------
-        data : Dict[str, float]
-            Dictionary of parameters where keys are component pairs and values are their respective values.
+        data : Dict[str, float] | List[float]
+            Dictionary of parameters where keys are component pairs and values are their respective values or list of values according to the component id.
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
 
@@ -234,30 +339,44 @@ class NRTL:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
             # Set the interaction energy parameter matrix
-            for i in range(comp_num):
-                for j in range(comp_num):
-                    # val
-                    val = data[f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"]
+            # SECTION:
+            if isinstance(data, Dict):
+                for i in range(comp_num):
+                    for j in range(comp_num):
+                        # val
+                        val = data[f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"]
 
-                    # find the component id
-                    comp_id_i = self.comp_idx[self.components[i]]
-                    comp_id_j = self.comp_idx[self.components[j]]
+                        # find the component id
+                        comp_id_i = self.comp_idx[self.components[i]]
+                        comp_id_j = self.comp_idx[self.components[j]]
 
-                    # to matrix
-                    mat_ij[comp_id_i, comp_id_j] = val
+                        # to matrix
+                        mat_ij[comp_id_i, comp_id_j] = val
+            elif isinstance(data, List):
+                for i in range(comp_num):
+                    for j in range(comp_num):
+                        # val
+                        val = data[i][j]
+
+                        # find the component id
+                        comp_id_i = self.comp_idx[self.components[i]]
+                        comp_id_j = self.comp_idx[self.components[j]]
+
+                        # to matrix
+                        mat_ij[comp_id_i, comp_id_j] = val
 
             # res
             return mat_ij
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def cal_dg_ij_M1(self, temperature: float,
+    def cal_dU_ij_M1(self, temperature: float,
                      a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                      b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                      c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                      symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
         """
-        Calculate interaction energy parameter `dg_ij` matrix dependent of temperature.
+        Calculate interaction energy parameter `dU_ij` matrix dependent of temperature.
 
         Parameters
         ----------
@@ -274,16 +393,16 @@ class NRTL:
 
         Returns
         -------
-        dg_ij : np.ndarray
-            Interaction energy parameter `dg_ij` matrix for NRTL model.
-        dg_ij_comp : dict
-            Dictionary of interaction energy parameters where keys are component pairs and values are their respective dg_ij values.
+        dU_ij : np.ndarray
+            Interaction energy parameter `dU_ij` matrix for UNIQUAC model.
+        dU_ij_comp : dict
+            Dictionary of interaction energy parameters where keys are component pairs and values are their respective dU_ij values.
 
         Notes
         -----
         1. The interaction energy parameter matrix is calculated using the formula:
 
-            `dg_ij = a_ij + b_ij * T + c_ij * T^2`
+            `dU_ij = a_ij + b_ij * T + c_ij * T^2`
 
             where T is the temperature [K].
 
@@ -306,11 +425,11 @@ class NRTL:
             # Get the number of components
             comp_num = self.comp_num
 
-            # Initialize dg_ij matrix
-            dg_ij = np.zeros((comp_num, comp_num))
+            # Initialize dU_ij matrix
+            dU_ij = np.zeros((comp_num, comp_num))
 
-            # dg_ij components
-            dg_ij_comp = {}
+            # dU_ij components
+            dU_ij_comp = {}
 
             # check delimiter
             if symbol_delimiter == "|":
@@ -320,7 +439,7 @@ class NRTL:
             else:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
-            # SECTION: calculate dg_ij values
+            # SECTION: calculate dU_ij values
             if isinstance(a_ij, np.ndarray) and isinstance(b_ij, np.ndarray) and isinstance(c_ij, np.ndarray):
                 for i in range(comp_num):
                     for j in range(comp_num):
@@ -333,16 +452,16 @@ class NRTL:
                             val_ = a_ij[i, j] + b_ij[i, j] * \
                                 temperature + c_ij[i, j] * pow(temperature, 2)
                             # set
-                            dg_ij[i, j] = val_
+                            dU_ij[i, j] = val_
                             # set by name
-                            dg_ij_comp[key_] = val_
+                            dU_ij_comp[key_] = val_
                         else:
                             # set
-                            dg_ij[i, j] = 0
+                            dU_ij[i, j] = 0
                             # set by name
-                            dg_ij_comp[key_] = 0
+                            dU_ij_comp[key_] = 0
 
-            # SECTION: if dg_ij is dict
+            # SECTION: if dU_ij is dict
             elif isinstance(a_ij, dict) and isinstance(b_ij, dict) and isinstance(c_ij, dict):
                 for i in range(comp_num):
                     for j in range(comp_num):
@@ -359,15 +478,15 @@ class NRTL:
                             val_ = a_ij[key_] + b_ij[key_] * \
                                 temperature + c_ij[key_] * pow(temperature, 2)
                             # set
-                            dg_ij[comp_id_i, comp_id_j] = val_
+                            dU_ij[comp_id_i, comp_id_j] = val_
                             # set by name
-                            dg_ij_comp[key_] = val_
+                            dU_ij_comp[key_] = val_
                         else:
                             # set
-                            dg_ij[comp_id_i, comp_id_j] = 0
+                            dU_ij[comp_id_i, comp_id_j] = 0
                             # set by name
-                            dg_ij_comp[key_] = 0
-            # SECTION: if dg_ij is TableMatrixData
+                            dU_ij_comp[key_] = 0
+            # SECTION: if dU_ij is TableMatrixData
             elif isinstance(a_ij, TableMatrixData) and isinstance(b_ij, TableMatrixData) and isinstance(c_ij, TableMatrixData):
                 # convert to numpy array and dict
                 for i in range(comp_num):
@@ -389,36 +508,36 @@ class NRTL:
                         # set
                         if i != j:
                             # set
-                            dg_ij[comp_id_i, comp_id_j] = val_
+                            dU_ij[comp_id_i, comp_id_j] = val_
                             # set by name
-                            dg_ij_comp[key_comp] = val_
+                            dU_ij_comp[key_comp] = val_
                         else:
                             # set
-                            dg_ij[comp_id_i, comp_id_j] = 0
+                            dU_ij[comp_id_i, comp_id_j] = 0
                             # set by name
-                            dg_ij_comp[key_comp] = 0
+                            dU_ij_comp[key_comp] = 0
             else:
                 raise TypeError(
                     "a_ij, b_ij and c_ij must be numpy array or dict")
             # res
-            return dg_ij, dg_ij_comp
+            return dU_ij, dU_ij_comp
         except Exception as e:
-            raise Exception(f"Error in cal_dg_ij_M1: {str(e)}")
+            raise Exception(f"Error in cal_dU_ij_M1: {str(e)}")
 
-    def cal_tau_ij_M1(self, temperature: float, dg_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      dg_ij_symbol: Literal['dg', 'dg_ij'] = 'dg', R_CONST: float = 8.314,
+    def cal_tau_ij_M1(self, temperature: float, dU_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+                      dU_ij_symbol: Literal['dU', 'dU_ij'] = 'dU', R_CONST: float = 8.314,
                       symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
         """
-        Calculate interaction parameters `tau_ij` matrix for NRTL model.
+        Calculate interaction parameters `tau_ij` matrix for UNIQUAC model.
 
         Parameters
         ----------
         temperature : float
             Temperature in Kelvin [K].
-        dg_ij : np.ndarray | Dict[str, float] | TableMatrixData
-            Interaction energy parameter [J/mol] matrix where dg_ij[i][j] between component i and j.
-        dg_ij_symbol : str
-            Interaction energy parameter symbol. Default is 'dg'.
+        dU_ij : np.ndarray | Dict[str, float] | TableMatrixData
+            Interaction energy parameter [J/mol] matrix where dU_ij[i][j] between component i and j.
+        dU_ij_symbol : str
+            Interaction energy parameter symbol. Default is 'dU'.
         R_CONST : float
             Univeral gas constant [J/mol/K], default R_CONST = 8.314
         symbol_delimiter : Literal["|", "_"]
@@ -427,7 +546,7 @@ class NRTL:
         Returns
         -------
         tau_ij : np.ndarray
-            interaction parameters `tau_ij` matrix for NRTL model.
+            interaction parameters `tau_ij` matrix for UNIQUAC model.
         tau_ij_comp : dict
             Dictionary of interaction parameters where keys are component pairs and values are their respective tau_ij values.
 
@@ -435,20 +554,20 @@ class NRTL:
         -----
         1. The tau_ij matrix is calculated using the formula:
 
-            `tau_ij = dg_ij / (R * T)`
+            `tau_ij = exp(-dU_ij / (R * T))`
 
             where R is the universal gas constant [J/mol/K] and T is the temperature [K].
 
-        2. Interaction energy parameter symbol is `dg` for TableMatrixData as:
+        2. Interaction energy parameter symbol is `dU` for TableMatrixData as:
 
-        - `dg_{component_i}-{component_j}`
-        - `dg | {component_i} | {component_j}`.
+        - `dU_{component_i}-{component_j}`
+        - `dU | {component_i} | {component_j}`.
         """
         try:
             # check
-            if not isinstance(dg_ij, np.ndarray) and not isinstance(dg_ij, dict) and not isinstance(dg_ij, TableMatrixData):
+            if not isinstance(dU_ij, np.ndarray) and not isinstance(dU_ij, dict) and not isinstance(dU_ij, TableMatrixData):
                 raise TypeError(
-                    "dg_ij must be numpy array, dict or TableMatrixData")
+                    "dU_ij must be numpy array, dict or TableMatrixData")
 
             # Get the number of components
             comp_num = self.comp_num
@@ -471,8 +590,8 @@ class NRTL:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
             # Calculate tauij values
-            # SECTION: if dg_ij is numpy array
-            if isinstance(dg_ij, np.ndarray):
+            # SECTION: if dU_ij is numpy array
+            if isinstance(dU_ij, np.ndarray):
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -481,7 +600,8 @@ class NRTL:
                         # check
                         if i != j:
                             # val
-                            val_ = dg_ij[i, j] / (R_CONST * temperature)
+                            val_ = exp(-1*dU_ij[i, j] /
+                                       (R_CONST * temperature))
                             # set
                             tau_ij[i, j] = val_
                             # set by name
@@ -491,8 +611,8 @@ class NRTL:
                             tau_ij[i, j] = 0
                             # set by name
                             tau_ij_comp[key_] = 0
-            # SECTION: if dg_ij is dict
-            elif isinstance(dg_ij, dict):
+            # SECTION: if dU_ij is dict
+            elif isinstance(dU_ij, dict):
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -505,7 +625,8 @@ class NRTL:
                         # check
                         if i != j:
                             # val
-                            val_ = dg_ij[key_] / (R_CONST * temperature)
+                            val_ = exp(-1*dU_ij[key_] /
+                                       (R_CONST * temperature))
                             # set
                             tau_ij[comp_id_i, comp_id_j] = val_
                             # set by name
@@ -515,18 +636,18 @@ class NRTL:
                             tau_ij[comp_id_i, comp_id_j] = 0
                             # set by name
                             tau_ij_comp[key_] = 0
-            # SECTION: if dg_ij is TableMatrixData
-            elif isinstance(dg_ij, TableMatrixData):
+            # SECTION: if dU_ij is TableMatrixData
+            elif isinstance(dU_ij, TableMatrixData):
                 # convert to numpy array and dict
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
-                        key_ = f"{dg_ij_symbol}_{components[i]}_{components[j]}"
+                        key_ = f"{dU_ij_symbol}_{components[i]}_{components[j]}"
                         # dict
                         key_comp = f"{components[i]}{symbol_delimiter_set}{components[j]}"
 
                         # val
-                        val_ = dg_ij.ij(key_)
+                        val_ = dU_ij.ij(key_)
 
                         # component id
                         comp_id_i = self.comp_idx[components[i]]
@@ -535,7 +656,7 @@ class NRTL:
                         # set
                         if i != j:
                             # val
-                            val_ = val_ / (R_CONST * temperature)
+                            val_ = exp(-1*val_ / (R_CONST * temperature))
                             # set
                             tau_ij[comp_id_i, comp_id_j] = val_
                             # set by name
@@ -546,7 +667,7 @@ class NRTL:
                             # set by name
                             tau_ij_comp[key_comp] = 0
             else:
-                raise TypeError("dg_ij must be numpy array or dict")
+                raise TypeError("dU_ij must be numpy array or dict")
 
             return tau_ij, tau_ij_comp
         except Exception as e:
@@ -559,7 +680,7 @@ class NRTL:
                       d_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                       symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
         """
-        Calculate interaction parameters `tau_ij` matrix for NRTL model.
+        Calculate interaction parameters `tau_ij` matrix for UNIQUAC model.
 
         Parameters
         ----------
@@ -579,7 +700,7 @@ class NRTL:
         Returns
         -------
         tau_ij : np.ndarray
-            interaction parameters `tau_ij` matrix for NRTL model.
+            interaction parameters `tau_ij` matrix for UNIQUAC model.
         tau_ij_comp : dict
             Dictionary of interaction parameters where keys are component pairs and values are their respective tau_ij values.
 
@@ -587,7 +708,7 @@ class NRTL:
         -----
         1. The extended Antoine equation format is used to calculate the interaction parameters using the following formula:
 
-            `tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T`
+            `tau_ij = a_ij + b_ij / T + c_ij * ln(T) + d_ij * T`
 
         2. Interaction energy parameter symbol is `X` for TableMatrixData as:
 
@@ -656,7 +777,7 @@ class NRTL:
                             tau_ij[i, j] = 0
                             # set by name
                             tau_ij_comp[key_] = 0
-            # SECTION: if dg_ij is dict
+            # SECTION: if dU_ij is dict
             elif isinstance(a_ij, dict) and isinstance(b_ij, dict) and isinstance(c_ij, dict) and isinstance(d_ij, dict):
                 for i in range(comp_num):
                     for j in range(comp_num):
@@ -682,7 +803,7 @@ class NRTL:
                             tau_ij[comp_id_i, comp_id_j] = 0
                             # set by name
                             tau_ij_comp[key_] = 0
-            # SECTION: if dg_ij is TableMatrixData
+            # SECTION: if dU_ij is TableMatrixData
             elif isinstance(a_ij, TableMatrixData) and isinstance(b_ij, TableMatrixData) and isinstance(c_ij, TableMatrixData) and isinstance(d_ij, TableMatrixData):
                 # convert to numpy array and dict
                 for i in range(comp_num):
@@ -720,97 +841,19 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in cal_tauij: {str(e)}")
 
-    def cal_G_ij(self, tau_ij: np.ndarray, alpha_ij: np.ndarray, symbol_delimiter: Literal["|", "_"] = "|"):
-        """
-        Calculate non-randomness parameters `G_ij` matrix for NRTL model according to `the component id`.
-
-        Parameters
-        ----------
-        tau_ij : np.ndarray
-            Interaction parameters `tau_ij` matrix for NRTL model.
-        alpha_ij : np.ndarray
-            Non-randomness parameters [dimensionless] matrix where alpha_ij[i][j] between component i and j.
-        symbol_delimiter : Literal["|", "_"]
-            Delimiter for the component id. Default is "|".
-
-        Returns
-        -------
-        G_ij : np.ndarray
-            Non-randomness parameters `G_ij` matrix for NRTL model.
-        G_ij_comp : dict
-            Dictionary of non-randomness parameters where keys are component pairs and values are their respective G_ij values.
-
-        Notes
-        -----
-        The G_ij matrix is calculated using the formula:
-
-        `G_ij = exp(-alpha_ij * tau_ij)`
-
-        where alpha_ij is the non-randomness parameter and tau_ij is the interaction parameter.
-        """
-        try:
-            # check
-            if not isinstance(tau_ij, np.ndarray):
-                raise TypeError("tau_ij must be numpy array")
-
-            if not isinstance(alpha_ij, np.ndarray):
-                raise TypeError("alpha_ij must be numpy array")
-
-            # Get the number of components
-            comp_num = self.comp_num
-
-            # components
-            components = self.components
-
-            # Initialize Gij matrix
-            G_ij = np.ones((comp_num, comp_num))
-            # dict
-            G_ij_comp = {}
-
-            # check delimiter
-            if symbol_delimiter == "|":
-                symbol_delimiter_set = " | "
-            elif symbol_delimiter == "_":
-                symbol_delimiter_set = "_"
-            else:
-                raise ValueError("symbol_delimiter must be '|' or '_'")
-
-            # Calculate Gij values
-            for i in range(comp_num):
-                for j in range(comp_num):
-                    # key
-                    key_ = f"{components[i]}{symbol_delimiter_set}{components[j]}"
-
-                    # check
-                    if i != j:
-                        # val
-                        val_ = exp(-1 * alpha_ij[i, j] * tau_ij[i, j])
-                        # set
-                        G_ij[i, j] = val_
-                        # set by name
-                        G_ij_comp[key_] = val_
-                    else:
-                        # set
-                        G_ij[i, j] = 1
-                        # set by name
-                        G_ij_comp[key_] = 1
-
-            # res
-            return G_ij, G_ij_comp
-        except Exception as e:
-            raise Exception(f"Error in cal_Gij: {str(e)}")
-
-    def calculate_activity_coefficients(self, mole_fraction: Dict[str, float],
+    def calculate_activity_coefficients(self,
+                                        mole_fraction: Dict[str, float],
                                         tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                        alpha_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                        calculation_mode: Literal['V1',
-                                                                  'V2'] = 'V1',
+                                        r_i_data: List[float] | Dict[str, float],
+                                        q_i_data: List[float] | Dict[str, float],
+                                        Z: Optional[float | int] = None,
+                                        calculation_mode: Literal['V1'] = 'V1',
                                         symbol_delimiter: Literal["|",
                                                                   "_"] = "|",
                                         message: Optional[str] = None,
                                         res_format: Literal['dict', 'str', 'json'] = 'dict') -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
         """
-        Calculate activity coefficients for a multicomponent mixture using the NRTL model.
+        Calculate activity coefficients for a multicomponent mixture using the UNIQUAC model.
 
         Parameters
         -----------
@@ -818,12 +861,16 @@ class NRTL:
             Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
         temperature : float
             Temperature in Kelvin.
-        tau_ij_comp : TableMatrixData | np.ndarray
+        tau_ij_comp : TableMatrixData | np.ndarray | Dict[str, float]
             Interaction parameters (tau_ij) between component i and j.
-        alpha_ij_comp : TableMatrixData | np.ndarray
-            Non-randomness parameters (alpha_ij) between component i and j.
+        r_i_data : List[float] | Dict[str, float]
+            relative van der Waals volume of component i
+        q_i_data : List[float] | Dict[str, float]
+            relative surface area of component i
+        Z : int | float
+            Model constant, Default is 10.
         calculation_mode : Literal['V1', 'V2']
-            Mode of calculation. If 'V1', use the first version of the NRTL model. If 'V2', use the second version.
+            Mode of calculation. If 'V1', use the first version of the UNIQUAC model. If 'V2', use the second version.
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
         message : Optional[str]
@@ -842,11 +889,10 @@ class NRTL:
             Dictionary of input values used for the calculation as:
                 - tau_ij: np.ndarray
                 - tau_ij_comp: Dict[str, float]
-                - alpha_ij: np.ndarray
-                - alpha_ij_comp: Dict[str, float]
-                - G_ij: np.ndarray
-                - G_ij_comp: Dict[str, float]
-                - calculation_mode: str
+                - r_i:  np.ndarray
+                - r_i_comp: Dict[str, float]
+                - q_i:  np.ndarray
+                - q_i_comp: Dict[str, float]
         """
         try:
             # SECTION
@@ -857,16 +903,20 @@ class NRTL:
             # comp no
             comp_num = self.comp_num
 
+            # check Z
+            if Z is None:
+                Z = self.Z
+
+            # check message
+            if message is None:
+                message = f"Calculate activity coefficients for {components_str} using UNIQUAC model"
+
             # SECTION
             # mole fraction (sorted by component id)
             xi = [mole_fraction[components[i]] for i in range(comp_num)]
 
-            # check message
-            if message is None:
-                message = f"Calculate activity coefficients for {components_str} using NRTL model"
-
             # SECTION
-            # set the interaction parameter matrix (tau_ij) for the NRTL model
+            # set the interaction parameter matrix (tau_ij) for the UNIQUAC model
             if isinstance(tau_ij_data, np.ndarray):
                 # set
                 tau_ij = tau_ij_data
@@ -891,41 +941,50 @@ class NRTL:
                     "tau_ij_data must be numpy array, dict or TableMatrixData")
 
             # SECTION
-            # set the non-randomness parameter matrix (alpha_ij) for the NRTL model
-            if isinstance(alpha_ij_data, np.ndarray):
+            # set relative van der Waals volume of component i (r_i) for the UNIQUAC model
+            if isinstance(r_i_data, np.ndarray):
                 # set
-                alpha_ij = alpha_ij_data
+                r_i = r_i_data
                 # to dict
-                alpha_ij_comp = self.to_dict_ij(
-                    alpha_ij_data, symbol_delimiter=symbol_delimiter)
-            elif isinstance(alpha_ij_data, TableMatrixData):
-                # convert to numpy array and dict
-                res_ = self.to_ij(data=alpha_ij_data)
+                r_i_comp = self.to_dict_i(r_i_data)
+            elif isinstance(r_i_data, List):
                 # set
-                alpha_ij = res_[0]
+                r_i = np.array(r_i_data)
                 # to dict
-                alpha_ij_comp = res_[1]
-            elif isinstance(alpha_ij_data, dict):
+                r_i_comp = self.to_dict_i(r_i_data)
+            elif isinstance(r_i_data, dict):
                 # convert dict to numpy array
-                alpha_ij = self.to_matrix_ij(
-                    data=alpha_ij_data, symbol_delimiter=symbol_delimiter)
+                r_i = self.to_i(data=r_i_data)
                 # to dict
-                alpha_ij_comp = alpha_ij_data
+                r_i_comp = r_i_data
             else:
-                raise TypeError(
-                    "alpha_ij_data must be numpy array, dict or TableMatrixData")
+                raise TypeError("r_i_data must be numpy array, dict or List")
 
             # SECTION
-            # set G_ij matrix for NRTL model
-            G_ij, G_ij_comp = self.cal_G_ij(
-                tau_ij=tau_ij, alpha_ij=alpha_ij, symbol_delimiter=symbol_delimiter)
+            # set relative surface area of component i (q_i) for the UNIQUAC model
+            if isinstance(q_i_data, np.ndarray):
+                # set
+                q_i = q_i_data
+                # to dict
+                q_i_comp = self.to_dict_i(q_i_data)
+            elif isinstance(q_i_data, List):
+                # set
+                q_i = np.array(q_i_data)
+                # to dict
+                q_i_comp = self.to_dict_i(q_i_data)
+            elif isinstance(q_i_data, dict):
+                # convert dict to numpy array
+                q_i = self.to_i(data=q_i_data)
+                # to dict
+                q_i_comp = q_i_data
+            else:
+                raise TypeError("q_i_data must be numpy array, dict or List")
 
             # SECTION
-            # Calculate activity coefficients using the NRTL model
+            # Calculate activity coefficients using the UNIQUAC model
             if calculation_mode == 'V1':
-                AcCo_i = self.CalAcCo_V1(xi=xi, tau_ij=tau_ij, G_ij=G_ij)
-            elif calculation_mode == 'V2':
-                AcCo_i = self.CalAcCo_V2(xi=xi, tau_ij=tau_ij, G_ij=G_ij)
+                AcCo_i = self.CalAcCo_V1(
+                    xi=xi, tau_ij=tau_ij, r_i=r_i, q_i=q_i, Z=Z)
             else:
                 raise ValueError("calculation_mode not supported!")
 
@@ -939,10 +998,11 @@ class NRTL:
                 "AcCo_i_comp": AcCo_i_comp,
                 'tau_ij': tau_ij,
                 'tau_ij_comp': tau_ij_comp,
-                'alpha_ij': alpha_ij,
-                'alpha_ij_comp': alpha_ij_comp,
-                'G_ij': G_ij,
-                'G_ij_comp': G_ij_comp,
+                'r_i': r_i,
+                'r_i_comp': r_i_comp,
+                'q_i': q_i,
+                'q_i_comp': q_i_comp,
+                'Z': Z,
                 'calculation_mode': calculation_mode,
             }
 
@@ -976,9 +1036,9 @@ class NRTL:
             raise Exception(
                 f"Error in calculate_activity_coefficients: {str(e)}")
 
-    def CalAcCo_V1(self, xi: List[float], tau_ij: np.ndarray, G_ij: np.ndarray) -> np.ndarray:
+    def CalAcCo_V1(self, xi: List[float], tau_ij: np.ndarray, r_i: np.ndarray, q_i: np.ndarray, Z: int | float) -> List[float]:
         '''
-        Calculate activity coefficient (AcCo) using Non-random two-liquid (NRTL) model.
+        Calculate activity coefficient (AcCo) using UNIQUAC model.
 
         Parameters
         -----------
@@ -986,20 +1046,23 @@ class NRTL:
             mole fraction of each component in the mixture
         tau_ij: np.ndarray
             interaction parameters (tau_ij) between component i and j
-        G_ij: np.ndarray
-            non-randomness parameters (G_ij) between component i and j
+        r_i: np.ndarray
+            relative van der Waals volume of component i
+        q_i: np.ndarray
+            relative surface area of component i
+        Z: int | float
+            model constant, default is 10
 
         Returns
         -------
-        AcCoi: np.ndarray
+        AcCoi: List[float]
             activity coefficient for each component
 
         Notes
         -----
         This function is used to calculate the activity coefficient for each component.
 
-        1. tau_ij: temperature dependent parameters (ta[i,i]=ta[j,j]=0) calculated at temperature T
-
+        1. tau_ij: temperature dependent parameters (tau_ij[i,i]=tau_ij[j,j]=1) calculated at temperature T
         '''
         try:
             # component no
@@ -1009,114 +1072,68 @@ class NRTL:
                 raise ValueError(
                     f"xi length {len(xi)} does not match component number {comp_num}")
 
-            # activity coefficient
-            AcCoi = np.zeros(comp_num)
+            # SECTION: calculate activity coefficients
+            # ∑r[i]x[i]
+            Sigma_rx = r_i@xi
 
-            # activity coefficient
-            C0 = np.zeros((comp_num, comp_num))
+            # ∑q[i]x[i]
+            Sigma_qx = q_i@xi
 
+            # volume fraction/mole fraction of component i
+            Vi = r_i/Sigma_rx
+
+            # surface area/mole fraction of component i
+            Fi = q_i/Sigma_qx
+
+            # volume fraction
+            phi_i = (r_i*xi)/Sigma_rx
+
+            # surface area fraction
+            teta_i = (q_i*xi)/Sigma_qx
+
+            # S
+            Si = np.zeros(comp_num)
             for i in range(comp_num):
-                _c0 = 0
-                for j in range(comp_num):
-                    _c0 = tau_ij[j, i]*G_ij[j, i]*xi[j] + _c0
+                Si[i] = np.dot(teta_i, tau_ij[:, i])
 
-                _c1 = 0
-                for k in range(comp_num):
-                    _c1 = G_ij[k, i]*xi[k] + _c1
+            # combinatorial part of the activity coefficient
+            gamma_comb_ij = (np.log(phi_i/xi) + 1 - (phi_i/xi) -
+                             (Z/2)*q_i*(np.log(phi_i/teta_i)+1-(phi_i/teta_i)))
 
-                for j in range(comp_num):
-                    _c2 = xi[j]*G_ij[i, j]
+            # residual part of the activity coefficient
+            gamma_res_ij = np.zeros(comp_num)
+            for i in range(comp_num):
+                gamma_res_ij[i] = q_i[i] * \
+                    (1-np.log(Si[i])-np.dot(tau_ij[i, :], (teta_i/Si)))
 
-                    _c3 = 0
-                    for k in range(comp_num):
-                        _c3 = G_ij[k, j]*xi[k] + _c3
-
-                    _c4 = 0
-                    for n in range(comp_num):
-                        _c4 = xi[n]*tau_ij[n, j]*G_ij[n, j] + _c4
-
-                    _c5 = tau_ij[i, j] - (_c4/_c3)
-
-                    # set
-                    C0[i, j] = (_c2/_c3)*_c5
-
-                _c6 = (_c0/_c1) + np.sum(C0[i, :])
-                AcCoi[i] = exp(_c6)
+            # activity coefficient
+            AcCoi = np.exp(gamma_comb_ij+gamma_res_ij)
+            # to list
+            AcCoi = AcCoi.tolist()
 
             # res
             return AcCoi
         except Exception as e:
             raise Exception(f"Error in CalAcCo_V1: {str(e)}")
 
-    def CalAcCo_V2(self, xi: list[float], tau_ij: np.ndarray, G_ij: np.ndarray) -> np.ndarray:
-        """
-        Calculate activity coefficients for a multicomponent mixture using the NRTL model.
-
-        Parameters:
-        -----------
-        xi : list[float]
-            Mole fractions of each component in the mixture.
-        tau_ij : np.ndarray
-            Binary interaction parameters (tau_ij) between component i and j.
-        G_ij : np.ndarray
-            Non-randomness parameters (G_ij) between component i and j.
-
-        Returns:
-        --------
-        AcCoi : np.ndarray
-            activity coefficients for each component, tauij matrix, Gij matrix
-        """
-        try:
-            # component no
-            comp_num = self.comp_num
-            # check
-            if len(xi) != comp_num:
-                raise ValueError(
-                    f"xi length {len(xi)} does not match component number {comp_num}")
-
-            # activity coefficient
-            ln_gamma = np.zeros(comp_num)
-
-            for i in range(comp_num):
-                # Calculate the first term: Σj τ_ji*G_ji*x_j / Σk G_ki*x_k
-                denom_i = np.sum(G_ij[:, i] * xi)
-                numer_i = np.sum(tau_ij[:, i] * G_ij[:, i] * xi)
-                first_term = numer_i / denom_i
-
-                # Calculate the second term (the summation)
-                second_term = 0
-                for j in range(comp_num):
-                    denom_j = np.sum(G_ij[:, j] * xi)
-                    numer_j = np.sum(xi * tau_ij[:, j] * G_ij[:, j])
-                    second_term += (xi[j] * G_ij[i, j] / denom_j) * \
-                        (tau_ij[i, j] - numer_j / denom_j)
-
-                # Combine the terms to get ln(gamma_i)
-                ln_gamma[i] = first_term + second_term
-
-            # Calculate the activity coefficients (gamma_i)
-            AcCoi = np.zeros(comp_num)
-            for i in range(comp_num):
-                AcCoi[i] = exp(ln_gamma[i])
-
-            # res
-            return AcCoi
-        except Exception as e:
-            raise Exception(f"Error in CalAcCoV2: {str(e)}")
-
-    def excess_gibbs_free_energy(self, mole_fraction: Dict[str, float], G_ij: np.ndarray, tau_ij: np.ndarray,
+    def excess_gibbs_free_energy(self, mole_fraction: Dict[str, float], tau_ij: np.ndarray,
+                                 r_i: np.ndarray, q_i: np.ndarray, Z: Optional[int | float] = None,
                                  message: Optional[str] = None, res_format: Literal['str', 'json', 'dict'] = 'dict') -> Dict[str, float | Dict] | str:
         """
-        Calculate excess Gibbs energy for a multicomponent mixture using the NRTL model.
+        Calculate excess Gibbs energy (G^E/RT) for a multicomponent mixture using the UNIQUAC model.
 
         Parameters
         -----------
         mole_fraction : dict
             Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
-        G_ij : np.ndarray
-            Matrix of G parameters where G[i][j] is G_ij
         tau_ij : np.ndarray
-            Matrix of tau parameters where tau[i][j] is tau_ij
+            Matrix of tau parameters where tau[i][j] is tau_ij between component i and j.
+        r_i : np.ndarray
+            Array of relative van der Waals volumes of each component.
+        q_i : np.ndarray
+            Array of relative surface areas of each component.
+        Z : int | float, optional
+            Model constant, default is 10.
         message : str, optional
             Message to be printed, default is None.
         res_format : str, optional
@@ -1128,31 +1145,65 @@ class NRTL:
             Dictionary containing the excess Gibbs energy and other information.
         """
         try:
+            # check
+            if not isinstance(mole_fraction, dict):
+                raise TypeError("mole_fraction must be a dictionary")
+
+            # check Z
+            if Z is None:
+                Z = self.Z
+
             # components
             components = self.components
             components_str = ', '.join(components)
 
-            # mole fraction
-            xi = [mole_fraction[components[i]] for i in range(len(components))]
+            # comp no
+            comp_num = self.comp_num
 
             # set message
             message = f'Excess Gibbs Free Energy for {components_str}' if message is None else message
 
+            # mole fraction
+            xi = [mole_fraction[components[i]] for i in range(len(components))]
+
             # Normalize mole fractions to ensure they sum to 1
             x = xi / np.sum(xi)
+            x = np.array(x)
 
-            n = len(x)  # Number of components
+            # NOTE: check all input
+            if len(x) != comp_num:
+                raise ValueError(
+                    f"mole_fraction length {len(x)} does not match component number {comp_num}")
+
+            if len(r_i) != comp_num:
+                raise ValueError(
+                    f"r_i length {len(r_i)} does not match component number {comp_num}")
+
+            if len(q_i) != comp_num:
+                raise ValueError(
+                    f"q_i length {len(q_i)} does not match component number {comp_num}")
+
+            # SECTION
+            # excess gibbs free energy
             gE_RT = 0
 
-            for i in range(n):
-                # Calculate denominator sum (Σj G_ji*x_j)
-                denom = np.sum(G_ij[:, i] * x)
+            # Volume and surface area fractions
+            phi = (r_i * x) / np.sum(r_i * x)
+            theta = (q_i * x) / np.sum(q_i * x)
 
-                # Calculate numerator sum (Σj τ_ji*G_ji*x_j)
-                numer = np.sum(tau_ij[:, i] * G_ij[:, i] * x)
+            # Combinatorial term
+            term1 = np.sum(x * np.log(phi / x))
+            term2 = np.sum(q_i * x * np.log(theta / phi))
+            gE_C = term1 + (Z / 2) * term2
 
-                # Add to excess Gibbs energy
-                gE_RT += xi[i] * numer / denom
+            # Residual term
+            gE_R = 0.0
+            for i in range(len(x)):
+                # sum_j (theta_j * tau_ji)
+                inner_sum = np.sum(theta * tau_ij[:, i])
+                gE_R -= q_i[i] * x[i] * np.log(inner_sum)
+
+            gE_RT = gE_C + gE_R
 
             # SECTION: set result format
             res = {

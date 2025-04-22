@@ -9,6 +9,7 @@ from .thermodb import ThermoDB
 from .thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager
 from .fugacitycore import FugacityCore
+from .activitycore import ActivityCore
 from ..utils import eos_model_name
 from .eosutils import EOSUtils
 
@@ -846,9 +847,11 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def cal_activity(self, model_name: Literal['NRTL', 'UNIQUAC'],
+    def cal_activity(self,
+                     model_name: Literal['NRTL', 'UNIQUAC'],
                      model_input: Dict,
-                     model_source: Dict):
+                     model_source: Dict,
+                     **kwargs):
         '''
         Initializes activity coefficient calculation
 
@@ -874,6 +877,79 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             activity coefficient
         '''
         try:
-            pass
+            # SECTION: keywords
+            # tolerance
+            tolerance = kwargs.get('tolerance', 1e-1)
+
+            # SECTION: set input parameters
+            # eos
+            activity_model = model_name.upper()
+
+            # NOTE: component number
+            component_num = 0
+
+            # SECTION: input
+            feed_spec = model_input.get('feed-specification', None)
+            # check
+            if feed_spec is None or feed_spec == 'None':
+                raise Exception('Feed specification is not provided!')
+
+            # component list
+            components = []
+            # mole fraction
+            mole_fraction = []
+            # looping through feed-specification
+            for key, value in feed_spec.items():
+                components.append(key)
+                mole_fraction.append(value)
+
+            # SECTION: check component
+            if isinstance(components, list):
+                # set
+                component_num = len(components)
+                # single
+                if len(components) == 1:
+                    raise Exception(
+                        'Single component calculation is not allowed!')
+            else:
+                raise Exception('Components list not provided!')
+
+            if len(mole_fraction) != component_num:
+                raise Exception('Mole fraction list not provided!')
+
+            # SECTION: set datasource and equationsource
+            # NOTE: check if datasource and equationsource are provided in model_input
+            # datasource
+            datasource = model_source.get('datasource', {})
+            # equationsource
+            equationsource = model_source.get('equationsource', {})
+            # set thermodb link
+            link_status = self.set_thermodb_link(datasource, equationsource)
+            # check
+            if not link_status:
+                raise Exception('Thermodb link failed!')
+
+            # SECTION: reference for eos
+            reference = self._references.get(activity_model, None)
+
+            # build datasource
+            component_datasource = self.set_datasource(components, reference)
+            # build equation source
+            equation_equationsource = self.set_equationsource(
+                components, reference)
+
+            # SECTION: init fugacity core
+            ActivityCore_ = ActivityCore(
+                component_datasource,
+                equation_equationsource,
+                components,
+                **kwargs)
+
+            # SECTION: calculation mode
+            res = ActivityCore_.activity_cal(
+                mole_fraction,
+                solver_method=solver_method)
+
+            return res
         except Exception as e:
-            raise Exception("Activity coefficient calculation failed!", e)
+            raise Exception("Activity calculation failed!, ", e)
