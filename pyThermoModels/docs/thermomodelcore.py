@@ -947,8 +947,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
             # SECTION: calculation mode
             res = ActivityCore_.activity_cal(
-                mole_fraction,
-                solver_method=solver_method)
+                mole_fraction, params)
 
             return res
         except Exception as e:

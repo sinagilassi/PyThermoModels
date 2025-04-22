@@ -49,7 +49,7 @@ CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-1.pkl')
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
 
 # ========================================
-# ! INITIALIZE FUGACITY OBJECT
+# NOTE: INITIALIZE PYTHERMOMODELS
 # ========================================
 tm = ptm.init()
 # log
@@ -87,9 +87,6 @@ datasource, equationsource = thub1.build()
 # by J.M. Smith, H.C. Van Ness, M.M. Abbott
 # Example 15.2 (page 587) in Introductory Chemical Engineering Thermodynamics
 
-#
-#
-
 # model input
 # eos model
 eos_model = 'PR'
@@ -97,7 +94,7 @@ eos_model = 'PR'
 # component phase
 phase = "VAPOR"
 
-# ! example 1
+# NOTE: example 1
 # feed spec
 N0s = {
     'N2': 0.40,

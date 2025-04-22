@@ -85,3 +85,11 @@ propane:
   EQUATIONS:
     vapor-pressure: VaPr
     heat-capacity: Cp_IG
+nrtl:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG

@@ -7,7 +7,7 @@ from .docs import ThermoModelCore, ThermoLib
 
 def init():
     '''
-    Initialize app
+    Initialize PyThermoModel app
 
     Returns
     -------
