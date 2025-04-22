@@ -54,6 +54,18 @@ butene_thermodb_file = os.path.join(thermodb_dir, '1-butene-1.pkl')
 # load
 butene_thermodb = ptdb.load_thermodb(butene_thermodb_file)
 
+# ! propane
+# thermodb file name
+propane_thermodb_file = os.path.join(thermodb_dir, 'propane-1.pkl')
+# load
+propane_thermodb = ptdb.load_thermodb(propane_thermodb_file)
+
+# ! methane
+# thermodb file name
+methane_thermodb_file = os.path.join(thermodb_dir, 'methane-1.pkl')
+# load
+methane_thermodb = ptdb.load_thermodb(methane_thermodb_file)
+
 # ========================================
 # ! INITIALIZE OBJECT
 # ========================================
@@ -70,11 +82,13 @@ print(type(thub1))
 
 # add component thermodb
 thub1.add_thermodb('CO2', CO2_thermodb)
+thub1.add_thermodb('CH4', methane_thermodb)
 thub1.add_thermodb('EtOH', ethanol_thermodb)
 thub1.add_thermodb('MeOH', methanol_thermodb)
 thub1.add_thermodb('acetylene', acetylene_thermodb)
 thub1.add_thermodb('1-butene', butene_thermodb)
 thub1.add_thermodb('n-butane', n_butane_thermodb)
+thub1.add_thermodb('propane', propane_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -91,7 +105,7 @@ datasource, equationsource = thub1.build()
 # ! THERMODYNAMIC PROPERTIES
 # ------------------------------------------------
 # vapor pressure
-VaPr = equationsource['CO2']['VaPr'].cal(T=304)
+VaPr = equationsource['propane']['VaPr'].cal(T=300.1)
 print(VaPr)
 
 # =======================================
@@ -103,14 +117,17 @@ print(VaPr)
 
 # Example 10.9, Introduction to Chemical Engineering Thermodynamics
 
+# Example 3.11 (page 68), The Thermodynamics of Phase and Reaction Equilibria
+
 
 # model input
 # eos model
-eos_model = 'SRK'
+eos_model = 'PR'
 
 # component phase
 phase = "VAPOR"
 
+# NOTE: Example 3.9
 # component
 component = "n-butane"
 # temperature [K]
@@ -118,21 +135,40 @@ T = 350
 # pressure bar
 P = 9.653800
 
+# NOTE: Example 10.9
 component = "1-butene"
 # temperature [C]
 T = 200
 # pressure bar
 P = 70
 
-# model input
+# NOTE: Example 3.11
+component = "propane"
+# phase
+phase = "VAPOR-LIQUID"
+# temperature [K]
+T = 300.1
+# pressure [bar]
+P = 9.99
+
+# NOTE: Example 3.13
+# component
+component = "CH4"
+# temperature [K]
+T = 340
+# pressure [bar]
+P = 30
+
+
+# SECTION: model input
 model_input = {
     # "phase": phase,
     "component": component,
     "pressure": [P, 'bar'],
-    "temperature": [T, 'C'],
+    "temperature": [T, 'K'],
 }
 
-# model source
+# SECTION: model source
 model_source = {
     "datasource": datasource,
     "equationsource": equationsource

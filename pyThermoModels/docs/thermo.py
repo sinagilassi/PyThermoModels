@@ -11,7 +11,7 @@ from ..configs import Tref, R_CONST
 
 def extractDataCol(colName, setData, equation):
     """
-    build a tuple 
+    build a tuple
     args:
         colName: column name
     """
@@ -34,7 +34,7 @@ def extractDataCol(colName, setData, equation):
 
 
 def calHeatCapacityAtConstantPressure(compList, T, params, equation):
-    """ 
+    """
     calculate gas diffusivity [m2/s]
     args:
         params: changes with equation
@@ -59,12 +59,12 @@ def calHeatCapacityAtConstantPressure(compList, T, params, equation):
 def calCpEq1(comList, T, loadData):
     """
         cal: heat capacity at constant pressure
-        unit: [kJ/kmol.K] 
+        unit: [kJ/kmol.K]
 
         args:
             comList: component name list
             T: temperature [K]
-            loadData: expr to be evaluated 
+            loadData: expr to be evaluated
     """
     # try/except
     try:
@@ -95,8 +95,8 @@ def calCpEq1(comList, T, loadData):
 
 def calMeanHeatCapacityAtConstantPressure(comList, params, equation, T2, T1=Tref):
     """
-        cal: mean heat capacity at constant pressure 
-        unit: [kJ/kmol.K] 
+        cal: mean heat capacity at constant pressure
+        unit: [kJ/kmol.K]
         args:
             comList: name of components
             T2: final temperature [K]
@@ -120,11 +120,11 @@ def calMeanHeatCapacityAtConstantPressure(comList, params, equation, T2, T1=Tref
 
 def calMixtureHeatCapacityAtConstantPressure(MoFri, HeCaCoPri):
     """
-    cal: heat capacity at constant pressure of mixture 
-    unit: [kJ/kmol.K] 
+    cal: heat capacity at constant pressure of mixture
+    unit: [kJ/kmol.K]
 
     args:
-        MoFri: mole fraction of components 
+        MoFri: mole fraction of components
         HeCaCoPri: heat capacity at constant pressure of components [kJ/kmol.K]
     """
     # try/except
@@ -147,7 +147,7 @@ def calMixtureHeatCapacityAtConstantPressure(MoFri, HeCaCoPri):
 def calEnthalpyChange(comList, T2, T1=Tref):
     """
         cal: enthalpy change
-        unit: [kJ/kmol] 
+        unit: [kJ/kmol]
 
         args:
             comList: component name list
@@ -175,7 +175,7 @@ def calStandardEnthalpyOfReaction(reaExpr, standardHeatOfFormationList):
         unit: [kJ/kmol]
 
         args:
-            reaExpr: reaction expression:  
+            reaExpr: reaction expression:
                     A + B <=> C + D
 
         return:
@@ -361,7 +361,7 @@ def calVolumetricFlowrateIG(P, T, MoFlRai):
 def calConcentrationIG(MoFlRai, VoFlRa):
     """
     calculate: concentration species species of ideal gas (IG) [mol/m^3]
-    args: 
+    args:
         MoFlRai: component molar flowrate [mol/m^3]
         VoFlRa: total volumetric flowrate [m^3/s]
     """
@@ -370,7 +370,7 @@ def calConcentrationIG(MoFlRai, VoFlRa):
 
 
 def calDensityIG(MW, CoSp):
-    """ 
+    """
     calculate: density of ideal gas (IG) [kg/m^3]
     args:
         MW: molecular weight [kg/mol]
@@ -385,12 +385,12 @@ def calDensityIG(MW, CoSp):
 
 
 def calDensityIGFromEOS(P, T, MixMW):
-    """ 
+    """
     calculate: density of ideal gas (IG) [kg/m^3]
     args:
         P: pressure [Pa]
         T: temperature [K]
-        MixMW: mixture molecular weight [kg/mol] 
+        MixMW: mixture molecular weight [kg/mol]
     """
     # try/exception
     try:
@@ -410,7 +410,7 @@ def calMolarFlowRate(SpCo, SuGaVe, CrSeAr):
         SpCo: species concentration [kmol/m^3] | [mol/m^3]
         SuGaVe: superficial gas velocity [m/s]
         CrSeAr: cross sectional area [m^2]
-    output: 
+    output:
         MoFlRa: molar flowrate [kmol/s] | [mol/s]
     """
     # try/exception
@@ -426,10 +426,10 @@ def calMolarFlowRate(SpCo, SuGaVe, CrSeAr):
 
 
 def calGasVisEq1(params, T):
-    """ 
+    """
     gas viscosity equation 1 - Pa.s
     args:
-        params: 
+        params:
             equation parameters list [A,B,C,D]
         T: temperature [K]
     """
@@ -446,7 +446,7 @@ def calGasVisEq1(params, T):
 
 
 def calGasVisEq2(eqExpr, T):
-    """ 
+    """
     gas viscosity equation - Pa.s
     args:
         eqExpr: equation expression
@@ -461,7 +461,7 @@ def calGasVisEq2(eqExpr, T):
 
 def calGasViscosity(comList, T, loadData):
     """
-        cal: gas viscosity at low pressure 
+        cal: gas viscosity at low pressure
         unit: [Pa.s]
         args:
             comList: component name list
@@ -520,7 +520,7 @@ def calGasViscosity(comList, T, loadData):
 
 def calGasThermalConductivity(comList, T, loadData):
     """
-        cal: gas thermal conductivity at low pressure 
+        cal: gas thermal conductivity at low pressure
         unit: [W/m.K]
 
         args:
@@ -577,10 +577,10 @@ def calGasThermalConductivity(comList, T, loadData):
 
 
 def calGasTherCondEq1(expr, params, T):
-    """ 
+    """
     gas thermal conductivity equation 1 - W/m.K
     args:
-        params: 
+        params:
             equation parameters list [C1, C2, C3, C4]
         T: temperature [K]
     """
@@ -603,10 +603,10 @@ def calGasTherCondEq1(expr, params, T):
 
 
 def calGasTherCondEq1V1(params, T):
-    """ 
+    """
     gas thermal conductivity equation 1 - W/m.K
     args:
-        params: 
+        params:
             equation parameters list [C1, C2, C3, C4]
         T: temperature [K]
     """
@@ -755,7 +755,7 @@ def calVapourPressureEq2(params, T):
         T: temperature [K]
 
     output:
-        res: vapour pressure [Pa] 
+        res: vapour pressure [Pa]
     '''
     # try/except
     try:
@@ -845,21 +845,31 @@ def calVapourPressure(comList, T, loadData):
         print(e)
 
 
-def calMolarVolume(P, T, Z):
+def calMolarVolume(P: float, T: float, Z: float, R: float = R_CONST):
     '''
-    calculate molar-volume [m^3/mol]
+    Calculate molar-volume [m^3/mol]
 
-    args:
-        Z: compressibility factor [-]
+    Parameters
+    ----------
+    P: float
+        pressure [Pa]
+    T: float
+        temperature [K]
+    Z: float
+        compressibility factor [-]
+    R: float, optional
+        universal gas constant [J/mol.K]. The default is R_CONST.
 
-    P: pressure [Pa]
-    T: temperature [K]
-    R: universal gas constant [J/mol.K]
-
-    output:
-        Vm: molar volume [m^3/mol]
+    Returns
+    -------
+    Vm: float
+        molar volume [m^3/mol]
     '''
-    return Z * ((R_CONST * T) / P)
+    try:
+        Vm = Z * ((R * T) / P)
+        return Vm
+    except Exception as e:
+        raise Exception("Error in calMolarVolume: ", e)
 
 
 def RackettEquation(Vc, Zc, Tr):
@@ -909,9 +919,9 @@ def calVaporPressureV2(T, Tc, w):
     '''
     calculate vapor pressure using the shortcut equation
 
-    Note: 
-        The shortcut vapor pressure equation must be regarded as an approximation for rapid estimates. 
-        The  approximation  is  generally  good  above  P  =  0.5  bar; the  percent  error  can  become significant at lower pressures (and temperatures). 
+    Note:
+        The shortcut vapor pressure equation must be regarded as an approximation for rapid estimates.
+        The  approximation  is  generally  good  above  P  =  0.5  bar; the  percent  error  can  become significant at lower pressures (and temperatures).
         Keep in mind that its estimates are based on the critical pressure which is generally 40-50 bar and acentric factor (at Tr = 0.7).
 
     args:
@@ -936,7 +946,7 @@ def calVaporPressureV2(T, Tc, w):
 
 def SetPhase(state):
     '''
-    set phase 
+    set phase
     '''
     # define phase
     _phaseSelection = {

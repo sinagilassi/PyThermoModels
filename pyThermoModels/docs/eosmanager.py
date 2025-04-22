@@ -13,11 +13,29 @@ from ..configs import R_CONST
 
 class EOSManager(EOSModels):
 
-    def __init__(self, datasource, equationsource):
+    def __init__(self, datasource, equationsource, **kwargs):
+        '''
+        Initialize the EOSManager class.
+
+        Parameters
+        ----------
+        datasource : object
+            Data source object containing thermodynamic data.
+        equationsource : object
+            Equation source object containing equation of state data.
+        **kwargs : dict, optional
+            Additional keyword arguments.
+        '''
+        # SECTION: init variables
         self.datasource = datasource
         self.equationsource = equationsource
-        # init
-        EOSModels.__init__(self, datasource, equationsource)
+
+        # SECTION: custom parameters
+        # k_ij, 2D array of binary interaction parameter (BIP)
+        self.k_ij = kwargs.get('k_ij', None)
+
+        # NOTE: init
+        EOSModels.__init__(self, datasource, equationsource, **kwargs)
 
     def __call__(self):
         pass
@@ -28,7 +46,8 @@ class EOSManager(EOSModels):
                   xi=[],
                   eos_model: str = "SRK",
                   solver_method: str = "ls",
-                  mode: str = "single"):
+                  mode: str = "single",
+                  **kwargs) -> Union[float, List[float], Dict[str, float]]:
         '''
         Estimates fugacity coefficient at fixed temperature and pressure through finding Z (lowest: for liquid, largest: for vapor)
 
@@ -71,7 +90,7 @@ class EOSManager(EOSModels):
         ### Hints
             1. _eos_params updated for single and mixture
         '''
-        # SRK params
+        # SECTION: SRK params
         _eos_params = []
         _eos_params_comp = {}
 
@@ -103,7 +122,7 @@ class EOSManager(EOSModels):
 
             # mixture a and b
             amix, bmix, aij, A_mix, B_mix = self.eos_mixing_rule(
-                xi, _eos_params)
+                xi, _eos_params, k_ij=self.k_ij)
 
             # new params *** mixture ***
             _params_mixture = self.eos_parameters_mixture(
@@ -192,8 +211,6 @@ class EOSManager(EOSModels):
                 k += 1
         # SECTION: *** root method ***
         elif solver_method == 'root':
-            # init
-            _zList = []
             # initial guess
             _res = np.roots(fZ_coeff)
             # save

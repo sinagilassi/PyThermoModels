@@ -8,6 +8,7 @@ import pycuc
 from ..configs import Tref, R_CONST
 from .eosmanager import EOSManager
 from .eosutils import EOSUtils
+from .thermo import calMolarVolume
 
 
 class FugacityCore(EOSManager):
@@ -18,7 +19,7 @@ class FugacityCore(EOSManager):
     fugacity coefficients for different phases (vapor, liquid, solid) using various EOS models.
     '''
 
-    def __init__(self, datasource, equationsource, components, operating_conditions, eos_parms):
+    def __init__(self, datasource, equationsource, components, operating_conditions, eos_parms, **kwargs):
         '''
         Initialize the FugacityCore class.
 
@@ -34,6 +35,8 @@ class FugacityCore(EOSManager):
             Dictionary containing operating conditions such as pressure and temperature.
         eos_parms : dict
             Dictionary containing EOS parameters such as phase, eos-model, mode, and liquid-fugacity-calculation-method.
+        **kwargs : dict
+            Additional keyword arguments.
 
         Notes
         -----
@@ -69,8 +72,8 @@ class FugacityCore(EOSManager):
         # root_analysis_set
         self.root_analysis_set = self.root_analysis_mode(self.phase)
 
-        # init
-        EOSManager.__init__(self, datasource, equationsource)
+        # SECTION: init
+        EOSManager.__init__(self, datasource, equationsource, **kwargs)
 
     @property
     def phase(self):
@@ -325,6 +328,7 @@ class FugacityCore(EOSManager):
                         # NOTE: pack
                         _phase_key = self.phase.lower()
                         _phi_pack[_phase_key][self.components[j]] = {
+                            "mole_fraction": yi[j],
                             "temperature": self.T,
                             "temperature_unit": "K",
                             "pressure": self.P,
@@ -339,8 +343,14 @@ class FugacityCore(EOSManager):
                                 'unit': 'dimensionless',
                                 'symbol': 'phi'
                             },
+                            'fugacity': {
+                                'value': yi[j]*float(_phi_res[j]) * self.P,
+                                'unit': 'Pa',
+                                'symbol': 'Fug_MIX'
+                            },
                             'mode': (self.mode).upper(),
-                            'phase': self.phase
+                            'phase': self.phase,
+                            'eos_model': eos_model,
                         }
 
                         # NOTE: save phi_comp
@@ -361,6 +371,7 @@ class FugacityCore(EOSManager):
 
                         # NOTE: set
                         _phi_pack[_phase][self.components[j]] = {
+                            "mole_fraction": yi[j],
                             "temperature": self.T,
                             "temperature_unit": "K",
                             "pressure": self.P,
@@ -375,8 +386,14 @@ class FugacityCore(EOSManager):
                                 'unit': 'dimensionless',
                                 'symbol': 'phi'
                             },
+                            'fugacity': {
+                                'value': yi[j]*float(_phi_res[j]) * self.P,
+                                'unit': 'Pa',
+                                'symbol': 'Fug_MIX'
+                            },
                             'mode': (self.mode).upper(),
-                            'phase': _phase
+                            'phase': _phase,
+                            'eos_model': eos_model,
                         }
 
                         # NOTE: save Zis_comp
@@ -474,12 +491,21 @@ class FugacityCore(EOSManager):
                     _phi.append(_phi_res)
                 # _phi_comp[self.components[i]] = _phi_res
 
+                # NOTE: molar volume calculation [m3/mol]
+                Vm = calMolarVolume(self.P, self.T, Zis[i], R=R_CONST)
+
                 # pack
                 res__ = {
+                    "mole_fraction": 1.0,
                     "temperature": self.T,
                     "temperature_unit": "K",
                     "pressure": self.P,
                     "pressure_unit": "Pa",
+                    "molar_volume": {
+                        'value': Vm,
+                        'unit': 'm3/mol',
+                        'symbol': 'MoVo'
+                    },
                     'compressibility_coefficient': {
                         'value': Zis[i],
                         'unit': 'dimensionless',
@@ -489,6 +515,11 @@ class FugacityCore(EOSManager):
                         'value': _phi_res[0],
                         'unit': 'dimensionless',
                         'symbol': 'phi'
+                    },
+                    'fugacity': {
+                        'value': 1*_phi_res[0] * self.P,
+                        'unit': 'Pa',
+                        'symbol': 'Fug_PURE'
                     },
                     'mode': (self.mode).upper(),
                     'phase': self.phase,

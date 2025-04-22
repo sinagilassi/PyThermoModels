@@ -36,6 +36,18 @@ C2H6_thermodb_file = os.path.join(thermodb_dir, 'ethane-1.pkl')
 # load
 C2H6_thermodb = ptdb.load_thermodb(C2H6_thermodb_file)
 
+# ! n-butane
+# thermodb file name
+n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-1.pkl')
+# load
+n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
+
+# ! CO2
+# thermodb file name
+CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-1.pkl')
+# load
+CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
+
 # ========================================
 # ! INITIALIZE FUGACITY OBJECT
 # ========================================
@@ -54,6 +66,8 @@ print(type(thub1))
 thub1.add_thermodb('N2', N2_thermodb)
 thub1.add_thermodb('CH4', CH4_thermodb)
 thub1.add_thermodb('C2H6', C2H6_thermodb)
+thub1.add_thermodb('n-butane', n_butane_thermodb)
+thub1.add_thermodb('CO2', CO2_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -73,6 +87,9 @@ datasource, equationsource = thub1.build()
 # by J.M. Smith, H.C. Van Ness, M.M. Abbott
 # Example 15.2 (page 587) in Introductory Chemical Engineering Thermodynamics
 
+#
+#
+
 # model input
 # eos model
 eos_model = 'PR'
@@ -91,8 +108,8 @@ T = 200
 # pressure [bar]
 P = 30
 
-# ! example 2
-# # feed spec
+# NOTE: Example 9.2. (page 252), The Thermodynamics of Phase and Reaction Equilibria
+# feed spec
 N0s = {
     'CH4': 0.35,
     'C2H6': 0.65,
@@ -102,14 +119,30 @@ T = 373.15
 # # pressure [bar]
 P = 30
 
-# model input
+# NOTE: Example 9.5 (page 257), The Thermodynamics of Phase and Reaction Equilibria
+# eos model
+eos_model = 'RK'
+# feed spec
+N0s = {
+    'CO2': 0.15,
+    'n-butane': 0.85,
+}
+# temperature [K]
+T = 444
+# pressure [bar]
+P = 10
+# binary interaction parameter
+k_ij = [[0, 0.18],
+        [0.18, 0]]
+
+# SECTION: model input
 model_input = {
     "feed-specification": N0s,
     "pressure": [P, 'bar'],
     "temperature": [T, 'K'],
 }
 
-# model source
+# SECTION: model source
 model_source = {
     "datasource": datasource,
     "equationsource": equationsource
@@ -137,5 +170,6 @@ print(res_)
 # calculate fugacity
 res = tm.cal_fugacity_mixture(model_name=eos_model,
                               model_input=model_input,
-                              model_source=model_source, solver_method='ls')
+                              model_source=model_source,
+                              k_ij=k_ij)
 print(res)

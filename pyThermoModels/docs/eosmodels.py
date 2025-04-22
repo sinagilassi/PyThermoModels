@@ -12,9 +12,25 @@ from ..configs import R_CONST, PREDEFINED_PARAMETERS
 
 class EOSModels():
     # init
-    def __init__(self, datasource, equationsource):
+    def __init__(self, datasource, equationsource, **kwargs):
+        '''
+        Initialize the EOSModels class
+
+        Parameters
+        ----------
+        datasource : dict
+            datasource for the component parameters
+        equationsource : dict
+            equationsource for the equation of state parameters
+        **kwargs : dict
+            additional parameters for the class
+        '''
+        # NOTE: datasource and equationsource are dictionaries
         self.datasource = datasource
         self.equationsource = equationsource
+
+        # NOTE: custom parameters
+        self.k_ij = kwargs.get('k_ij', None)
 
     def eos_parameter_selection(self, method: str):
         '''
@@ -57,21 +73,29 @@ class EOSModels():
                     "epsilon": 0,
                     "omega": 0.08664,
                     'psi': 0.42748,
-                    'alpha': lambda x: x**-0.50,
+                    'alpha': lambda Tr: pow(Tr, -0.50)
                 },
                 "SRK": {
                     "sigma": 1,
                     "epsilon": 0,
                     "omega": 0.08664,
                     'psi': 0.42748,
-                    'alpha': lambda Tr, omega: pow(1+(0.480+1.574*omega-0.176*(omega**2))*(1-pow(Tr, 0.5)), 2)
+                    'alpha': lambda Tr, omega: pow(
+                        1 + (0.480 + 1.574 * omega - 0.176 * pow(omega, 2)) *
+                        (1 - pow(Tr, 0.5)),
+                        2
+                    )
                 },
                 "PR": {
-                    "sigma": 1+sqrt(2),
-                    "epsilon": 1-sqrt(2),
+                    "sigma": 1 + sqrt(2),
+                    "epsilon": 1 - sqrt(2),
                     "omega": 0.07780,
                     'psi': 0.45724,
-                    'alpha': lambda Tr, omega: pow(1+(0.37464+1.54226*omega-0.26992*(omega**2))*(1-pow(Tr, 0.5)), 2)
+                    'alpha': lambda Tr, omega: pow(
+                        1+(0.37464 + 1.54226*omega - 0.26992*pow(omega, 2)) *
+                        (1 - pow(Tr, 0.5)),
+                        2
+                    )
                 },
             }
 
@@ -208,9 +232,9 @@ class EOSModels():
 
         # SECTION: Determination of Equation-of-State Parameters (page 98)
         # a(T)
-        a = psi*alpha*pow(R, 2)*pow(Tc, 2)/(Pc)
+        a = psi*alpha*pow(R, 2)*pow(Tc, 2)/Pc
         # b
-        b = omega*R*Tc/(Pc)
+        b = omega*R*Tc/Pc
 
         # SECTION: Roots of the Generic Cubic Equation of State (page 99)
         # beta
@@ -345,7 +369,8 @@ class EOSModels():
         except Exception as e:
             raise Exception(f"Error in eos_parameters_mixture: {e}")
 
-    def eos_mixing_rule(self, xi, params_list, k=[]):
+    def eos_mixing_rule(self, xi, params_list,
+                        k_ij: Optional[np.ndarray | list] = None):
         '''
         Mixing rule to determine mixture a and b parameters
 
@@ -355,6 +380,8 @@ class EOSModels():
             mole fraction
         params_list : list
             list of dict of params
+        k_ij : numpy array, optional
+            2D array of binary interaction parameter (BIP), default is empty
 
         Returns
         -------
@@ -376,10 +403,12 @@ class EOSModels():
         rNo = len(params_list)
 
         # ki
-        if len(k) == 0:
-            kij = np.zeros((rNo, rNo))
+        if k_ij is None:
+            k_ij = np.zeros((rNo, rNo))
         else:
-            kij = k
+            # check
+            if isinstance(k_ij, list):
+                k_ij = np.array(k_ij)
 
         # ai,bi, Ai,Bi
         ai = np.zeros(rNo)
@@ -395,8 +424,8 @@ class EOSModels():
             Bi[i] = params_list[i]['B']
 
         # NOTE: Attraction parameter amix
-        a_ij = self.__aij(ai, kij)
-        A_ij = self.__aij(Ai, kij)
+        a_ij = self.__aij(ai, k_ij)
+        A_ij = self.__aij(Ai, k_ij)
 
         # NOTE: Calculate a_mix
         a_mix = 0.0
@@ -417,7 +446,7 @@ class EOSModels():
         # res
         return a_mix, b_mix, a_ij, A_mix, B_mix
 
-    def __aij(self, ai: np.ndarray, k: Optional[np.ndarray] = None):
+    def __aij(self, ai: np.ndarray, k_ij: np.ndarray):
         '''
         calculate aij for mixture using Van der Waals mixing rules
 
@@ -425,7 +454,7 @@ class EOSModels():
         ----------
         ai : numpy array
             1D array of pure component attraction parameter (a), default is empty
-        k : numpy array, optional
+        k_ij : numpy array
             2D array of binary interaction parameter (BIP), default is empty
 
         Returns
@@ -436,13 +465,6 @@ class EOSModels():
         # record no
         rNo = len(ai)
 
-        # NOTE: binary interaction parameter (BIP) with a symmetric property
-        # ki
-        if k is None:
-            kij = np.zeros((rNo, rNo))
-        else:
-            kij = k
-
         # NOTE: Attraction parameter
         # aij
         aij = np.zeros((rNo, rNo))
@@ -450,8 +472,7 @@ class EOSModels():
         # looping through the matrix
         for i in range(rNo):
             for j in range(rNo):
-                if i != j:
-                    aij[i, j] = (1-kij[i, j])*sqrt(ai[i]*ai[j])
+                aij[i, j] = (1 - k_ij[i, j])*sqrt(ai[i]*ai[j])
 
         # res
         return aij

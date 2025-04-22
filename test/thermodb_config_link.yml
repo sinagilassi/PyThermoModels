@@ -77,3 +77,11 @@ C2H6:
   EQUATIONS:
     vapor-pressure: VaPr
     heat-capacity: Cp_IG
+propane:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
