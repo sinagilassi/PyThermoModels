@@ -39,14 +39,13 @@ setup(
     keywords=[
         'python', 'chemical-engineering', 'equation-of-state',
         'thermodynamic-properties', 'activity-coefficient',
-        'thermodynamic-models', 'NRTL', 'UNIQUAC', 'SRK', 'PR'
+        'thermodynamic-models', 'NRTL', 'UNIQUAC', 'SRK', 'PR', 'RK', 'vdW'
     ],
     classifiers=[
         "Development Status :: Planning",
         "Intended Audience :: Education",
         "Topic :: Scientific/Engineering",
         "Programming Language :: Python :: 3.10",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: Unix",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
