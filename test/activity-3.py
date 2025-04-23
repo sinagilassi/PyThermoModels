@@ -91,15 +91,15 @@ mole_fraction = {
 
 # molecular id
 # MeOH-EtOH
-r_i = np.array([1.4311, 2.1055])
-q_i = np.array([1.4320, 1.8920])
+r_i = [1.4311, 2.1055]
+q_i = [1.4320, 1.8920]
 
 # NOTE: non-randomness parameters
 # binary energy of interaction parameters
-tau_ij = np.array([
+tau_ij = [
     [1, 1.031995],
     [1.309036, 1]
-])
+]
 
 # NOTE: operating conditions
 # temperature [K]
@@ -129,5 +129,8 @@ print("-" * 50)
 # NOTE: excess gibbs free energy
 gibbs_energy = activity_uniquac.excess_gibbs_free_energy(
     mole_fraction=mole_fraction, tau_ij=tau_ij, r_i=r_i, q_i=q_i)
-print(f"excess gibbs free energy: {gibbs_energy}")
+print(f"excess gibbs free energy 1: {gibbs_energy}")
+print("-" * 50)
+gibbs_energy = activity_uniquac.excess_gibbs_free_energy()
+print(f"excess gibbs free energy 2: {gibbs_energy}")
 print("-" * 50)

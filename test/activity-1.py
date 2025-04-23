@@ -139,3 +139,6 @@ gibbs_energy = activity_nrtl.excess_gibbs_free_energy(
     mole_fraction=mole_fraction, G_ij=G_ij, tau_ij=tau_ij)
 print(f"excess gibbs free energy method 1: {gibbs_energy}")
 print("-" * 50)
+gibbs_energy = activity_nrtl.excess_gibbs_free_energy()
+print(f"excess gibbs free energy method 1: {gibbs_energy}")
+print("-" * 50)

@@ -36,6 +36,18 @@ class UNIQUAC:
     # constant
     Z = 10.0
 
+    # NOTE: variable based on the component id
+    __tau_ij = None
+    __tau_ij_comp = None
+    __dU_ij = None
+    __dU_ij_comp = None
+    __r_i = None
+    __r_i_comp = None
+    __q_i = None
+    __q_i_comp = None
+    __mole_fraction = None
+    __xi = None
+
     def __init__(self,
                  components: List[str],
                  datasource: Dict = {},
@@ -862,6 +874,110 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in cal_tauij: {str(e)}")
 
+    def __X_ij(self,
+               ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]],
+               symbol_delimiter: Literal["|", "_"] = "|"):
+        """
+        Convert interaction parameter data to numpy array and dict.
+
+        Parameters
+        ----------
+        ij_data : TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]]
+            Interaction parameters (tau_ij) between component i and j.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for the component id. Default is "|".
+
+        Returns
+        -------
+        ij_array : np.ndarray
+            Interaction parameter matrix (numpy array).
+        ij_comp : Dict[str, float]
+            Dictionary of interaction parameters where keys are component pairs and values are their respective values.
+        """
+        try:
+            # SECTION
+            # set the interaction parameter matrix (such as tau_ij) for the UNIQUAC model
+            if isinstance(ij_data, np.ndarray):
+                # set
+                ij_array = ij_data
+                # to dict
+                ij_comp = self.to_dict_ij(
+                    ij_data, symbol_delimiter=symbol_delimiter)
+            elif isinstance(ij_data, TableMatrixData):
+                # convert to numpy array and dict
+                res_ = self.to_ij(data=ij_data)
+                # set
+                ij_array = res_[0]
+                # to dict
+                ij_comp = res_[1]
+            elif isinstance(ij_data, dict):
+                # convert dict to numpy array
+                ij_array = self.to_matrix_ij(
+                    data=ij_data, symbol_delimiter=symbol_delimiter)
+                # to dict
+                ij_comp = ij_data
+            elif isinstance(ij_data, List):
+                # convert list to numpy array
+                ij_array = np.array(ij_data)
+                # to dict
+                ij_comp = self.to_dict_ij(
+                    ij_array, symbol_delimiter=symbol_delimiter)
+            else:
+                raise TypeError(
+                    "tau_ij_data must be numpy array, dict or TableMatrixData")
+
+            # res
+            return ij_array, ij_comp
+        except Exception as e:
+            raise Exception(f"Error in extraction data: {str(e)}")
+
+    def __X_i(self,
+              i_data: List[float] | Dict[str, float] | np.ndarray,
+              symbol_delimiter: Literal["|", "_"] = "|"):
+        '''
+        Convert interaction parameter data to numpy array and dict.
+
+        Parameters
+        ----------
+        i_data : List[float] | Dict[str, float] | np.ndarray
+            Interaction parameters (r_i or q_i) for component i.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for the component id. Default is "|".
+
+        Returns
+        -------
+        i_array : np.ndarray
+            Interaction parameter matrix (numpy array).
+        i_comp : Dict[str, float]
+            Dictionary of interaction parameters where keys are component pairs and values are their respective values.
+        '''
+        try:
+            # SECTION
+            # set relative surface area of component i (such as q_i) for the UNIQUAC model
+            if isinstance(i_data, np.ndarray):
+                # set
+                i_array = i_data
+                # to dict
+                i_comp = self.to_dict_i(i_data)
+            elif isinstance(i_data, List):
+                # set
+                i_array = np.array(i_data)
+                # to dict
+                i_comp = self.to_dict_i(i_data)
+            elif isinstance(i_data, dict):
+                # convert dict to numpy array
+                i_array = self.to_i(data=i_data)
+                # to dict
+                i_comp = i_data
+            else:
+                raise TypeError("q_i_data must be numpy array, dict or List")
+
+            # res
+            return i_array, i_comp
+
+        except Exception as e:
+            raise Exception(f"Error in extraction data: {str(e)}")
+
     def cal(self,
             model_input: Dict,
             Z: Optional[float | int] = None,
@@ -937,9 +1053,9 @@ class UNIQUAC:
 
     def __calculate_activity_coefficients(self,
                                           mole_fraction: Dict[str, float],
-                                          tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                          r_i_data: List[float] | Dict[str, float],
-                                          q_i_data: List[float] | Dict[str, float],
+                                          tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]],
+                                          r_i_data: List[float] | Dict[str, float] | np.ndarray,
+                                          q_i_data: List[float] | Dict[str, float] | np.ndarray,
                                           Z: Optional[float | int],
                                           calculation_mode: Literal['V1'],
                                           symbol_delimiter: Literal["|", "_"],
@@ -954,9 +1070,9 @@ class UNIQUAC:
             Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
         tau_ij_comp : TableMatrixData | np.ndarray | Dict[str, float]
             Interaction parameters (tau_ij) between component i and j.
-        r_i_data : List[float] | Dict[str, float]
+        r_i_data : List[float] | Dict[str, float] | np.ndarray
             relative van der Waals volume of component i
-        q_i_data : List[float] | Dict[str, float]
+        q_i_data : List[float] | Dict[str, float] | np.ndarray
             relative surface area of component i
         Z : int | float
             Model constant, Default is 10.
@@ -1006,6 +1122,10 @@ class UNIQUAC:
             # mole fraction (sorted by component id)
             xi = [mole_fraction[components[i]] for i in range(comp_num)]
 
+            # NOTE: store class variables
+            self.__xi = xi
+            self.__mole_fraction = mole_fraction
+
             # SECTION
             # set the interaction parameter matrix (tau_ij) for the UNIQUAC model
             if isinstance(tau_ij_data, np.ndarray):
@@ -1027,9 +1147,19 @@ class UNIQUAC:
                     data=tau_ij_data, symbol_delimiter=symbol_delimiter)
                 # to dict
                 tau_ij_comp = tau_ij_data
+            elif isinstance(tau_ij_data, List):
+                # convert list to numpy array
+                tau_ij = np.array(tau_ij_data)
+                # to dict
+                tau_ij_comp = self.to_dict_ij(
+                    tau_ij, symbol_delimiter=symbol_delimiter)
             else:
                 raise TypeError(
                     "tau_ij_data must be numpy array, dict or TableMatrixData")
+
+            # NOTE: store class variables
+            self.__tau_ij = tau_ij
+            self.__tau_ij_comp = tau_ij_comp
 
             # SECTION
             # set relative van der Waals volume of component i (r_i) for the UNIQUAC model
@@ -1051,6 +1181,10 @@ class UNIQUAC:
             else:
                 raise TypeError("r_i_data must be numpy array, dict or List")
 
+            # NOTE: store class variables
+            self.__r_i = r_i
+            self.__r_i_comp = r_i_comp
+
             # SECTION
             # set relative surface area of component i (q_i) for the UNIQUAC model
             if isinstance(q_i_data, np.ndarray):
@@ -1070,6 +1204,10 @@ class UNIQUAC:
                 q_i_comp = q_i_data
             else:
                 raise TypeError("q_i_data must be numpy array, dict or List")
+
+            # NOTE: store class variables
+            self.__q_i = q_i
+            self.__q_i_comp = q_i_comp
 
             # SECTION
             # Calculate activity coefficients using the UNIQUAC model
@@ -1212,24 +1350,33 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in CalAcCo_V1: {str(e)}")
 
-    def excess_gibbs_free_energy(self, mole_fraction: Dict[str, float], tau_ij: np.ndarray,
-                                 r_i: np.ndarray, q_i: np.ndarray, Z: Optional[int | float] = None,
-                                 message: Optional[str] = None, res_format: Literal['str', 'json', 'dict'] = 'dict') -> Dict[str, float | Dict] | str:
+    def excess_gibbs_free_energy(self,
+                                 mole_fraction: Optional[Dict[str,
+                                                              float]] = None,
+                                 tau_ij: Optional[np.ndarray] = None,
+                                 r_i:  Optional[np.ndarray] = None,
+                                 q_i:  Optional[np.ndarray] = None,
+                                 Z: Optional[int | float] = None,
+                                 symbol_delimiter: Literal["|", "_"] = "|",
+                                 message: Optional[str] = None,
+                                 res_format: Literal['str', 'json', 'dict'] = 'dict') -> Dict[str, float | Dict] | str:
         """
-        Calculate excess Gibbs energy (G^E/RT) for a multicomponent mixture using the UNIQUAC model.
+        Calculate excess Gibbs energy (G^E/RT) for a multi-component mixture using the UNIQUAC model.
 
         Parameters
         -----------
-        mole_fraction : dict
+        mole_fraction : dict | None
             Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
-        tau_ij : np.ndarray
+        tau_ij : np.ndarray | None
             Matrix of tau parameters where tau[i][j] is tau_ij between component i and j.
-        r_i : np.ndarray
+        r_i : np.ndarray | None
             Array of relative van der Waals volumes of each component.
-        q_i : np.ndarray
+        q_i : np.ndarray | None
             Array of relative surface areas of each component.
         Z : int | float, optional
             Model constant, default is 10.
+        symbol_delimiter : Literal["|", "_"], optional
+            Delimiter for the component id. Default is "|".
         message : str, optional
             Message to be printed, default is None.
         res_format : str, optional
@@ -1242,24 +1389,30 @@ class UNIQUAC:
         """
         try:
             # check
-            if not isinstance(mole_fraction, dict):
-                raise TypeError("mole_fraction must be a dictionary")
+            if mole_fraction:
+                if not isinstance(mole_fraction, dict):
+                    raise TypeError("mole_fraction must be a dictionary")
+            else:
+                mole_fraction = self.__mole_fraction
+                # check
+                if mole_fraction is None:
+                    raise ValueError("mole_fraction is not set")
 
             # check Z
             if Z is None:
                 Z = self.Z
 
-            # components
+            # NOTE: components
             components = self.components
             components_str = ', '.join(components)
 
             # comp no
             comp_num = self.comp_num
 
-            # set message
+            # NOTE: set message
             message = f'Excess Gibbs Free Energy for {components_str}' if message is None else message
 
-            # mole fraction
+            # NOTE: mole fraction
             xi = [mole_fraction[components[i]] for i in range(len(components))]
 
             # Normalize mole fractions to ensure they sum to 1
@@ -1271,13 +1424,50 @@ class UNIQUAC:
                 raise ValueError(
                     f"mole_fraction length {len(x)} does not match component number {comp_num}")
 
+            # NOTE: set tau_ij
+            if tau_ij is None:
+                tau_ij = self.__tau_ij
+                # check
+                if tau_ij is None:
+                    raise ValueError("tau_ij is not set")
+
+            # check
+            if isinstance(tau_ij, List):
+                # convert to numpy array
+                tau_ij = np.array(tau_ij)
+            # check
+            if not isinstance(tau_ij, np.ndarray):
+                raise TypeError("tau_ij must be numpy array")
+            # check
+            if tau_ij.shape[0] != comp_num or tau_ij.shape[1] != comp_num:
+                raise ValueError(
+                    f"tau_ij shape {tau_ij.shape} does not match component number {comp_num}")
+
+            # NOTE: set r_i
+            if r_i is None:
+                r_i = self.__r_i
+                # check
+                if r_i is None:
+                    raise ValueError("r_i is not set")
+            # check
             if len(r_i) != comp_num:
                 raise ValueError(
                     f"r_i length {len(r_i)} does not match component number {comp_num}")
 
+            # NOTE: set q_i
+            if q_i is None:
+                q_i = self.__q_i
+                # check
+                if q_i is None:
+                    raise ValueError("q_i is not set")
+            # check
             if len(q_i) != comp_num:
                 raise ValueError(
                     f"q_i length {len(q_i)} does not match component number {comp_num}")
+
+            # set array
+            r_i = np.array(r_i)
+            q_i = np.array(q_i)
 
             # SECTION
             # excess gibbs free energy

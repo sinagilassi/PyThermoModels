@@ -27,6 +27,18 @@ class NRTL:
     # universal gas constant [J/mol/K]
     R_CONST = 8.314
 
+    # NOTE: variables based on component id
+    __tau_ij = None
+    __tau_ij_comp = None
+    __dg_ij = None
+    __dg_ij_comp = None
+    __alpha_ij = None
+    __alpha_ij_comp = None
+    __G_ij = None
+    __G_ij_comp = None
+    __mole_fraction = None
+    __xi = None
+
     def __init__(self,
                  components: List[str],
                  datasource: Dict = {},
@@ -950,6 +962,10 @@ class NRTL:
             # mole fraction (sorted by component id)
             xi = [mole_fraction[components[i]] for i in range(comp_num)]
 
+            # NOTE: store in class
+            self.__xi = xi
+            self.__mole_fraction = mole_fraction
+
             # check message
             if message is None:
                 message = f"Calculate activity coefficients for {components_str} using NRTL model"
@@ -979,6 +995,10 @@ class NRTL:
                 raise TypeError(
                     "tau_ij_data must be numpy array, dict or TableMatrixData")
 
+            # NOTE: store in class
+            self.__tau_ij = tau_ij
+            self.__tau_ij_comp = tau_ij_comp
+
             # SECTION
             # set the non-randomness parameter matrix (alpha_ij) for the NRTL model
             if isinstance(alpha_ij_data, np.ndarray):
@@ -1004,10 +1024,18 @@ class NRTL:
                 raise TypeError(
                     "alpha_ij_data must be numpy array, dict or TableMatrixData")
 
+            # NOTE: store in class
+            self.__alpha_ij = alpha_ij
+            self.__alpha_ij_comp = alpha_ij_comp
+
             # SECTION
             # set G_ij matrix for NRTL model
             G_ij, G_ij_comp = self.cal_G_ij(
                 tau_ij=tau_ij, alpha_ij=alpha_ij, symbol_delimiter=symbol_delimiter)
+
+            # NOTE: store in class
+            self.__G_ij = G_ij
+            self.__G_ij_comp = G_ij_comp
 
             # SECTION
             # Calculate activity coefficients using the NRTL model
@@ -1199,10 +1227,15 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in CalAcCoV2: {str(e)}")
 
-    def excess_gibbs_free_energy(self, mole_fraction: Dict[str, float], G_ij: np.ndarray, tau_ij: np.ndarray,
-                                 message: Optional[str] = None, res_format: Literal['str', 'json', 'dict'] = 'dict') -> Dict[str, float | Dict] | str:
+    def excess_gibbs_free_energy(self,
+                                 mole_fraction: Optional[Dict[str,
+                                                              float]] = None,
+                                 G_ij: Optional[np.ndarray] = None,
+                                 tau_ij: Optional[np.ndarray] = None,
+                                 message: Optional[str] = None,
+                                 res_format: Literal['str', 'json', 'dict'] = 'dict') -> Dict[str, float | Dict] | str:
         """
-        Calculate excess Gibbs energy for a multicomponent mixture using the NRTL model.
+        Calculate excess Gibbs energy for a multi-component mixture using the NRTL model.
 
         Parameters
         -----------
@@ -1223,14 +1256,41 @@ class NRTL:
             Dictionary containing the excess Gibbs energy and other information.
         """
         try:
-            # components
+            # NOTE: components
             components = self.components
             components_str = ', '.join(components)
 
-            # mole fraction
+            # NOTE: mole fraction
+            # check
+            if mole_fraction is None:
+                mole_fraction = self.__mole_fraction
+
+            # set
             xi = [mole_fraction[components[i]] for i in range(len(components))]
 
-            # set message
+            # NOTE: G_ij
+            # check
+            if G_ij is None:
+                G_ij = self.__G_ij
+            # list
+            if isinstance(G_ij, list):
+                G_ij = np.array(G_ij)
+            # check array
+            if not isinstance(G_ij, np.ndarray):
+                raise TypeError("G_ij must be numpy array")
+
+            # NOTE: tau_ij
+            # check
+            if tau_ij is None:
+                tau_ij = self.__tau_ij
+            # list
+            if isinstance(tau_ij, list):
+                tau_ij = np.array(tau_ij)
+            # check array
+            if not isinstance(tau_ij, np.ndarray):
+                raise TypeError("tau_ij must be numpy array")
+
+            # NOTE: set message
             message = f'Excess Gibbs Free Energy for {components_str}' if message is None else message
 
             # Normalize mole fractions to ensure they sum to 1
