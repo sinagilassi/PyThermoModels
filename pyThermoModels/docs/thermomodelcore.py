@@ -890,11 +890,18 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 raise Exception('Components list not provided!')
 
             # SECTION: set datasource and equationsource
-            # NOTE: check if datasource and equationsource are provided in model input
-            # datasource
-            datasource = model_source.get('datasource', {})
-            # equationsource
-            equationsource = model_source.get('equationsource', {})
+            if model_source:
+                # NOTE: check if datasource and equationsource are provided in model input
+                # datasource
+                datasource = model_source.get('datasource', {})
+                # equationsource
+                equationsource = model_source.get('equationsource', {})
+            else:
+                # datasource
+                datasource = {}
+                # equationsource
+                equationsource = {}
+
             # set thermodb link
             link_status = self.set_thermodb_link(datasource, equationsource)
             # check

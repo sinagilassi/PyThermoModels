@@ -83,7 +83,7 @@ class NRTL:
         self.comp_idx = {components[i]: i for i in range(self.comp_num)}
 
     def __repr__(self) -> str:
-        return """
+        model_ = """
         The NRTL (`Non-Random Two-Liquid`) model - a thermodynamic framework used to describe the behavior of mixtures,
         particularly in the context of phase equilibria and activity coefficients.
 
@@ -94,6 +94,7 @@ class NRTL:
 
         Universal gas constant (R) is defined as 8.314 J/mol/K.
         """
+        return model_
 
     def to_ij(self, data: TableMatrixData, prop_symbol: str,
               symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
@@ -906,8 +907,6 @@ class NRTL:
         -----------
         mole_fraction : Dict[str, float]
             Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
-        temperature : float
-            Temperature in Kelvin.
         tau_ij_comp : TableMatrixData | np.ndarray
             Interaction parameters (tau_ij) between component i and j.
         alpha_ij_comp : TableMatrixData | np.ndarray
@@ -1043,6 +1042,8 @@ class NRTL:
             # res
             res = {
                 'property_name': 'activity coefficients',
+                'components': components,
+                'mole_fraction': xi,
                 'value': AcCo_i,
                 'unit': 1,
                 'symbol': "AcCo_i",
@@ -1251,6 +1252,8 @@ class NRTL:
             # SECTION: set result format
             res = {
                 "property_name": "Excess Molar Gibbs Free Energy",
+                "components": components,
+                "mole_fraction": xi,
                 "value": float(gE_RT),
                 "unit": 1,
                 "symbol": "ExMoGiFrEn",

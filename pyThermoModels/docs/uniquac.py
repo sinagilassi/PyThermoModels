@@ -97,7 +97,7 @@ class UNIQUAC:
             raise TypeError("components must be a list")
 
         # SECTION: Assign the parameters to instance variables
-        self.darasource = datasource
+        self.datasource = datasource
         self.equationsource = equationsource
         self.components = [components.strip() for components in components]
 
@@ -106,6 +106,27 @@ class UNIQUAC:
         self.comp_num = len(components)
         # idx
         self.comp_idx = {components[i]: i for i in range(self.comp_num)}
+
+    def __str__(self):
+        model_ = """
+        The UNIQUAC (`Universal Quasi-Chemical`) model - a thermodynamic framework used to describe the behavior of mixtures,
+        particularly in the context of phase equilibria and activity coefficients
+
+        To apply the UNIQUAC model, you'll need the following parameters:
+
+        **Pure Component Parameters**
+        - r_i (volume parameter): represents the volume of a molecule in the mixture.
+        - q_i (surface area parameter): represents the surface area of a molecule in the mixture.
+
+        **Binary Interaction Parameters**
+        - Δu_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
+        - τ_ij (binary interaction parameter): represents the interaction energy between two molecules of different components [dimensionless].
+
+        Universal gas constant (R) is defined as 8.314 J/mol/K.
+
+        Z is a constant used in the model, default value is 10.0.
+        """
+        return model_
 
     def to_ij(self, data: TableMatrixData, prop_symbol: str,
               symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
@@ -841,26 +862,96 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in cal_tauij: {str(e)}")
 
-    def calculate_activity_coefficients(self,
-                                        mole_fraction: Dict[str, float],
-                                        tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                        r_i_data: List[float] | Dict[str, float],
-                                        q_i_data: List[float] | Dict[str, float],
-                                        Z: Optional[float | int] = None,
-                                        calculation_mode: Literal['V1'] = 'V1',
-                                        symbol_delimiter: Literal["|",
-                                                                  "_"] = "|",
-                                        message: Optional[str] = None,
-                                        res_format: Literal['dict', 'str', 'json'] = 'dict') -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
+    def cal(self,
+            model_input: Dict,
+            Z: Optional[float | int] = None,
+            calculation_mode: Literal['V1'] = 'V1',
+            symbol_delimiter: Literal["|",
+                                      "_"] = "|",
+            message: Optional[str] = None,
+            res_format: Literal['dict', 'str', 'json'] = 'dict') -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
         """
-        Calculate activity coefficients for a multicomponent mixture using the UNIQUAC model.
+        Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
+
+        Parameters
+        -----------
+        model_input : Dict
+            Dictionary of input values where keys are component names and values are their respective values.
+                - `mole_fraction`: Dict[str, float]
+                    dictionary of mole fractions where keys are component names and values are their respective mole fractions.
+                - `tau_ij` : TableMatrixData | np.ndarray | Dict[str, float]
+                    Interaction parameters (tau_ij) between component i and j.
+                - `r_i` : List[float] | Dict[str, float]
+                    relative van der Waals volume of component i
+                - `q_i` : List[float] | Dict[str, float]
+                    relative surface area of component i
+        Z : int | float
+            Model constant, Default is 10.
+        calculation_mode : Literal['V1', 'V2']
+            Mode of calculation. If 'V1', use the first version of the UNIQUAC model. If 'V2', use the second version.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for the component id. Default is "|".
+        message : Optional[str]
+            Message to be displayed. Default is None.
+        res_format : Literal['dict', 'str', 'json']
+            Format of the result. Default is 'dict'.
+        """
+        try:
+            # SECTION: check
+            if not isinstance(model_input, dict):
+                raise TypeError("model_input must be dict")
+
+            # SECTION: check model input
+            if 'mole_fraction' not in model_input:
+                raise KeyError("mole_fraction is required in model_input")
+            if 'tau_ij' not in model_input:
+                raise KeyError("tau_ij is required in model_input")
+            if 'r_i' not in model_input:
+                raise KeyError("r_i is required in model_input")
+            if 'q_i' not in model_input:
+                raise KeyError("q_i is required in model_input")
+
+            # NOTE: get values
+            # mole fraction
+            mole_fraction = model_input['mole_fraction']
+            # tau_ij
+            tau_ij = model_input['tau_ij']
+            # r_i
+            r_i = model_input['r_i']
+            # q_i
+            q_i = model_input['q_i']
+
+            # SECTION: calculate activity coefficients
+            return self.__calculate_activity_coefficients(
+                mole_fraction=mole_fraction,
+                tau_ij_data=tau_ij,
+                r_i_data=r_i,
+                q_i_data=q_i,
+                Z=Z,
+                calculation_mode=calculation_mode,
+                symbol_delimiter=symbol_delimiter,
+                message=message,
+                res_format=res_format)
+        except Exception as e:
+            raise Exception(f"Error in uniquac model cal: {str(e)}")
+
+    def __calculate_activity_coefficients(self,
+                                          mole_fraction: Dict[str, float],
+                                          tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
+                                          r_i_data: List[float] | Dict[str, float],
+                                          q_i_data: List[float] | Dict[str, float],
+                                          Z: Optional[float | int],
+                                          calculation_mode: Literal['V1'],
+                                          symbol_delimiter: Literal["|", "_"],
+                                          message: Optional[str],
+                                          res_format: Literal['dict', 'str', 'json']) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
+        """
+        Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
 
         Parameters
         -----------
         mole_fraction : Dict[str, float]
             Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
-        temperature : float
-            Temperature in Kelvin.
         tau_ij_comp : TableMatrixData | np.ndarray | Dict[str, float]
             Interaction parameters (tau_ij) between component i and j.
         r_i_data : List[float] | Dict[str, float]
@@ -988,6 +1079,9 @@ class UNIQUAC:
             else:
                 raise ValueError("calculation_mode not supported!")
 
+            # convert to float
+            AcCo_i = [float(i) for i in AcCo_i]
+
             # SECTION
             # init the activity coefficients
             AcCo_i_comp = {components[i]: AcCo_i[i] for i in range(comp_num)}
@@ -1009,6 +1103,8 @@ class UNIQUAC:
             # res
             res = {
                 'property_name': 'activity coefficients',
+                'components': components,
+                'mole_fraction': xi,
                 'value': AcCo_i,
                 'unit': 1,
                 'symbol': "AcCo_i",
@@ -1208,7 +1304,9 @@ class UNIQUAC:
             # SECTION: set result format
             res = {
                 "property_name": "Excess Molar Gibbs Free Energy",
-                "value": gE_RT,
+                "components": components,
+                "mole_fraction": xi,
+                "value": float(gE_RT),
                 "unit": 1,
                 "symbol": "ExMoGiFrEn",
                 'message': message

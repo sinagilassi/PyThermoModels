@@ -21,7 +21,7 @@ thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
 
 # ! nrtl ethanol-butyl-methyl-ether
 nrtl_path = os.path.join(
-    thermodb_dir, 'thermodb_nrtl_ethanol_butyl-methyl-ether_1.pkl')
+    thermodb_dir, 'thermodb_nrtl_methanol_ethanol_1.pkl')
 # load
 thermodb_nrtl_1 = ptdb.load_thermodb(nrtl_path)
 # check
@@ -52,7 +52,7 @@ datasource, equationsource = thub1.build()
 # =======================================
 # SECTION: configure activity model
 # components
-components = ['ethanol', 'butyl-methyl-ether']
+components = ['methanol', 'ethanol']
 
 # model input
 activity_model = 'NRTL'
@@ -81,23 +81,33 @@ print(activity_nrtl)
 # ========================================
 # NOTE ACTIVITY CALCULATION
 # ========================================
-# NOTE: Example: Ethanol-Butyl-Methyl-Ether
+# NOTE: Example: Methanol-Ethanol
 
-# feed spec
+# mole fraction
 mole_fraction = {
-    'ethanol': 0.4,
-    'butyl-methyl-ether': 0.6
+    'methanol': 0.0316,
+    'ethanol': 0.9684
 }
 
 # NOTE: non-randomness parameters
+# non-randomness parameters
 non_randomness_parameters = thermodb_nrtl_1.select('non-randomness-parameters')
 print(type(non_randomness_parameters))
 
-# dg_ij
-dg_ij = non_randomness_parameters.ijs(
-    f"dg | {components[0]} | {components[1]}")
-print(type(dg_ij))
-print(dg_ij)
+# a_ij
+a_ij = non_randomness_parameters.ijs(f"a | {components[0]} | {components[1]}")
+print(type(a_ij))
+print(a_ij)
+
+# b_ij
+b_ij = non_randomness_parameters.ijs(f"b | {components[0]} | {components[1]}")
+print(type(b_ij))
+print(b_ij)
+
+# c_ij
+c_ij = non_randomness_parameters.ijs(f"c | {components[0]} | {components[1]}")
+print(type(c_ij))
+print(c_ij)
 
 # alpha_ij
 alpha_ij = non_randomness_parameters.ijs(
@@ -107,14 +117,22 @@ print(alpha_ij)
 
 # NOTE: operating conditions
 # temperature [K]
-T = 323.15
+T = 350.1546257
 # pressure [bar]
 P = 30
+
+# NOTE: calculate the interaction parameter matrix (dg_ij)
+dg_ij, dg_ij_comp = activity_nrtl.cal_dg_ij_M1(
+    temperature=T, a_ij=a_ij, b_ij=b_ij, c_ij=c_ij)
+print(f"dg_ij: {dg_ij}")
+print(f"dg_ij_comp: {dg_ij_comp}")
+print("-" * 50)
 
 # NOTE: calculate the interaction parameter matrix (tau_ij)
 tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(temperature=T, dg_ij=dg_ij)
 print(f"tau_ij: {tau_ij}")
 print(f"tau_ij_comp: {tau_ij_comp}")
+print("-" * 50)
 
 # SECTION: model input
 model_input = {
