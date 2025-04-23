@@ -8,6 +8,7 @@ from .thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager
 from .fugacitycore import FugacityCore
 from .activitycore import ActivityCore
+from .eoscore import eosCore
 from .eosutils import EOSUtils
 from ..utils import eos_model_name
 
@@ -844,6 +845,29 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             return res
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
+
+    def init_eos(self, **kwargs):
+        '''
+        Initializes eos model
+
+        Parameters
+        ----------
+        **kwargs: Optional[Dict]
+            additional arguments
+                - tolerance: float, tolerance for the calculation (default: 1e-1)
+
+        Returns
+        -------
+        eosCore: object
+            eosCore object for the calculation of fugacity
+        '''
+        try:
+            # SECTION: keywords
+
+            # SECTION: init fugacity core
+            return eosCore(**kwargs)
+        except Exception as e:
+            raise Exception("EOS calculation failed!, ", e)
 
     def init_activity(self,
                       components: List[str],

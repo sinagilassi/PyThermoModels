@@ -108,6 +108,9 @@ tm = ptm.init()
 # log
 print("tm: ", tm)
 
+# init
+eos = ptm.eos()
+
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
@@ -183,17 +186,17 @@ model_source = {
 # ------------------------------------------------
 # NOTE: eos root analysis
 # ------------------------------------------------
-res = tm.check_eos_roots_single_component(
-    model_name=eos_model,
-    model_input=model_input,
-    model_source=model_source)
-print(res)
+# res = tm.check_eos_roots_single_component(
+#     model_name=eos_model,
+#     model_input=model_input,
+#     model_source=model_source)
+# print(res)
 
 # ------------------------------------------------
 # NOTE: calculation
 # ------------------------------------------------
 # NOTE: gas fugacity calculation method
-res = tm.cal_fugacity(
+res = eos.cal_fugacity(
     model_name=eos_model,
     model_input=model_input,
     model_source=model_source)
