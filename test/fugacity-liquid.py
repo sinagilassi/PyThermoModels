@@ -65,6 +65,10 @@ tm = ptm.init()
 # log
 print("tm: ", tm)
 
+# init
+eos = ptm.eos()
+print("eos: ", eos)
+
 # =======================================
 # SECTION: THERMODB LINK CONFIGURATION
 # =======================================
@@ -100,30 +104,28 @@ eos_model = 'SRK'
 # component phase
 phase = "LIQUID"
 
+# NOTE: example
 # component
-N0s = {
-    "acetylene": 1.0
-}
-
+component = 'acetylene'
 # temperature [K]
 T = 250
-
 # pressure [MPa]
 P = 2
 
-# model input
+# SECTION: model input
 model_input = {
-    "phase": phase,
-    "feed-specification": N0s,
+    # "phase": phase,
+    "component": component,
     "pressure": [P, 'MPa'],
     "temperature": [T, 'K'],
 }
 
-# model source
+# SECTION: model source
 model_source = {
     "datasource": datasource,
     "equationsource": equationsource
 }
+
 # ------------------------------------------------
 # NOTE: check reference
 # ------------------------------------------------
@@ -133,28 +135,18 @@ print(res_)
 # ------------------------------------------------
 # NOTE: eos root analysis
 # ------------------------------------------------
-res = tm.check_eos_roots(
-    model_name=eos_model, model_input=model_input, model_source=model_source)
+res = eos.check_eos_roots_single_component(
+    model_name=eos_model,
+    model_input=model_input,
+    model_source=model_source)
 print(res)
 
 # ------------------------------------------------
 # NOTE: eos
 # ------------------------------------------------
 # NOTE: liquid fugacity calculation method
-res = tm.cal_fugacity(model_name=eos_model, model_input=model_input,
-                      model_source=model_source)
-
-# NOTE: gas fugacity calculation method
-# res = tm.cal_fugacity(
-#     model_name=eos_model, model_input=model_input)
-
-Z, Phi, eos_parms, phi_parms = res
-# res
-print(f"Z: {Z}")
-print('-'*50)
-print(f"Phi: {Phi}")
-print('-'*50)
-# print(eos_parms)
-# print('-'*50)
-# print(phi_parms)
-# print('-'*50)
+res = eos.cal_fugacity(
+    model_name=eos_model,
+    model_input=model_input,
+    model_source=model_source)
+print(res)

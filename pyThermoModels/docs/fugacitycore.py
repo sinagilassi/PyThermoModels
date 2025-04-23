@@ -652,7 +652,7 @@ class FugacityCore(EOSManager):
                 Zi_comp[self.components[i]] = _Zi.tolist()
                 eos_params.append(_eos_params[0])
 
-                # ! fugacity coefficient (vapor phase)
+                # ! fugacity coefficient (at vapor pressure)
                 _phi = self.eos_fugacity(
                     self.P, self.T, _Zi, _eos_params[0], self.components, self.datasource, eos_model=eos_model, mode=mode)
                 # check
@@ -662,9 +662,10 @@ class FugacityCore(EOSManager):
                 phi.append(_phi[0])
                 phi_comp[self.components[i]] = [_phi[0]]
 
-                # NOTE: fugacity of saturated vapor at T and Psat [Pa]
-                _fug_l_sat = VaPr_i[i]*phi[i]
-                fug_l_sat.append(_fug_l_sat)
+                # NOTE: fugacity of saturated vapor at T [K] and P* (vapor-pressure) [Pa]
+                _fug_sat = VaPr_i[i]*phi[i]
+
+                # NOTE: critical molar volume [m3/mol]
 
                 # save
                 # set

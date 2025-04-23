@@ -55,6 +55,10 @@ tm = ptm.init()
 # log
 print("tm: ", tm)
 
+# init
+eos = ptm.eos()
+print("eos: ", eos)
+
 # =======================================
 # SECTION: THERMODB LINK CONFIGURATION
 # =======================================
@@ -149,24 +153,24 @@ model_source = {
 # ! CHECK REFERENCES
 # =======================================
 # check reference
-# res_ = tm.check_fugacity_reference(eos_model)
-# print(res_)
+res_ = tm.check_fugacity_reference(eos_model)
+print(res_)
 
 # =======================================
 # ! EOS ROOT ANALYSIS
 # =======================================
 # eos root analysis
-res_ = tm.check_eos_roots_multi_component(model_name=eos_model,
-                                          model_input=model_input,
-                                          model_source=model_source)
+res_ = eos.check_eos_roots_multi_component(model_name=eos_model,
+                                           model_input=model_input,
+                                           model_source=model_source)
 print(res_)
 
 # =======================================
 # ! FUGACITY CALCULATION
 # =======================================
 # calculate fugacity
-res = tm.cal_fugacity_mixture(model_name=eos_model,
-                              model_input=model_input,
-                              model_source=model_source,
-                              k_ij=k_ij)
+res = eos.cal_fugacity_mixture(model_name=eos_model,
+                               model_input=model_input,
+                               model_source=model_source,
+                               k_ij=k_ij)
 print(res)
