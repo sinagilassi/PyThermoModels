@@ -1,4 +1,4 @@
-from .eoscore import EOSCore
+from .eoscore import eosCore
 from .fugacity import FugacityClass
 from .thermomodelcore import ThermoModelCore
 from .fugacitycore import FugacityCore

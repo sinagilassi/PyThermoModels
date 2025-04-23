@@ -3,15 +3,13 @@ from typing import Dict, List, Union, Literal, Optional, Tuple
 import pycuc
 import json
 # local
-from .eoscore import EOSCore
-from .fugacity import FugacityClass
 from .thermodb import ThermoDB
 from .thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager
 from .fugacitycore import FugacityCore
 from .activitycore import ActivityCore
-from ..utils import eos_model_name
 from .eosutils import EOSUtils
+from ..utils import eos_model_name
 
 
 class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):

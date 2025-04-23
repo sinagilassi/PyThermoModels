@@ -66,13 +66,6 @@ methane_thermodb_file = os.path.join(thermodb_dir, 'methane-1.pkl')
 # load
 methane_thermodb = ptdb.load_thermodb(methane_thermodb_file)
 
-# ========================================
-# ! INITIALIZE OBJECT
-# ========================================
-tm = ptm.init()
-# log
-print("tm: ", tm)
-
 # =======================================
 # SECTION: THERMODB LINK CONFIGURATION
 # =======================================
@@ -107,6 +100,13 @@ datasource, equationsource = thub1.build()
 # vapor pressure
 VaPr = equationsource['propane']['VaPr'].cal(T=300.1)
 print(VaPr)
+
+# ========================================
+# NOTE: INITIALIZE OBJECT
+# ========================================
+tm = ptm.init()
+# log
+print("tm: ", tm)
 
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
