@@ -4,6 +4,7 @@
 # package/module list
 import numpy as np
 import pycuc
+from math import exp
 # local
 from ..configs import Tref, R_CONST
 from .eosmanager import EOSManager
@@ -103,7 +104,7 @@ class FugacityCore(EOSManager):
 
     def root_analysis_mode(self, phase: str):
         '''
-        Sets root analysis mode based on the phase set in the model input
+        Sets root analysis mode based on the phase set in the model input and liquid fugacity calculation method.
 
         Returns
         -------
@@ -124,8 +125,10 @@ class FugacityCore(EOSManager):
             # check phase
             if phase == 'VAPOR-LIQUID':
                 calculation_mode = 1
-            elif phase == 'LIQUID':
+            elif phase == 'LIQUID' and self.liquid_fugacity_calculation_method == 'EOS':
                 calculation_mode = 2
+            elif phase == 'LIQUID' and self.liquid_fugacity_calculation_method == 'Poynting':
+                calculation_mode = 1
             elif phase == 'VAPOR':
                 calculation_mode = 3
             elif phase == 'SUPERCRITICAL':
@@ -223,10 +226,6 @@ class FugacityCore(EOSManager):
         # universal gas constant [J/mol.K]
         # R = R_CONST
 
-        # default values
-        eos_model = self.eos_model
-        mode = self.mode
-
         # setting
         solver_method = kwargs.get('solver_method', 'ls')
         root_analysis_set = kwargs.get('root_analysis_set', 1)
@@ -317,8 +316,13 @@ class FugacityCore(EOSManager):
             # NOTE: looping through Zis
             for i in range(len(Zis)):
                 # ! fugacity coefficient (vapor phase)
-                _phi_res = self.eos_fugacity(self.P, self.T, Zis[i], _eos_params, self.components,
-                                             yi=yi, eos_model=eos_model, mode=mode, params_comp=_eos_params_comp)
+                _phi_res = self.eos_fugacity(self.P, self.T, Zis[i],
+                                             _eos_params,
+                                             self.components,
+                                             yi=yi,
+                                             eos_model=eos_model,
+                                             mode=mode,
+                                             params_comp=_eos_params_comp)
                 # save
                 _phi.append(_phi_res)
 
@@ -329,10 +333,21 @@ class FugacityCore(EOSManager):
                         _phase_key = self.phase.lower()
                         _phi_pack[_phase_key][self.components[j]] = {
                             "mole_fraction": yi[j],
-                            "temperature": self.T,
-                            "temperature_unit": "K",
-                            "pressure": self.P,
-                            "pressure_unit": "Pa",
+                            "pressure": {
+                                'value': self.P,
+                                'unit': 'Pa',
+                                'symbol': 'P'
+                            },
+                            "temperature": {
+                                'value': self.T,
+                                'unit': 'K',
+                                'symbol': 'T'
+                            },
+                            "molar_volume": {
+                                'value': calMolarVolume(self.P, self.T, Zis[0], R=R_CONST),
+                                'unit': 'm3/mol',
+                                'symbol': 'MoVo'
+                            },
                             'compressibility_coefficient': {
                                 'value': Zis[0],
                                 'unit': 'dimensionless',
@@ -372,10 +387,21 @@ class FugacityCore(EOSManager):
                         # NOTE: set
                         _phi_pack[_phase][self.components[j]] = {
                             "mole_fraction": yi[j],
-                            "temperature": self.T,
-                            "temperature_unit": "K",
-                            "pressure": self.P,
-                            "pressure_unit": "Pa",
+                            "pressure": {
+                                'value': self.P,
+                                'unit': 'Pa',
+                                'symbol': 'P'
+                            },
+                            "temperature": {
+                                'value': self.T,
+                                'unit': 'K',
+                                'symbol': 'T'
+                            },
+                            "molar_volume": {
+                                'value': calMolarVolume(self.P, self.T, Zis[i], R=R_CONST),
+                                'unit': 'm3/mol',
+                                'symbol': 'MoVo'
+                            },
                             'compressibility_coefficient': {
                                 'value': Zis[i],
                                 'unit': 'dimensionless',
@@ -420,7 +446,7 @@ class FugacityCore(EOSManager):
             # set phase
             _phi_pack['phase'] = []
             # set component
-            _phi_pack['component'] = component_
+            _phi_pack['component'] = [component_]
 
             # NOTE: check phase
             if self.phase == 'VAPOR-LIQUID':
@@ -497,10 +523,16 @@ class FugacityCore(EOSManager):
                 # pack
                 res__ = {
                     "mole_fraction": 1.0,
-                    "temperature": self.T,
-                    "temperature_unit": "K",
-                    "pressure": self.P,
-                    "pressure_unit": "Pa",
+                    "temperature": {
+                        'value': self.T,
+                        'unit': 'K',
+                        'symbol': 'T'
+                    },
+                    "pressure": {
+                        'value': self.P,
+                        'unit': 'Pa',
+                        'symbol': 'P'
+                    },
                     "molar_volume": {
                         'value': Vm,
                         'unit': 'm3/mol',
@@ -562,6 +594,14 @@ class FugacityCore(EOSManager):
             liquid fugacity
         _eos_params : dict
             eos parameters
+
+        Notes
+        -----
+        1. calculation_mode = -1: invalid phase
+        2. calculation_mode = 1: VAPOR-LIQUID
+        3. calculation_mode = 2: LIQUID
+        4. calculation_mode = 3: VAPOR or SUPERCRITICAL
+        5. calculation_mode = 4: SOLID
         '''
         try:
             # setting
@@ -631,65 +671,187 @@ class FugacityCore(EOSManager):
             eos_params = []
 
             # set results
-            _phi_pack = {
-                'VAPOR': {},
-                'LIQUID': {},
-                'SOLID': {},
-                'SUPERCRITICAL': {}
-            }
+            _phi_pack = {}
+            # set phase (always liquid)
+            _phi_pack['liquid'] = {}
+            _phi_pack['phase'] = ['liquid']
 
             # SECTION: liquid fugacity calculation
-            # note: At T < Tc and P > Psat, EOS may give 1 or 3 roots → use smallest (liquid).
-            # looping through components
-            for i in range(compNo):
-                # NOTE: find roots
+            # NOTE: At T < Tc and P > Psat, EOS may give 1 or 3 roots → use smallest (liquid).
+            # NOTE: calculate fugacity coefficient at vapor pressure (P*) and system temperature (T).
+
+            # SECTION: check mode
+            if mode == 'mixture':
+                # NOTE:
+                raise Exception(
+                    "Liquid fugacity calculation method for the mixture mode is not available!")
+                # NOTE: mixture
+                # looping through components
+                for i in range(compNo):
+                    # NOTE: find roots
+                    # ! at vapor pressure (P*) and system temperature (T)
+                    P_ = VaPr_i[i]
+                    # find eos roots
+                    _Zi, _eos_params, _eos_params_comp = self.eos_roots(
+                        P_, self.T, self.components, root_analysis_res,
+                        self.datasource, eos_model=eos_model,
+                        solver_method=solver_method, mode=mode)
+
+                    # NOTE: check root analysis res
+                    # set
+                    Zi[i] = _Zi
+                    Zi_comp[self.components[i]] = _Zi.tolist()
+                    eos_params.append(_eos_params[0])
+
+                    # ! fugacity coefficient at vapor pressure (P*) and system temperature (T)
+                    _phi = self.eos_fugacity(
+                        P_, self.T, _Zi, _eos_params[0], self.components,
+                        self.datasource, eos_model=eos_model, mode=mode)
+
+                    # check
+                    if _phi is None:
+                        raise Exception(
+                            "fugacity coefficient calculation failed!")
+                    # set
+                    phi.append(_phi[0])
+                    phi_comp[self.components[i]] = [_phi[0]]
+
+                    # NOTE: fugacity of saturated vapor at T [K] and P* (vapor-pressure) [Pa]
+                    _Fug_sat = VaPr_i[i]*phi[i]
+
+                    # NOTE: molar volume at T[K] and P* (vapor-pressure) [Pa]
+                    Vm = 1
+
+                    # save
+                    # set
+                    _phi_pack[self.phase][self.components[i]] = {
+                        "temperature": self.T,
+                        "temperature_unit": "K",
+                        "pressure": self.P,
+                        "pressure_unit": "Pa",
+                        'compressibility_coefficient': {
+                            'value': Zi[i],
+                            'unit': 'dimensionless',
+                            'symbol': 'Z'
+                        },
+                        'fugacity_coefficient': {
+                            'value': fug_l_sat[i],
+                            'unit': 'dimensionless',
+                            'symbol': 'phi'
+                        },
+                        'mode': (self.mode).upper(),
+                        'phase': self.phase
+                    }
+            elif mode == 'single':
+                # NOTE: single
+                # set component
+                _phi_pack['component'] = [self.components[0]]
+
+                # ! at vapor pressure (P*) and system temperature (T)
+                P_sat = VaPr_i[0]
+                # find eos roots
                 _Zi, _eos_params, _eos_params_comp = self.eos_roots(
-                    self.P, self.T, self.components, root_analysis_res, self.datasource, eos_model=eos_model, solver_method=solver_method, mode=mode)
+                    P_sat, self.T, self.components, root_analysis_res,
+                    self.datasource, eos_model=eos_model,
+                    solver_method=solver_method, mode=mode)
 
                 # NOTE: check root analysis res
-                # set
-                Zi[i] = _Zi
-                Zi_comp[self.components[i]] = _Zi.tolist()
-                eos_params.append(_eos_params[0])
+                if len(_Zi) != 2:
+                    raise Exception("Invalid root analysis res!")
+                # ! smallest root (liquid phase)
+                Zi_min = float(np.min(_Zi))
+                # ! largest root (vapor phase)
+                Zi_max = float(np.max(_Zi))
 
-                # ! fugacity coefficient (at vapor pressure)
+                # ! fugacity coefficient at vapor pressure (P*) and system temperature (T)
                 _phi = self.eos_fugacity(
-                    self.P, self.T, _Zi, _eos_params[0], self.components, self.datasource, eos_model=eos_model, mode=mode)
+                    P_sat, self.T, Zi_min, _eos_params[0], self.components,
+                    self.datasource, eos_model=eos_model, mode=mode)
+
                 # check
                 if _phi is None:
                     raise Exception("fugacity coefficient calculation failed!")
                 # set
-                phi.append(_phi[0])
-                phi_comp[self.components[i]] = [_phi[0]]
+                phi_sat = _phi[0]
 
-                # NOTE: fugacity of saturated vapor at T [K] and P* (vapor-pressure) [Pa]
-                _fug_sat = VaPr_i[i]*phi[i]
+                # NOTE: fugacity of saturated vapor [Pa] at T [K] and P* (vapor-pressure) [Pa]
+                Fug_sat = P_sat*phi_sat
 
-                # NOTE: critical molar volume [m3/mol]
+                # NOTE: molar volume [m3/mol] at T[K] and P* (vapor-pressure) [Pa]
+                Vm = Zi_min * R_CONST * self.T / P_sat
+
+                # NOTE: poynting term
+                poynting_term = exp(Vm*(self.P - P_sat)/(R_CONST*self.T))
+                fug_l_sat = Fug_sat * poynting_term
+
+                # NOTE: fugacity of liquid phase [Pa] at T [K]
+                phi_l = fug_l_sat / self.P
 
                 # save
                 # set
-                _phi_pack[self.phase][self.components[i]] = {
-                    "temperature": self.T,
-                    "temperature_unit": "K",
-                    "pressure": self.P,
-                    "pressure_unit": "Pa",
+                res__ = {
+                    "mole_fraction": 1.0,
+                    "temperature": {
+                        'value': self.T,
+                        'unit': 'K',
+                        'symbol': 'T'
+                    },
+                    "pressure": {
+                        'value': self.P,
+                        'unit': 'Pa',
+                        'symbol': 'P'
+                    },
+                    "vapor_pressure": {
+                        'value': float(VaPr_i[0]),
+                        'unit': 'Pa',
+                        'symbol': 'VaPr'
+                    },
+                    "molar_volume": {
+                        'value': float(Vm),
+                        'unit': 'm3/mol',
+                        'symbol': 'MoVo'
+                    },
                     'compressibility_coefficient': {
-                        'value': Zi[i],
+                        'value': float(Zi_min),
                         'unit': 'dimensionless',
                         'symbol': 'Z'
                     },
+                    'fugacity_coefficient_sat': {
+                        'value': float(phi_sat),
+                        'unit': 'dimensionless',
+                        'symbol': 'phi_SAT'
+                    },
                     'fugacity_coefficient': {
-                        'value': fug_l_sat[i],
+                        'value': float(phi_l),
                         'unit': 'dimensionless',
                         'symbol': 'phi'
                     },
+                    "Poynting_term": {
+                        'value': float(poynting_term),
+                        'unit': 'dimensionless',
+                        'symbol': 'Poynting'
+                    },
+                    'fugacity_sat': {
+                        'value': float(Fug_sat),
+                        'unit': 'Pa',
+                        'symbol': 'Fug_SAT'
+                    },
+                    "fugacity": {
+                        'value': float(fug_l_sat),
+                        'unit': 'Pa',
+                        'symbol': 'Fug_PURE'
+                    },
                     'mode': (self.mode).upper(),
-                    'phase': self.phase
+                    'phase': self.phase,
+                    'eos_model': eos_model,
                 }
 
+                # save
+                _phase_key = self.phase.lower()
+                _phi_pack[_phase_key] = res__
+
             # res
-            return Zi, phi, eos_params, _phi_pack
+            return _phi_pack
         except Exception as e:
             raise Exception('Liquid fugacity calculation failed!, ', e)
 

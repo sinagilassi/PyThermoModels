@@ -155,12 +155,12 @@ T = 300.1
 P = 9.99
 
 # NOTE: Example 3.13
-# component
-component = "CH4"
-# temperature [K]
-T = 340
-# pressure [bar]
-P = 30
+# # component
+# component = "CH4"
+# # temperature [K]
+# T = 340
+# # pressure [bar]
+# P = 30
 
 
 # SECTION: model input

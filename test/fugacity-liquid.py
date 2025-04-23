@@ -58,6 +58,14 @@ methanol_thermodb = ptdb.load_thermodb(methanol_thermodb_file)
 print(type(methanol_thermodb))
 print(methanol_thermodb.check())
 
+# ! propane
+# thermodb file name
+propane_thermodb_file = os.path.join(thermodb_dir, 'propane-1.pkl')
+# load
+propane_thermodb_file = ptdb.load_thermodb(propane_thermodb_file)
+print(type(propane_thermodb_file))
+print(propane_thermodb_file.check())
+
 # ========================================
 # ! INITIALIZE OBJECT
 # ========================================
@@ -82,6 +90,8 @@ print(type(thub1))
 # thub1.add_thermodb('MeOH', methanol_thermodb)
 # acetylene
 thub1.add_thermodb('acetylene', acetylene_thermodb)
+# propane
+thub1.add_thermodb('propane', propane_thermodb_file)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
@@ -99,7 +109,7 @@ datasource, equationsource = thub1.build()
 # =======================================
 # model input
 # eos model
-eos_model = 'SRK'
+eos_model = 'PR'
 
 # component phase
 phase = "LIQUID"
@@ -109,14 +119,22 @@ phase = "LIQUID"
 component = 'acetylene'
 # temperature [K]
 T = 250
-# pressure [MPa]
-P = 2
+# pressure [bar]
+P = 20
+
+# NOTE: example
+# component
+component = 'propane'
+# temperature [K]
+T = 300.1
+# pressure [bar]
+P = 10
 
 # SECTION: model input
 model_input = {
     # "phase": phase,
     "component": component,
-    "pressure": [P, 'MPa'],
+    "pressure": [P, 'bar'],
     "temperature": [T, 'K'],
 }
 
@@ -148,5 +166,6 @@ print(res)
 res = eos.cal_fugacity(
     model_name=eos_model,
     model_input=model_input,
-    model_source=model_source)
+    model_source=model_source,
+    liquid_fugacity_mode='Poynting')
 print(res)
