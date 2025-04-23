@@ -42,10 +42,9 @@ setup(
         'thermodynamic-models', 'NRTL', 'UNIQUAC', 'SRK', 'PR', 'RK', 'vdW'
     ],
     classifiers=[
-        "Development Status :: Planning",
+        "Development Status :: 1 - Planning",
         "Intended Audience :: Education",
-        "Topic :: Scientific/Engineering",
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.13",
         "Operating System :: Unix",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
