@@ -1,4 +1,4 @@
-# Python Thermodynamic Models
+# 🌡️ Python Thermodynamic Models
 
 ![PyThermoModels](./header1.png)
 

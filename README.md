@@ -336,6 +336,23 @@ print(f"excess gibbs free energy: {gibbs_energy}")
 
 ---
 
+## 📚 Documentation
+
+For comprehensive documentation, tutorials, and more detailed examples, please visit:
+
+[PyThermoModels Documentation](https://pythermomodels.readthedocs.io/en/latest/)
+
+The documentation includes:
+
+- Detailed API references
+- Step-by-step tutorials
+- Advanced usage examples
+- Integration guides with PyThermoDB and PyThermoLinkDB
+
+We encourage all users to explore the documentation to fully leverage the capabilities of PyThermoModels in their projects.
+
+---
+
 ## 📝 License
 
 This project is licensed under the MIT License. You are free to use, modify, and distribute this software in your own applications or projects. However, if you choose to use this app in another app or software, please ensure that my name, Sina Gilassi, remains credited as the original author. This includes retaining any references to the original repository or documentation where applicable. By doing so, you help acknowledge the effort and time invested in creating this project.
