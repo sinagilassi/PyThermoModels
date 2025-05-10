@@ -89,6 +89,50 @@ def activity(
         raise Exception("Initialization failed!, ", e)
 
 
+def activities(
+        components: List[str],
+        model_name: Literal['NRTL', 'UNIQUAC'],
+        model_source: Optional[Dict] = None,
+        **kwargs):
+    '''
+    Initialize activity calculation library
+
+    Parameters
+    ----------
+    components: list
+        List of component names to be used in the activity model, such as ['ethanol', 'butyl-methyl-ether'].
+    model_name: str
+        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC').
+            1. NRTL: Non-Random Two-Liquid Model
+            2. UNIQUAC: Universal Quasi-Chemical Model
+    model_source: dict, optional
+        Dictionary containing the source of the activity model data.
+        If None, default values will be used.
+            - `datasource`: dict
+                Dictionary containing the data source for the activity model.
+            - `equationsource`: dict
+                Dictionary containing the equation source for the activity model.
+    **kwargs: dict
+        Additional keyword arguments.
+
+    Returns
+    -------
+    ActivityCoreC: object
+        Instance of the selected activity model class.
+    '''
+    try:
+        # manager
+        ThermoModelCore_ = ThermoModelCore()
+        # return
+        return ThermoModelCore_.init_activity(
+            components=components,
+            model_name=model_name,
+            model_source=model_source,
+            **kwargs)
+    except Exception as e:
+        raise Exception("Initialization failed!, ", e)
+
+
 def thermo_lib():
     '''
     Initialize thermodynamic calculation library
