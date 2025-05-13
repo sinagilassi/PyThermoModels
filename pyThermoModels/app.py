@@ -2,7 +2,7 @@
 from typing import Dict, Optional, Literal, List
 # local
 from .configs import __description__, __version__
-from .docs import ThermoModelCore, ThermoLib
+from .docs import ThermoModelCore, ThermoLib, NRTL, UNIQUAC
 
 
 def init():
@@ -93,7 +93,7 @@ def activities(
         components: List[str],
         model_name: Literal['NRTL', 'UNIQUAC'],
         model_source: Optional[Dict] = None,
-        **kwargs):
+        **kwargs) -> NRTL | UNIQUAC:
     '''
     Initialize activity calculation library
 
@@ -117,14 +117,14 @@ def activities(
 
     Returns
     -------
-    ActivityCoreC: object
+    NRTL | UNIQUAC: object
         Instance of the selected activity model class.
     '''
     try:
         # manager
         ThermoModelCore_ = ThermoModelCore()
         # return
-        return ThermoModelCore_.init_activity(
+        return ThermoModelCore_.init_activities(
             components=components,
             model_name=model_name,
             model_source=model_source,
