@@ -1011,7 +1011,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             if not link_status:
                 raise Exception('Thermodb link failed!')
 
-            # SECTION: reference for eos
+            # SECTION: reference for activity model
             reference = self._references.get(activity_model, None)
 
             # build datasource

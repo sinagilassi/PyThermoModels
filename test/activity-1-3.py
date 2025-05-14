@@ -65,7 +65,9 @@ model_source = {
 
 # activity model
 activity_nrtl = ptm.activities(
-    components=components, model_name=activity_model)
+    components=components,
+    model_name=activity_model,
+    model_source=model_source)
 print(activity_nrtl)
 
 
@@ -90,6 +92,8 @@ mole_fraction = {
 # NOTE: non-randomness parameters
 non_randomness_parameters = thermodb_nrtl_1.select('non-randomness-parameters')
 print(type(non_randomness_parameters))
+# symbols
+print(non_randomness_parameters.matrix_symbol)
 
 # dg_ij
 dg_ij = non_randomness_parameters.ijs(
@@ -97,11 +101,21 @@ dg_ij = non_randomness_parameters.ijs(
 print(type(dg_ij))
 print(dg_ij)
 
+# or
+dg_ij = non_randomness_parameters.mat('dg', components)
+print(dg_ij)
+
+
 # alpha_ij
 alpha_ij = non_randomness_parameters.ijs(
     f"alpha | {components[0]} | {components[1]}")
 print(type(alpha_ij))
 print(alpha_ij)
+
+# or
+alpha_ij = non_randomness_parameters.mat('alpha', components)
+print(alpha_ij)
+
 
 # NOTE: operating conditions
 # temperature [K]
@@ -118,8 +132,6 @@ print(f"tau_ij_comp: {tau_ij_comp}")
 model_input = {
     "mole_fraction": mole_fraction,
     "temperature": [T, 'K'],
-    "tau_ij": tau_ij,
-    "alpha_ij": alpha_ij
 }
 
 # NOTE: calculate activity

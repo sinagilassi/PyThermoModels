@@ -99,11 +99,14 @@ class ThermoLinkDB:
             # check
             if dependent_data_src is not None and dependent_data_src != 'None':
                 for item, value in dependent_data_src.items():
-                    _item_symbol = value['symbol']
+                    _item_symbol = str(value['symbol'])
+                    # add symbol
                     dependent_data.append(_item_symbol)
 
             # datasource
             datasource = {}
+
+            # NOTE: checking components
             for component in components:
                 if component in self._thermodb_component:
                     # set
@@ -111,9 +114,32 @@ class ThermoLinkDB:
                     # parms
                     for item in dependent_data:
                         # get value
-                        _val = self.datasource[component][item]
-                        # save
-                        datasource[component][item] = _val
+                        _val = self.datasource[component].get(item, None)
+
+                        # check
+                        if _val is not None and _val != 'None':
+                            # save
+                            datasource[component][item] = _val
+
+            # NOTE: checking general data defined as 'NRTL' and 'UNIQUAC'
+            for records in self._thermodb_component:
+                # set upper
+                records_ = records.upper()
+
+                # check item
+                if records_ in ['UNIQUAC', 'NRTL']:
+                    # set
+                    datasource[records_] = {}
+                    # parms
+                    for item in dependent_data:
+                        # get value
+                        _val = self.datasource[records].get(item, None)
+
+                        # check
+                        if _val is not None and _val != 'None':
+                            # save
+                            datasource[records_][item] = _val
+
             # res
             return datasource
         except Exception as e:

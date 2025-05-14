@@ -4,11 +4,14 @@ import json
 import os
 from math import pow, exp, log
 from typing import List, Dict, Tuple, Any, Literal, Optional, Union
+import pycuc
 from rich import print
 import pyThermoDB
 from pyThermoDB import (
     TableMatrixData, TableData, TableEquation, TableMatrixEquation
 )
+# local
+from .extractor import Extractor
 
 
 class NRTL:
@@ -86,6 +89,8 @@ class NRTL:
         # SECTION: Assign the parameters to instance variables
         self.datasource = datasource
         self.equationsource = equationsource
+
+        # components
         self.components = [components.strip() for components in components]
 
         # SECTION
@@ -431,8 +436,11 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in cal_dg_ij_M1: {str(e)}")
 
-    def cal_tau_ij_M1(self, temperature: float, dg_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      dg_ij_symbol: Literal['dg', 'dg_ij'] = 'dg', R_CONST: float = 8.314,
+    def cal_tau_ij_M1(self,
+                      temperature: float,
+                      dg_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+                      dg_ij_symbol: Literal['dg', 'dg_ij'] = 'dg',
+                      R_CONST: float = 8.314,
                       symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction parameters `tau_ij` matrix for NRTL model.
@@ -842,6 +850,8 @@ class NRTL:
             Dictionary of model input values where keys are parameter names and values are their respective values.
                 - `mole_fraction`: Dict[str, float]
                     Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
+                - `temperature`: List[str | float], Optional
+                    List of temperatures in any units as [300, 'K'], it is automatically converted to Kelvin.
                 - `tau_ij`: TableMatrixData | np.ndarray | Dict[str, float]
                     Interaction parameters (tau_ij) between component i and j.
                 - `alpha_ij`: TableMatrixData | np.ndarray | Dict[str, float]
@@ -880,14 +890,63 @@ class NRTL:
                 raise TypeError("model_input must be dict")
 
             # SECTION: check keys
-            required_keys = [
-                'mole_fraction', 'tau_ij', 'alpha_ij']
-            for key in required_keys:
-                if key not in model_input:
-                    raise KeyError(f"{key} is required in model_input")
+            required_keys = ['tau_ij', 'alpha_ij']
+
+            # ? check mole_fraction
+            if 'mole_fraction' not in model_input:
+                raise KeyError("mole_fraction is required in model_input")
+
+            # set
+            mole_fraction = model_input['mole_fraction']
+
+            # ? checking alpha_ij and tau_ij
+            # ! user should provide the required keys
+            missed_keys = [
+                key for key in required_keys if key not in model_input]
+
+            # check required keys
+            if len(missed_keys) > 0:
+                # check temperature
+                if 'temperature' not in model_input:
+                    # error
+                    raise KeyError("temperature is required in model_input")
+
+                # check if temperature is list
+                if not isinstance(model_input['temperature'], list):
+                    # error
+                    raise TypeError("temperature must be list")
+
+                # check if temperature is empty
+                if len(model_input['temperature']) == 0:
+                    # error
+                    raise ValueError("temperature list is empty")
+
+                # check format as [300, 'K']
+                if not all(isinstance(temp, (int, float, str)) for temp in model_input['temperature']):
+                    # error
+                    raise TypeError("temperature list must be int or float")
+
+                # call input generator
+                inputs_ = self.inputs_generator(
+                    temperature=model_input['temperature'],
+                    model_input=model_input,
+                )
+
+                # looping through the missed keys
+                for key in missed_keys:
+                    # key value
+                    value_ = inputs_[key]
+
+                    # check
+                    if value_ is None:
+                        # error
+                        raise ValueError(
+                            f"{key} is required in model_input")
+
+                    # update the model_input
+                    model_input[key] = value_
 
             # SECTION: get values
-            mole_fraction = model_input['mole_fraction']
             tau_ij_data = model_input['tau_ij']
             alpha_ij_data = model_input['alpha_ij']
 
@@ -913,7 +972,7 @@ class NRTL:
                                           message: Optional[str],
                                           res_format: Literal['dict', 'str', 'json']) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
         """
-        Calculate activity coefficients for a multicomponent mixture using the NRTL model.
+        Calculate activity coefficients for a multi-component mixture using the NRTL model.
 
         Parameters
         -----------
@@ -1328,3 +1387,218 @@ class NRTL:
                 raise ValueError("res_format must be 'dict', 'json' or 'str'")
         except Exception as e:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
+
+    def inputs_generator(self,
+                         temperature: Optional[List[float | str]] = None,
+                         **kwargs):
+        '''
+        Prepares inputs for the NRTL activity model for calculating activity coefficients.
+
+        Parameters
+        ----------
+        temperature : List[float | str], optional
+            Temperature in any units as: [300, 'K'], it is automatically converted to Kelvin.
+        kwargs : dict
+            Additional parameters for the model.
+            - interaction-energy-parameter : list, optional
+                Interaction energy parameters for the components.
+        '''
+        try:
+            # SECTION: check src
+            # extract activity model inputs
+            datasource = self.datasource.get('NRTL', {})
+
+            # NOTE: check model inputs
+            if kwargs.get('model_input') is not None:
+                # update the datasource
+                datasource.update(kwargs['model_input'])
+
+            # ! set initial values
+            a_ij = None
+            b_ij = None
+            c_ij = None
+            d_ij = None
+            dg_ij = None
+            alpha_ij = None
+            tau_ij = None
+
+            # NOTE: check if datasource is a dictionary
+            if datasource is not None:
+                # check if datasource is a dictionary
+                if not isinstance(datasource, dict):
+                    raise ValueError(
+                        "datasource must be a dictionary.")
+
+                # check if datasource is empty
+                if len(datasource) == 0:
+                    raise ValueError(
+                        "datasource cannot be empty.")
+
+            # NOTE: check temperature
+            if temperature is not None:
+                # check if temperature is a list
+                if not isinstance(temperature, list):
+                    raise ValueError(
+                        "temperature must be a list of floats or strings.")
+
+                # convert temperature to Kelvin
+                T = pycuc.convert_from_to(temperature[0], temperature[1], 'K')
+
+            # NOTE: method 1
+            # ! Δg_ij, interaction energy parameter
+            dg_ij_src = datasource.get(
+                'dg_ij', None) or datasource.get('dg', None)
+
+            # NOTE: method 2
+            # ! constants a, b, c, and d
+            a_ij_src = datasource.get(
+                'a_ij', None) or datasource.get('a', None)
+            b_ij_src = datasource.get(
+                'b_ij', None) or datasource.get('b', None)
+            c_ij_src = datasource.get(
+                'c_ij', None) or datasource.get('c', None)
+            d_ij_src = datasource.get(
+                'd_ij', None) or datasource.get('d', None)
+
+            # NOTE: α_ij, non-randomness parameter
+            alpha_ij_src = datasource.get(
+                'alpha_ij', None) or datasource.get('alpha', None)
+            if alpha_ij_src is None:
+                # set default value
+                alpha_ij_src = None
+
+            # NOTE: tau_ij, binary interaction parameter
+            tau_ij_src = datasource.get(
+                'tau_ij', None) or datasource.get('tau', None)
+            if tau_ij_src is None:
+                # set default value
+                tau_ij_src = None
+
+            # SECTION: extract data
+            # NOTE: check method
+            tau_ij_cal_method = 0
+            if dg_ij_src is None:
+                # check if a_ij, b_ij, c_ij are provided
+                if a_ij_src is None or b_ij_src is None or c_ij_src is None or d_ij_src is None:
+                    raise ValueError(
+                        "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, and d.")
+                # set method
+                tau_ij_cal_method = 2
+
+                # ! a_ij
+                if isinstance(a_ij_src, TableMatrixData):
+                    a_ij = a_ij_src.mat('a', self.components)
+                elif isinstance(a_ij_src, list):
+                    a_ij = np.array(a_ij_src)
+                elif isinstance(a_ij_src, np.ndarray):
+                    a_ij = a_ij_src
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (a_ij). Must be TableMatrixData, list of lists, or numpy array.")
+
+                # ! b_ij
+                if isinstance(b_ij_src, TableMatrixData):
+                    b_ij = b_ij_src.mat('b', self.components)
+                elif isinstance(b_ij_src, list):
+                    b_ij = np.array(b_ij_src)
+                elif isinstance(b_ij_src, np.ndarray):
+                    b_ij = b_ij_src
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (b_ij). Must be TableMatrixData, list of lists, or numpy array.")
+
+                # ! c_ij
+                if isinstance(c_ij_src, TableMatrixData):
+                    c_ij = c_ij_src.mat('c', self.components)
+                elif isinstance(c_ij_src, list):
+                    c_ij = np.array(c_ij_src)
+                elif isinstance(c_ij_src, np.ndarray):
+                    c_ij = c_ij_src
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (c_ij). Must be TableMatrixData, list of lists, or numpy array.")
+
+                # ! d_ij
+                if isinstance(d_ij_src, TableMatrixData):
+                    d_ij = d_ij_src.mat('d', self.components)
+                elif isinstance(d_ij_src, list):
+                    d_ij = np.array(d_ij_src)
+                elif isinstance(d_ij_src, np.ndarray):
+                    d_ij = d_ij_src
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (d_ij). Must be TableMatrixData, list of lists, or numpy array.")
+            elif dg_ij_src is not None:
+                # ! use dg_ij
+                if isinstance(dg_ij_src, TableMatrixData):
+                    dg_ij = dg_ij_src.mat('dg', self.components)
+                elif isinstance(dg_ij_src, list):
+                    dg_ij = np.array(dg_ij_src)
+                elif isinstance(dg_ij_src, np.ndarray):
+                    dg_ij = dg_ij_src
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (Δg_ij). Must be TableMatrixData, list of lists, or numpy array.")
+                # set method
+                tau_ij_cal_method = 1
+            else:
+                raise ValueError(
+                    "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, d.")
+
+            # SECTION: extract data
+            # NOTE: α_ij, non-randomness parameter
+            # check
+            if alpha_ij_src is not None or alpha_ij_src != 'None':
+                if isinstance(alpha_ij_src, TableMatrixData):
+                    alpha_ij = alpha_ij_src.mat('alpha', self.components)
+                elif isinstance(alpha_ij_src, list):
+                    alpha_ij = np.array(alpha_ij_src)
+                elif isinstance(alpha_ij_src, np.ndarray):
+                    alpha_ij = alpha_ij_src
+                else:
+                    raise ValueError(
+                        "Invalid source for non-randomness parameter (α_ij). Must be TableMatrixData, list of lists, or numpy array.")
+            else:
+                # set default value
+                alpha_ij = None
+
+            # NOTE: calculate the binary interaction parameter matrix (tau_ij)
+            # check
+            if tau_ij_src is not None or tau_ij_src != 'None':
+                if tau_ij_cal_method == 1:
+                    tau_ij, tau_ij_comp = self.cal_tau_ij_M1(
+                        temperature=T, dg_ij=dg_ij)
+                elif tau_ij_cal_method == 2:
+                    tau_ij, tau_ij_comp = self.cal_tau_ij_M2(
+                        temperature=T,
+                        a_ij=a_ij, b_ij=b_ij, c_ij=c_ij, d_ij=d_ij)
+                else:
+                    raise ValueError(
+                        "tau_ij_cal_method not supported!")
+            else:
+                # check types
+                if isinstance(tau_ij_src, TableMatrixData):
+                    tau_ij = tau_ij_src.mat('tau', self.components)
+                elif isinstance(tau_ij_src, List[List[float]]):
+                    tau_ij = np.array(tau_ij_src)
+                elif isinstance(tau_ij_src, np.ndarray):
+                    tau_ij = tau_ij_src
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (tau_ij). Must be TableMatrixData, list of lists, or numpy array.")
+
+            # NOTE: nrtl inputs
+            inputs = {
+                "alpha_ij": alpha_ij,
+                "tau_ij": tau_ij,
+                "dg_ij": dg_ij,
+                "a_ij": a_ij,
+                "b_ij": b_ij,
+                "c_ij": c_ij,
+                "d_ij": d_ij,
+            }
+
+            # res
+            return inputs
+        except Exception as e:
+            raise Exception(f"Failed to calculate NRTL activity: {e}") from e

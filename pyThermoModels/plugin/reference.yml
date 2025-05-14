@@ -159,7 +159,7 @@ REFERENCES:
         name: vapor pressure
         symbol: VaPr
         unit: Pa
-  NRTL1:
+  NRTL:
     ARGS:
       non-randomness-parameter:
         name: non-randomness parameter
@@ -174,9 +174,37 @@ REFERENCES:
           name: activity coefficient
           symbol: AcCo
           unit: None
-      DEPENDANT-DATA: None
-      DEPENDANT-EQUATIONS: None
-  UNIQUAC1:
+    DEPENDANT-DATA:
+      alpha:
+        name: non-randomness parameter
+        symbol: alpha
+        unit: None
+      dg:
+        name: dg
+        symbol: dg
+        unit: None
+      a:
+        name: a
+        symbol: a
+        unit: None
+      b:
+        name: b
+        symbol: b
+        unit: None
+      c:
+        name: c
+        symbol: c
+        unit: None
+      d:
+        name: d
+        symbol: d
+        unit: None
+      tau:
+        name: tau
+        symbol: tau
+        unit: None
+    DEPENDANT-EQUATIONS: None
+  UNIQUAC:
     ARGS:
       volume-parameter:
         name: volume parameter
@@ -195,23 +223,5 @@ REFERENCES:
           name: activity coefficient
           symbol: AcCo
           unit: None
-      DEPENDANT-DATA: None
-      DEPENDANT-EQUATIONS: None
-  NRTL:
-    ARGS:
-      RETURNS:
-        activity-coefficient:
-          name: activity coefficient
-          symbol: AcCo
-          unit: None
-      DEPENDANT-DATA: None
-      DEPENDANT-EQUATIONS: None
-  UNIQUAC:
-    ARGS:
-      RETURNS:
-        activity-coefficient:
-          name: activity coefficient
-          symbol: AcCo
-          unit: None
-      DEPENDANT-DATA: None
-      DEPENDANT-EQUATIONS: None
+    DEPENDANT-DATA: None
+    DEPENDANT-EQUATIONS: None

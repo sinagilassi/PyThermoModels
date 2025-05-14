@@ -1,8 +1,8 @@
 # import packages/modules
 import os
+import numpy as np
 from rich import print
 import pyThermoModels as ptm
-from pyThermoModels import NRTL, UNIQUAC
 import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
 
@@ -21,7 +21,7 @@ thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
 
 # ! nrtl ethanol-butyl-methyl-ether
 nrtl_path = os.path.join(
-    thermodb_dir, 'thermodb_nrtl_ethanol_butyl-methyl-ether_1.pkl')
+    thermodb_dir, 'thermodb_nrtl_methanol_ethanol_1.pkl')
 # load
 thermodb_nrtl_1 = ptdb.load_thermodb(nrtl_path)
 # check
@@ -52,10 +52,10 @@ datasource, equationsource = thub1.build()
 # =======================================
 # SECTION: configure activity model
 # components
-components = ['ethanol', 'butyl-methyl-ether']
+components = ['methanol', 'ethanol']
 
 # model input
-activity_model = 'NRTL'
+activity_model = 'UNIQUAC'
 
 # SECTION: model source
 model_source = {
@@ -64,10 +64,9 @@ model_source = {
 }
 
 # activity model
-activity_nrtl = ptm.activities(
+activity_uniquac = ptm.activities(
     components=components, model_name=activity_model)
-print(activity_nrtl)
-
+print(activity_uniquac)
 
 # =======================================
 # NOTE CHECK REFERENCES
@@ -79,65 +78,62 @@ print(activity_nrtl)
 # ========================================
 # NOTE ACTIVITY CALCULATION
 # ========================================
-# NOTE: Example: Ethanol-Butyl-Methyl-Ether
+# NOTE: Example: Methanol-Ethanol
 
-# feed spec
+# mole fraction
 mole_fraction = {
-    'ethanol': 0.4,
-    'butyl-methyl-ether': 0.6
+    'methanol': 0.4,
+    'ethanol': 0.6
 }
 
+# molecular id
+# MeOH-EtOH
+r_i = [1.4311, 2.1055]
+q_i = [1.4320, 1.8920]
+
 # NOTE: non-randomness parameters
-non_randomness_parameters = thermodb_nrtl_1.select('non-randomness-parameters')
-print(type(non_randomness_parameters))
-
-# dg_ij
-dg_ij = non_randomness_parameters.ijs(
-    f"dg | {components[0]} | {components[1]}")
-print(type(dg_ij))
-print(dg_ij)
-
-# alpha_ij
-alpha_ij = non_randomness_parameters.ijs(
-    f"alpha | {components[0]} | {components[1]}")
-print(type(alpha_ij))
-print(alpha_ij)
+# binary energy of interaction parameters
+tau_ij = [
+    [1, 1.031995],
+    [1.309036, 1]
+]
 
 # NOTE: operating conditions
 # temperature [K]
-T = 323.15
+T = 350.1546257
 # pressure [bar]
 P = 30
-
-# NOTE: calculate the interaction parameter matrix (tau_ij)
-tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(temperature=T, dg_ij=dg_ij)
-print(f"tau_ij: {tau_ij}")
-print(f"tau_ij_comp: {tau_ij_comp}")
 
 # SECTION: model input
 model_input = {
     "mole_fraction": mole_fraction,
-    "temperature": [T, 'K'],
     "tau_ij": tau_ij,
-    "alpha_ij": alpha_ij
+    "r_i": r_i,
+    "q_i": q_i
+}
+
+# ! in case tau_ij, and r_i, q_i are not provided but existing in the datasource
+model_input = {
+    "mole_fraction": mole_fraction,
+    "temperature": [T, 'K']
 }
 
 # NOTE: calculate activity
-res_, others_ = activity_nrtl.cal(model_input=model_input)
+res_, others_ = activity_uniquac.cal(model_input=model_input)
 # print(res_)
 
 # print the results
 print(f"res_: {res_}")
 print("-" * 50)
-G_ij = others_['G_ij']
-print(f"G_ij: {G_ij}")
+print(f"others_: {others_}")
 print("-" * 50)
 
+
 # NOTE: excess gibbs free energy
-gibbs_energy = activity_nrtl.excess_gibbs_free_energy(
-    mole_fraction=mole_fraction, G_ij=G_ij, tau_ij=tau_ij)
-print(f"excess gibbs free energy method 1: {gibbs_energy}")
+gibbs_energy = activity_uniquac.excess_gibbs_free_energy(
+    mole_fraction=mole_fraction, tau_ij=tau_ij, r_i=r_i, q_i=q_i)
+print(f"excess gibbs free energy 1: {gibbs_energy}")
 print("-" * 50)
-gibbs_energy = activity_nrtl.excess_gibbs_free_energy()
-print(f"excess gibbs free energy method 1: {gibbs_energy}")
+gibbs_energy = activity_uniquac.excess_gibbs_free_energy()
+print(f"excess gibbs free energy 2: {gibbs_energy}")
 print("-" * 50)
