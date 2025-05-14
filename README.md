@@ -1,6 +1,6 @@
 # Python Thermodynamic Models
 
-![PyThermoModels](./static/header1.png)
+![PyThermoModels](https://drive.google.com/uc?export=view&id=1y1eM0h_I1Ikca1fe1LNihCxgrPIRXmXf)
 
 ![Downloads](https://img.shields.io/pypi/dm/pyThermoModels) ![PyPI](https://img.shields.io/pypi/v/pyThermoModels) ![Python Version](https://img.shields.io/pypi/pyversions/pyThermoModels.svg) ![License](https://img.shields.io/pypi/l/pyThermoModels) ![Read the Docs](https://img.shields.io/readthedocs/pyThermoModels)
 
