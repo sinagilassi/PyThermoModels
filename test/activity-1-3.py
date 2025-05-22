@@ -68,6 +68,11 @@ activity_nrtl = ptm.activities(
     components=components,
     model_name=activity_model,
     model_source=model_source)
+# check activity model
+if not isinstance(activity_nrtl, NRTL):
+    raise TypeError(
+        f"activity_nrtl is not NRTL class, but {type(activity_nrtl)}")
+
 print(activity_nrtl)
 
 

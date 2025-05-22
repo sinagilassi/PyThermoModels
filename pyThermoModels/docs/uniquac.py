@@ -140,8 +140,12 @@ class UNIQUAC:
         """
         return model_
 
-    def to_ij(self, data: TableMatrixData, prop_symbol: str,
-              symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+    def to_ij(self, data: TableMatrixData,
+              prop_symbol: str,
+              symbol_delimiter: Literal[
+                  "|", "_"
+              ] = "|"
+              ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Convert TableMatrixData to numpy array (mat_ij) and dictionary (dict_ij).
 
@@ -187,15 +191,28 @@ class UNIQUAC:
             # Set the interaction energy parameter matrix
             for i in range(comp_num):
                 for j in range(comp_num):
+                    # key
+                    key_ = f"{prop_symbol}_{self.components[i]}-{self.components[j]}"
                     # val
-                    val = data.ij(
-                        f"{prop_symbol}_{self.components[i]}-{self.components[j]}")
-                    # to matrix
-                    mat_ij[i, j] = val
+                    val = data.ij(key_)
 
-                    # to dict
+                    # to matrix
+                    # ? val["value"] or 0.0 in case of None
+                    if val is not None and val["value"] is not None:
+                        mat_ij[i, j] = float(val["value"])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}-{self.components[j]}")
+
+                    # key
                     key_ = f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"
-                    dict_ij[key_] = val
+                    # val
+                    # ? val["value"] or 0.0 in case of None
+                    if val is not None and val["value"] is not None:
+                        dict_ij[key_] = float(val["value"])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}-{self.components[j]}")
 
             # res
             return mat_ij, dict_ij
@@ -245,7 +262,12 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_dict_ij(self, data: np.ndarray, symbol_delimiter: Literal["|", "_"] = "|") -> Dict[str, float]:
+    def to_dict_ij(self,
+                   data: np.ndarray,
+                   symbol_delimiter: Literal[
+                       "|", "_"
+                   ] = "|"
+                   ) -> Dict[str, float]:
         """
         Convert to dictionary (dict_ij) according to the component id.
 
@@ -295,7 +317,9 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_dict_i(self, data: List[float] | np.ndarray) -> Dict[str, float]:
+    def to_dict_i(self,
+                  data: List[float] | np.ndarray
+                  ) -> Dict[str, float]:
         """
         Convert to dictionary (dict_i) according to the component id.
 
@@ -336,7 +360,12 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_matrix_ij(self, data: Dict[str, float] | List[float], symbol_delimiter: Literal["|", "_"] = "|") -> np.ndarray:
+    def to_matrix_ij(self,
+                     data: Dict[str, float] | List[float],
+                     symbol_delimiter: Literal[
+                         "|", "_"
+                     ] = "|"
+                     ) -> np.ndarray:
         """
         Convert to matrix (mat_ij) according to `the component id`.
 
@@ -371,8 +400,8 @@ class UNIQUAC:
             else:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
-            # Set the interaction energy parameter matrix
-            # SECTION:
+            # SECTION: Set the interaction energy parameter matrix
+            # check if data is dict or list
             if isinstance(data, Dict):
                 for i in range(comp_num):
                     for j in range(comp_num):
@@ -407,7 +436,10 @@ class UNIQUAC:
                      a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                      b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                      c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                     symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+                     symbol_delimiter: Literal[
+                         "|", "_"
+                     ] = "|"
+                     ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction energy parameter `dU_ij` matrix dependent of temperature.
 
@@ -443,15 +475,21 @@ class UNIQUAC:
         """
         try:
             # SECTION: check
-            if not isinstance(a_ij, np.ndarray) and not isinstance(a_ij, dict) and not isinstance(a_ij, TableMatrixData):
+            if (not isinstance(a_ij, np.ndarray) and
+                not isinstance(a_ij, dict) and
+                    not isinstance(a_ij, TableMatrixData)):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(b_ij, np.ndarray) and not isinstance(b_ij, dict) and not isinstance(b_ij, TableMatrixData):
+            if (not isinstance(b_ij, np.ndarray) and
+                not isinstance(b_ij, dict) and
+                    not isinstance(b_ij, TableMatrixData)):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(c_ij, np.ndarray) and not isinstance(c_ij, dict) and not isinstance(c_ij, TableMatrixData):
+            if (not isinstance(c_ij, np.ndarray) and
+                not isinstance(c_ij, dict) and
+                    not isinstance(c_ij, TableMatrixData)):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
@@ -473,7 +511,11 @@ class UNIQUAC:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
             # SECTION: calculate dU_ij values
-            if isinstance(a_ij, np.ndarray) and isinstance(b_ij, np.ndarray) and isinstance(c_ij, np.ndarray):
+            if (isinstance(a_ij, np.ndarray) and
+                isinstance(b_ij, np.ndarray) and
+                    isinstance(c_ij, np.ndarray)):
+
+                # loop over the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -495,7 +537,11 @@ class UNIQUAC:
                             dU_ij_comp[key_] = 0
 
             # SECTION: if dU_ij is dict
-            elif isinstance(a_ij, dict) and isinstance(b_ij, dict) and isinstance(c_ij, dict):
+            elif (isinstance(a_ij, dict) and
+                  isinstance(b_ij, dict) and
+                  isinstance(c_ij, dict)):
+
+                # loop over the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -520,8 +566,11 @@ class UNIQUAC:
                             # set by name
                             dU_ij_comp[key_] = 0
             # SECTION: if dU_ij is TableMatrixData
-            elif isinstance(a_ij, TableMatrixData) and isinstance(b_ij, TableMatrixData) and isinstance(c_ij, TableMatrixData):
-                # convert to numpy array and dict
+            elif (isinstance(a_ij, TableMatrixData) and
+                  isinstance(b_ij, TableMatrixData) and
+                  isinstance(c_ij, TableMatrixData)):
+
+                # loop over the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -529,10 +578,34 @@ class UNIQUAC:
                         # dict
                         key_comp = f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"
 
+                        # TODO: extract val
+                        # a_ij
+                        a_ij_ = a_ij.ij(f"a_{key_}")
+                        if a_ij_ is not None and a_ij_["value"] is not None:
+                            a_ij_val = float(a_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for a_ij: {a_ij_} for key: {key_}")
+
+                        # b_ij
+                        b_ij_ = b_ij.ij(f"b_{key_}")
+                        if b_ij_ is not None and b_ij_["value"] is not None:
+                            b_ij_val = float(b_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for b_ij: {b_ij_} for key: {key_}")
+
+                        # c_ij
+                        c_ij_ = c_ij.ij(f"c_{key_}")
+                        if c_ij_ is not None and c_ij_["value"] is not None:
+                            c_ij_val = float(c_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for c_ij: {c_ij_} for key: {key_}")
+
                         # val
-                        val_ = a_ij.ij(f"a_{key_}") + b_ij.ij(f"b_{key_}") * \
-                            temperature + \
-                            c_ij.ij(f"c_{key_}") * pow(temperature, 2)
+                        val_ = a_ij_val + b_ij_val * temperature + \
+                            c_ij_val * pow(temperature, 2)
 
                         # component id
                         comp_id_i = self.comp_idx[self.components[i]]
@@ -557,9 +630,18 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in cal_dU_ij_M1: {str(e)}")
 
-    def cal_tau_ij_M1(self, temperature: float, dU_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      dU_ij_symbol: Literal['dU', 'dU_ij'] = 'dU', R_CONST: float = 8.314,
-                      symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+    def cal_tau_ij_M1(self,
+                      temperature: float,
+                      dU_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+                      dU_ij_symbol:
+                          Literal[
+                              'dU', 'dU_ij'
+                      ] = 'dU',
+                          R_CONST: float = 8.314,
+                      symbol_delimiter: Literal[
+                          "|", "_"
+                      ] = "|"
+                      ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction parameters `tau_ij` matrix for UNIQUAC model.
 
@@ -608,10 +690,10 @@ class UNIQUAC:
             # components
             components = self.components
 
-            # Initialize tauij matrix
-            tau_ij = np.zeros((comp_num, comp_num))
+            # Initialize tau_ij matrix
+            tau_ij = np.zeros((comp_num, comp_num), dtype=float)
 
-            # tauij components
+            # tau_ij components
             tau_ij_comp = {}
 
             # check delimiter
@@ -622,7 +704,7 @@ class UNIQUAC:
             else:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
-            # Calculate tauij values
+            # Calculate tau_ij values
             # SECTION: if dU_ij is numpy array
             if isinstance(dU_ij, np.ndarray):
                 for i in range(comp_num):
@@ -711,7 +793,10 @@ class UNIQUAC:
                       b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                       c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                       d_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+                      symbol_delimiter: Literal[
+                          "|", "_"
+                      ] = "|"
+                      ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction parameters `tau_ij` matrix for UNIQUAC model.
 
@@ -752,19 +837,27 @@ class UNIQUAC:
         """
         try:
             # SECTION: check
-            if not isinstance(a_ij, np.ndarray) and not isinstance(a_ij, dict) and not isinstance(a_ij, TableMatrixData):
+            if (not isinstance(a_ij, np.ndarray) and
+                not isinstance(a_ij, dict) and
+                    not isinstance(a_ij, TableMatrixData)):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(b_ij, np.ndarray) and not isinstance(b_ij, dict) and not isinstance(b_ij, TableMatrixData):
+            if (not isinstance(b_ij, np.ndarray) and
+                not isinstance(b_ij, dict) and
+                    not isinstance(b_ij, TableMatrixData)):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(c_ij, np.ndarray) and not isinstance(c_ij, dict) and not isinstance(c_ij, TableMatrixData):
+            if (not isinstance(c_ij, np.ndarray) and
+                not isinstance(c_ij, dict) and
+                    not isinstance(c_ij, TableMatrixData)):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(d_ij, np.ndarray) and not isinstance(d_ij, dict) and not isinstance(d_ij, TableMatrixData):
+            if (not isinstance(d_ij, np.ndarray) and
+                not isinstance(d_ij, dict) and
+                    not isinstance(d_ij, TableMatrixData)):
                 raise TypeError(
                     "d_ij must be numpy array, dict or TableMatrixData")
 
@@ -774,10 +867,10 @@ class UNIQUAC:
             # components
             components = self.components
 
-            # Initialize tauij matrix
+            # Initialize tau_ij matrix
             tau_ij = np.zeros((comp_num, comp_num))
 
-            # tauij components
+            # tau_ij components
             tau_ij_comp = {}
 
             # check delimiter
@@ -788,8 +881,13 @@ class UNIQUAC:
             else:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
-            # SECTION: Calculate tauij values
-            if isinstance(a_ij, np.ndarray) and isinstance(b_ij, np.ndarray) and isinstance(c_ij, np.ndarray) and isinstance(d_ij, np.ndarray):
+            # SECTION: Calculate tau_ij values
+            if (isinstance(a_ij, np.ndarray) and
+                isinstance(b_ij, np.ndarray) and
+                isinstance(c_ij, np.ndarray) and
+                    isinstance(d_ij, np.ndarray)):
+
+                # loop over the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -811,7 +909,12 @@ class UNIQUAC:
                             # set by name
                             tau_ij_comp[key_] = 0
             # SECTION: if dU_ij is dict
-            elif isinstance(a_ij, dict) and isinstance(b_ij, dict) and isinstance(c_ij, dict) and isinstance(d_ij, dict):
+            elif (isinstance(a_ij, dict) and
+                  isinstance(b_ij, dict) and
+                  isinstance(c_ij, dict) and
+                  isinstance(d_ij, dict)):
+
+                # loop over the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -837,8 +940,12 @@ class UNIQUAC:
                             # set by name
                             tau_ij_comp[key_] = 0
             # SECTION: if dU_ij is TableMatrixData
-            elif isinstance(a_ij, TableMatrixData) and isinstance(b_ij, TableMatrixData) and isinstance(c_ij, TableMatrixData) and isinstance(d_ij, TableMatrixData):
-                # convert to numpy array and dict
+            elif (isinstance(a_ij, TableMatrixData) and
+                  isinstance(b_ij, TableMatrixData) and
+                  isinstance(c_ij, TableMatrixData) and
+                  isinstance(d_ij, TableMatrixData)):
+
+                # looping over the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -846,9 +953,42 @@ class UNIQUAC:
                         # dict
                         key_comp = f"{components[i]}{symbol_delimiter_set}{components[j]}"
 
+                        # TODO: extract val
+                        # a_ij
+                        a_ij_ = a_ij.ij(key_)
+                        if a_ij_ is not None and a_ij_["value"] is not None:
+                            a_ij_val = float(a_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for a_ij: {a_ij_} for key: {key_}")
+
+                        # b_ij
+                        b_ij_ = b_ij.ij(key_)
+                        if b_ij_ is not None and b_ij_["value"] is not None:
+                            b_ij_val = float(b_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for b_ij: {b_ij_} for key: {key_}")
+
+                        # c_ij
+                        c_ij_ = c_ij.ij(key_)
+                        if c_ij_ is not None and c_ij_["value"] is not None:
+                            c_ij_val = float(c_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for c_ij: {c_ij_} for key: {key_}")
+
+                        # d_ij
+                        d_ij_ = d_ij.ij(key_)
+                        if d_ij_ is not None and d_ij_["value"] is not None:
+                            d_ij_val = float(d_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for d_ij: {d_ij_} for key: {key_}")
+
                         # val
-                        val_ = a_ij.ij(key_) + b_ij.ij(key_) / temperature + c_ij.ij(
-                            key_) * log(temperature) + d_ij.ij(key_) * temperature
+                        val_ = a_ij_val + b_ij_val / temperature + c_ij_val * \
+                            log(temperature) + d_ij_val * temperature
 
                         # component id
                         comp_id_i = self.comp_idx[components[i]]
@@ -876,7 +1016,10 @@ class UNIQUAC:
 
     def __X_ij(self,
                ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]],
-               symbol_delimiter: Literal["|", "_"] = "|"):
+               prop_symbol: str,
+               symbol_delimiter: Literal[
+                   "|", "_"
+               ] = "|"):
         """
         Convert interaction parameter data to numpy array and dict.
 
@@ -884,6 +1027,8 @@ class UNIQUAC:
         ----------
         ij_data : TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]]
             Interaction parameters (tau_ij) between component i and j.
+        prop_symbol : str
+            Interaction parameter symbol.
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
 
@@ -904,8 +1049,12 @@ class UNIQUAC:
                 ij_comp = self.to_dict_ij(
                     ij_data, symbol_delimiter=symbol_delimiter)
             elif isinstance(ij_data, TableMatrixData):
+                # prop symbol
+                prop_symbol = prop_symbol.strip()
                 # convert to numpy array and dict
-                res_ = self.to_ij(data=ij_data)
+                res_ = self.to_ij(
+                    data=ij_data,
+                    prop_symbol=prop_symbol)
                 # set
                 ij_array = res_[0]
                 # to dict
@@ -933,7 +1082,9 @@ class UNIQUAC:
 
     def __X_i(self,
               i_data: List[float] | Dict[str, float] | np.ndarray,
-              symbol_delimiter: Literal["|", "_"] = "|"):
+              symbol_delimiter: Literal[
+                  "|", "_"
+              ] = "|"):
         '''
         Convert interaction parameter data to numpy array and dict.
 
@@ -985,10 +1136,10 @@ class UNIQUAC:
             symbol_delimiter: Literal["|",
                                       "_"] = "|",
             message: Optional[str] = None,
-            res_format: Literal[
-                'dict', 'str', 'json'
-            ] = 'dict',
-            **kwargs) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
+            **kwargs
+            ) -> Tuple[
+                Dict[str, str | float | Dict], Dict[str, str | float | Dict]
+    ] | str:
         """
         Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
 
@@ -1014,8 +1165,6 @@ class UNIQUAC:
             Delimiter for the component id. Default is "|".
         message : Optional[str]
             Message to be displayed. Default is None.
-        res_format : Literal['dict', 'str', 'json']
-            Format of the result. Default is 'dict'.
         **kwargs : Optional
             Additional keyword arguments.
 
@@ -1103,8 +1252,7 @@ class UNIQUAC:
                 Z=Z,
                 calculation_mode=calculation_mode,
                 symbol_delimiter=symbol_delimiter,
-                message=message,
-                res_format=res_format)
+                message=message)
         except Exception as e:
             raise Exception(f"Error in uniquac model cal: {str(e)}")
 
@@ -1117,7 +1265,7 @@ class UNIQUAC:
                                           calculation_mode: Literal['V1'],
                                           symbol_delimiter: Literal["|", "_"],
                                           message: Optional[str],
-                                          res_format: Literal['dict', 'str', 'json']) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
+                                          ) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
         """
         Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
 
@@ -1139,8 +1287,6 @@ class UNIQUAC:
             Delimiter for the component id. Default is "|".
         message : Optional[str]
             Message to be displayed. Default is None.
-        res_format : Literal['dict', 'str', 'json']
-            Format of the result. Default is 'dict'.
 
         Returns
         --------
@@ -1193,7 +1339,10 @@ class UNIQUAC:
                     tau_ij_data, symbol_delimiter=symbol_delimiter)
             elif isinstance(tau_ij_data, TableMatrixData):
                 # convert to numpy array and dict
-                res_ = self.to_ij(data=tau_ij_data)
+                res_ = self.to_ij(
+                    data=tau_ij_data,
+                    prop_symbol="tau"
+                )
                 # set
                 tau_ij = res_[0]
                 # to dict
@@ -1201,7 +1350,9 @@ class UNIQUAC:
             elif isinstance(tau_ij_data, dict):
                 # convert dict to numpy array
                 tau_ij = self.to_matrix_ij(
-                    data=tau_ij_data, symbol_delimiter=symbol_delimiter)
+                    data=tau_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
                 # to dict
                 tau_ij_comp = tau_ij_data
             elif isinstance(tau_ij_data, List):
@@ -1249,7 +1400,7 @@ class UNIQUAC:
                 q_i = q_i_data
                 # to dict
                 q_i_comp = self.to_dict_i(q_i_data)
-            elif isinstance(q_i_data, List):
+            elif isinstance(q_i_data, list):
                 # set
                 q_i = np.array(q_i_data)
                 # to dict
@@ -1270,16 +1421,21 @@ class UNIQUAC:
             # Calculate activity coefficients using the UNIQUAC model
             if calculation_mode == 'V1':
                 AcCo_i = self.CalAcCo_V1(
-                    xi=xi, tau_ij=tau_ij, r_i=r_i, q_i=q_i, Z=Z)
+                    xi=xi,
+                    tau_ij=tau_ij,
+                    r_i=r_i,
+                    q_i=q_i,
+                    Z=Z)
             else:
                 raise ValueError("calculation_mode not supported!")
 
-            # convert to float
-            AcCo_i = [float(i) for i in AcCo_i]
+            # set the activity coefficients float
+            AcCo_i = [float(AcCo_i[i]) for i in range(comp_num)]
 
             # SECTION
             # init the activity coefficients
-            AcCo_i_comp = {components[i]: AcCo_i[i] for i in range(comp_num)}
+            AcCo_i_comp = {components[i]: float(
+                AcCo_i[i]) for i in range(comp_num)}
 
             # SECTION: prepare result
             # input values
@@ -1306,28 +1462,20 @@ class UNIQUAC:
                 'message': message,
             }
 
-            # NOTE: check res_format
-            if res_format == 'dict':
-                # return as dict
-                return res, other_values
-            elif res_format == 'json':
-                # return as json string
-                res = json.dumps(res, indent=4)
-                other_values = json.dumps(other_values, indent=4)
-                return res, other_values
-            elif res_format == 'str':
-                # return as string
-                res = str(res)
-                other_values = str(other_values)
-                return res, other_values
-            else:
-                raise ValueError("res_format not supported!")
+            # res
+            return res, other_values
 
         except Exception as e:
             raise Exception(
                 f"Error in calculate_activity_coefficients: {str(e)}")
 
-    def CalAcCo_V1(self, xi: List[float], tau_ij: np.ndarray, r_i: np.ndarray, q_i: np.ndarray, Z: int | float) -> List[float]:
+    def CalAcCo_V1(self,
+                   xi: List[float],
+                   tau_ij: np.ndarray,
+                   r_i: np.ndarray,
+                   q_i: np.ndarray,
+                   Z: int | float
+                   ) -> np.ndarray:
         '''
         Calculate activity coefficient (AcCo) using UNIQUAC model.
 
@@ -1346,7 +1494,7 @@ class UNIQUAC:
 
         Returns
         -------
-        AcCoi: List[float]
+        AcCoi: np.ndarray
             activity coefficient for each component
 
         Notes
@@ -1362,6 +1510,9 @@ class UNIQUAC:
             if len(xi) != comp_num:
                 raise ValueError(
                     f"xi length {len(xi)} does not match component number {comp_num}")
+
+            # activity coefficient
+            AcCoi = np.zeros(comp_num)
 
             # SECTION: calculate activity coefficients
             # ∑r[i]x[i]
@@ -1399,8 +1550,6 @@ class UNIQUAC:
 
             # activity coefficient
             AcCoi = np.exp(gamma_comb_ij+gamma_res_ij)
-            # to list
-            AcCoi = AcCoi.tolist()
 
             # res
             return AcCoi
@@ -1414,9 +1563,14 @@ class UNIQUAC:
                                  r_i:  Optional[np.ndarray] = None,
                                  q_i:  Optional[np.ndarray] = None,
                                  Z: Optional[int | float] = None,
-                                 symbol_delimiter: Literal["|", "_"] = "|",
+                                 symbol_delimiter: Literal[
+                                     "|", "_"
+                                 ] = "|",
                                  message: Optional[str] = None,
-                                 res_format: Literal['str', 'json', 'dict'] = 'dict') -> Dict[str, float | Dict] | str:
+                                 res_format: Literal[
+                                     'str', 'json', 'dict'
+                                 ] = 'dict'
+                                 ) -> Dict[str, float | Dict] | str:
         """
         Calculate excess Gibbs energy (G^E/RT) for a multi-component mixture using the UNIQUAC model.
 
@@ -1569,7 +1723,9 @@ class UNIQUAC:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
 
     def inputs_generator(self,
-                         temperature: Optional[List[float | str]] = None,
+                         temperature: Optional[
+                             List[float | str]
+                         ] = None,
                          **kwargs):
         '''
         Prepares inputs for the UNIQUAC activity model for calculating activity coefficients.
@@ -1582,6 +1738,25 @@ class UNIQUAC:
             Additional parameters for the model.
             - interaction-energy-parameter : list, optional
                 Interaction energy parameters for the components.
+
+        Returns
+        -------
+        inputs : dict
+            Dictionary of inputs for the UNIQUAC activity model.
+            - tau_ij : np.ndarray
+                Interaction parameters (tau_ij) between component i and j.
+            - r_i : np.ndarray
+                Relative van der Waals volume of component i.
+            - q_i : np.ndarray
+                Relative surface area of component i.
+            a_ij : np.ndarray
+                Interaction energy parameter (a_ij) between component i and j.
+            b_ij : np.ndarray
+                Interaction energy parameter (b_ij) between component i and j.
+            c_ij : np.ndarray
+                Interaction energy parameter (c_ij) between component i and j.
+            d_ij : np.ndarray
+                Interaction energy parameter (d_ij) between component i and j.
         '''
         try:
             # SECTION: check src
@@ -1620,8 +1795,13 @@ class UNIQUAC:
                     raise ValueError(
                         "temperature must be a list of floats or strings.")
 
+                # temperature
+                T_value = float(temperature[0])
+                T_unit = str(temperature[1])
+
                 # convert temperature to Kelvin
-                T = pycuc.convert_from_to(temperature[0], temperature[1], 'K')
+                T = pycuc.convert_from_to(
+                    T_value, T_unit, 'K')
 
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
@@ -1683,9 +1863,16 @@ class UNIQUAC:
             # SECTION: extract data
             # NOTE: check method
             tau_ij_cal_method = 0
+
+            # check if dU_ij, a_ij, b_ij, c_ij, d_ij are provided
+
+            # ! check if dU_ij is None
             if dU_ij_src is None:
                 # check if a_ij, b_ij, c_ij are provided
-                if a_ij_src is None or b_ij_src is None or c_ij_src is None or d_ij_src is None:
+                if (a_ij_src is None or
+                    b_ij_src is None or
+                    c_ij_src is None or
+                        d_ij_src is None):
                     raise ValueError(
                         "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, and d.")
                 # set method
@@ -1694,7 +1881,7 @@ class UNIQUAC:
                 # ! a_ij
                 if isinstance(a_ij_src, TableMatrixData):
                     a_ij = a_ij_src.mat('a', self.components)
-                elif isinstance(a_ij_src, List[List[float]]):
+                elif isinstance(a_ij_src, list):
                     a_ij = np.array(a_ij_src)
                 elif isinstance(a_ij_src, np.ndarray):
                     a_ij = a_ij_src
@@ -1705,7 +1892,7 @@ class UNIQUAC:
                 # ! b_ij
                 if isinstance(b_ij_src, TableMatrixData):
                     b_ij = b_ij_src.mat('b', self.components)
-                elif isinstance(b_ij_src, List[List[float]]):
+                elif isinstance(b_ij_src, list):
                     b_ij = np.array(b_ij_src)
                 elif isinstance(b_ij_src, np.ndarray):
                     b_ij = b_ij_src
@@ -1716,7 +1903,7 @@ class UNIQUAC:
                 # ! c_ij
                 if isinstance(c_ij_src, TableMatrixData):
                     c_ij = c_ij_src.mat('c', self.components)
-                elif isinstance(c_ij_src, List[List[float]]):
+                elif isinstance(c_ij_src, list):
                     c_ij = np.array(c_ij_src)
                 elif isinstance(c_ij_src, np.ndarray):
                     c_ij = c_ij_src
@@ -1727,7 +1914,7 @@ class UNIQUAC:
                 # ! d_ij
                 if isinstance(d_ij_src, TableMatrixData):
                     d_ij = d_ij_src.mat('d', self.components)
-                elif isinstance(d_ij_src, List[List[float]]):
+                elif isinstance(d_ij_src, list):
                     d_ij = np.array(d_ij_src)
                 elif isinstance(d_ij_src, np.ndarray):
                     d_ij = d_ij_src
@@ -1738,7 +1925,7 @@ class UNIQUAC:
                 # ! use dU_ij
                 if isinstance(dU_ij_src, TableMatrixData):
                     dU_ij = dU_ij_src.mat('dU', self.components)
-                elif isinstance(dU_ij_src, List[List[float]]):
+                elif isinstance(dU_ij_src, list):
                     dU_ij = np.array(dU_ij_src)
                 elif isinstance(dU_ij_src, np.ndarray):
                     dU_ij = dU_ij_src
@@ -1754,22 +1941,75 @@ class UNIQUAC:
             # SECTION: calculate tau_ij
             # NOTE: calculate the binary interaction parameter matrix (tau_ij)
             # check
-            if tau_ij_src is not None or tau_ij_src != 'None':
+            if tau_ij_src is None or tau_ij_src == 'None':
+                # ! tau_ij is None
+                # ? check method
                 if tau_ij_cal_method == 1:
+                    # check if dU_ij is None
+                    if dU_ij is None:
+                        raise ValueError(
+                            "dU_ij is not set. Cannot calculate tau_ij.")
+
+                    # convert values to float
+                    if isinstance(dU_ij, np.ndarray):
+                        dU_ij = dU_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "dU_ij must be numpy array.")
+
                     tau_ij, _ = self.cal_tau_ij_M1(
-                        temperature=T, dU_ij=dU_ij)
+                        temperature=T,
+                        dU_ij=dU_ij
+                    )
                 elif tau_ij_cal_method == 2:
+                    # check if a_ij, b_ij, c_ij, d_ij are None
+                    if (a_ij is None or
+                        b_ij is None or
+                        c_ij is None or
+                            d_ij is None):
+                        raise ValueError(
+                            "a_ij, b_ij, c_ij, d_ij cannot be None for calculating tau_ij")
+
+                    # If a_ij, b_ij, c_ij, d_ij are numpy array with mixed value types, convert all values to float
+                    if isinstance(a_ij, np.ndarray):
+                        a_ij = a_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "a_ij must be a numpy array")
+
+                    if isinstance(b_ij, np.ndarray):
+                        b_ij = b_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "b_ij must be a numpy array")
+
+                    if isinstance(c_ij, np.ndarray):
+                        c_ij = c_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "c_ij must be a numpy array")
+
+                    if isinstance(d_ij, np.ndarray):
+                        d_ij = d_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "d_ij must be a numpy array")
+
                     tau_ij, _ = self.cal_tau_ij_M2(
                         temperature=T,
-                        a_ij=a_ij, b_ij=b_ij, c_ij=c_ij, d_ij=d_ij)
+                        a_ij=a_ij,
+                        b_ij=b_ij,
+                        c_ij=c_ij,
+                        d_ij=d_ij)
                 else:
                     raise ValueError(
                         "Invalid tau_ij_cal_method. Must be 1 or 2.")
             else:
+                # ! check if tau_ij is provided
                 # check types
                 if isinstance(tau_ij_src, TableMatrixData):
                     tau_ij = tau_ij_src.mat('tau', self.components)
-                elif isinstance(tau_ij_src, List[List[float]]):
+                elif isinstance(tau_ij_src, list):
                     tau_ij = np.array(tau_ij_src)
                 elif isinstance(tau_ij_src, np.ndarray):
                     tau_ij = tau_ij_src
@@ -1793,4 +2033,4 @@ class UNIQUAC:
             return inputs
         except Exception as e:
             raise Exception(
-                f"Failed to calculate UNIQUAC activity: {e}") from e
+                f"Failed to generate UNIQUAC activity inputs: {e}") from e

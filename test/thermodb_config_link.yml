@@ -92,6 +92,7 @@ nrtl:
     AcFa: AcFa
     alpha: alpha
     dg: dg
+    tau: tau
   EQUATIONS:
     vapor-pressure: VaPr
     heat-capacity: Cp_IG
@@ -103,6 +104,7 @@ uniquac:
     r: r
     q: q
     dg: dU
+    tau: tau
   EQUATIONS:
     vapor-pressure: VaPr
     heat-capacity: Cp_IG

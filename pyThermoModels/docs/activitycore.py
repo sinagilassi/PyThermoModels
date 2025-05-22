@@ -1,9 +1,6 @@
 # import packages/modules
-import numpy as np
-from math import pow, sqrt, exp, log
-from typing import Union, Optional, Any
+from typing import Union, Optional
 # local
-from ..configs import R_CONST
 from .nrtl import NRTL
 from .uniquac import UNIQUAC
 
@@ -57,6 +54,11 @@ class ActivityCore:
             Instance of the NRTL activity model class.
         '''
         try:
+            # NOTE: NRTL
+            # check if nrtl is None
+            if self.__nrtl is None:
+                # err
+                raise ValueError("NRTL model not initialized.")
             return self.__nrtl
         except Exception as e:
             raise Exception(f"Error in NRTL: {e}") from e
@@ -72,6 +74,11 @@ class ActivityCore:
             Instance of the UNIQUAC activity model class.
         '''
         try:
+            # NOTE: UNIQUAC
+            # check if uniquac is None
+            if self.__uniquac is None:
+                # err
+                raise ValueError("UNIQUAC model not initialized.")
             return self.__uniquac
         except Exception as e:
             raise Exception(f"Error in UNIQUAC: {e}") from e

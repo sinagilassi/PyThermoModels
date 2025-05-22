@@ -1,8 +1,7 @@
 # import packages/modules
-from typing import Dict, Optional, Literal, List
+from typing import Dict, Optional, Literal, List, Any
 # local
-from .configs import __description__, __version__
-from .docs import ThermoModelCore, ThermoLib, NRTL, UNIQUAC
+from .docs import ThermoModelCore, ThermoLib, NRTL, UNIQUAC, ActivityCore
 
 
 def init():
@@ -48,8 +47,9 @@ def eos(**kwargs):
 def activity(
         components: List[str],
         model_name: Literal['NRTL', 'UNIQUAC'],
-        model_source: Optional[Dict] = None,
-        **kwargs):
+        model_source: Optional[Dict[str, Any]] = None,
+        **kwargs
+) -> ActivityCore:
     '''
     Initialize activity calculation library
 
@@ -92,8 +92,9 @@ def activity(
 def activities(
         components: List[str],
         model_name: Literal['NRTL', 'UNIQUAC'],
-        model_source: Optional[Dict] = None,
-        **kwargs) -> NRTL | UNIQUAC:
+        model_source: Optional[Dict[str, Any]] = None,
+        **kwargs
+) -> NRTL | UNIQUAC:
     '''
     Initialize activity calculation library
 

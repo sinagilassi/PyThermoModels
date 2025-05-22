@@ -1,5 +1,5 @@
 # import package/modules
-from typing import Dict, List, Union, Literal, Optional, Tuple
+from typing import Dict, List, Union, Literal, Optional, Tuple, Any
 import pycuc
 import json
 # local
@@ -874,7 +874,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
     def init_activity(self,
                       components: List[str],
                       model_name: Literal['NRTL', 'UNIQUAC'],
-                      model_source: Dict,
+                      model_source: Optional[Dict[str, Any]] = None,
                       **kwargs):
         '''
         Initializes activity coefficient calculation
@@ -953,7 +953,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
     def init_activities(self,
                         components: List[str],
                         model_name: Literal['NRTL', 'UNIQUAC'],
-                        model_source: Dict,
+                        model_source: Optional[Dict[str, Any]] = None,
                         **kwargs) -> NRTL | UNIQUAC:
         '''
         Initializes activity coefficient calculation

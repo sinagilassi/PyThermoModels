@@ -1,12 +1,9 @@
 # import libs
 import numpy as np
 import json
-import os
 from math import pow, exp, log
-from typing import List, Dict, Tuple, Any, Literal, Optional, Union
+from typing import List, Dict, Tuple, Literal, Optional, Any
 import pycuc
-from rich import print
-import pyThermoDB
 from pyThermoDB import (
     TableMatrixData, TableData, TableEquation, TableMatrixEquation
 )
@@ -45,7 +42,8 @@ class NRTL:
     def __init__(self,
                  components: List[str],
                  datasource: Dict = {},
-                 equationsource: Dict = {}):
+                 equationsource: Dict = {}
+                 ):
         '''
         Initialize the NRTL (`Non-Random Two-Liquid`) model used to calculate activity coefficients in liquid mixtures.
 
@@ -113,8 +111,13 @@ class NRTL:
         """
         return model_
 
-    def to_ij(self, data: TableMatrixData, prop_symbol: str,
-              symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+    def to_ij(self,
+              data: TableMatrixData,
+              prop_symbol: str,
+              symbol_delimiter: Literal[
+                  "|", "_"
+              ] = "|"
+              ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Convert TableMatrixData to numpy array (mat_ij) and dictionary (dict_ij).
 
@@ -164,22 +167,40 @@ class NRTL:
             # Set the interaction energy parameter matrix
             for i in range(comp_num):
                 for j in range(comp_num):
+                    # key
+                    key_ = f"{prop_symbol}_{self.components[i]}-{self.components[j]}"
                     # val
-                    val = data.ij(
-                        f"{prop_symbol}_{self.components[i]}-{self.components[j]}")
+                    val = data.ij(key_)
+
                     # to matrix
-                    mat_ij[i, j] = val
+                    # ? val["value"] or 0.0 in case of None
+                    if val is not None and val["value"] is not None:
+                        mat_ij[i, j] = float(val["value"])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}-{self.components[j]}")
 
                     # to dict
                     key_ = f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"
-                    dict_ij[key_] = val
+                    # to dict
+                    # ? val["value"] or 0.0 in case of None
+                    if val is not None and val["value"] is not None:
+                        dict_ij[key_] = float(val["value"])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}-{self.components[j]}")
 
             # res
             return mat_ij, dict_ij
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_dict_ij(self, data: np.ndarray, symbol_delimiter: Literal["|", "_"] = "|") -> Dict[str, float]:
+    def to_dict_ij(self,
+                   data: np.ndarray,
+                   symbol_delimiter: Literal[
+                       "|", "_"
+                   ] = "|"
+                   ) -> Dict[str, float]:
         """
         Convert to dictionary (dict_ij) according to the component id.
 
@@ -229,7 +250,12 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_matrix_ij(self, data: Dict[str, float], symbol_delimiter: Literal["|", "_"] = "|") -> np.ndarray:
+    def to_matrix_ij(self,
+                     data: Dict[str, float],
+                     symbol_delimiter: Literal[
+                         "|", "_"
+                     ] = "|"
+                     ) -> np.ndarray:
         """
         Convert to matrix (mat_ij) according to `the component id`.
 
@@ -267,8 +293,10 @@ class NRTL:
             # Set the interaction energy parameter matrix
             for i in range(comp_num):
                 for j in range(comp_num):
+                    # key
+                    key_ = f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"
                     # val
-                    val = data[f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"]
+                    val = data[key_]
 
                     # find the component id
                     comp_id_i = self.comp_idx[self.components[i]]
@@ -286,7 +314,10 @@ class NRTL:
                      a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                      b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                      c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                     symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+                     symbol_delimiter: Literal[
+                         "|", "_"
+                     ] = "|"
+                     ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction energy parameter `dg_ij` matrix dependent of temperature.
 
@@ -322,15 +353,21 @@ class NRTL:
         """
         try:
             # SECTION: check
-            if not isinstance(a_ij, np.ndarray) and not isinstance(a_ij, dict) and not isinstance(a_ij, TableMatrixData):
+            if (not isinstance(a_ij, np.ndarray) and
+                not isinstance(a_ij, dict) and
+                    not isinstance(a_ij, TableMatrixData)):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(b_ij, np.ndarray) and not isinstance(b_ij, dict) and not isinstance(b_ij, TableMatrixData):
+            if (not isinstance(b_ij, np.ndarray) and
+                not isinstance(b_ij, dict) and
+                    not isinstance(b_ij, TableMatrixData)):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(c_ij, np.ndarray) and not isinstance(c_ij, dict) and not isinstance(c_ij, TableMatrixData):
+            if (not isinstance(c_ij, np.ndarray) and
+                not isinstance(c_ij, dict) and
+                    not isinstance(c_ij, TableMatrixData)):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
@@ -352,7 +389,11 @@ class NRTL:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
             # SECTION: calculate dg_ij values
-            if isinstance(a_ij, np.ndarray) and isinstance(b_ij, np.ndarray) and isinstance(c_ij, np.ndarray):
+            if (isinstance(a_ij, np.ndarray) and
+                isinstance(b_ij, np.ndarray) and
+                    isinstance(c_ij, np.ndarray)):
+
+                # looping through the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -374,7 +415,11 @@ class NRTL:
                             dg_ij_comp[key_] = 0
 
             # SECTION: if dg_ij is dict
-            elif isinstance(a_ij, dict) and isinstance(b_ij, dict) and isinstance(c_ij, dict):
+            elif (isinstance(a_ij, dict) and
+                  isinstance(b_ij, dict) and
+                  isinstance(c_ij, dict)):
+
+                # looping through the components
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -399,7 +444,9 @@ class NRTL:
                             # set by name
                             dg_ij_comp[key_] = 0
             # SECTION: if dg_ij is TableMatrixData
-            elif isinstance(a_ij, TableMatrixData) and isinstance(b_ij, TableMatrixData) and isinstance(c_ij, TableMatrixData):
+            elif (isinstance(a_ij, TableMatrixData) and
+                  isinstance(b_ij, TableMatrixData) and
+                  isinstance(c_ij, TableMatrixData)):
                 # convert to numpy array and dict
                 for i in range(comp_num):
                     for j in range(comp_num):
@@ -408,10 +455,34 @@ class NRTL:
                         # dict
                         key_comp = f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"
 
+                        # TODO: extract val
+                        # a_ij
+                        a_ij_ = a_ij.ij(f"a_{key_}")
+                        if a_ij_ is not None and a_ij_["value"] is not None:
+                            a_ij_val = float(a_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for a_ij: {a_ij_} for key: {key_}")
+
+                        # b_ij
+                        b_ij_ = b_ij.ij(f"b_{key_}")
+                        if b_ij_ is not None and b_ij_["value"] is not None:
+                            b_ij_val = float(b_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for b_ij: {b_ij_} for key: {key_}")
+
+                        # c_ij
+                        c_ij_ = c_ij.ij(f"c_{key_}")
+                        if c_ij_ is not None and c_ij_["value"] is not None:
+                            c_ij_val = float(c_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for c_ij: {c_ij_} for key: {key_}")
+
                         # val
-                        val_ = a_ij.ij(f"a_{key_}") + b_ij.ij(f"b_{key_}") * \
-                            temperature + \
-                            c_ij.ij(f"c_{key_}") * pow(temperature, 2)
+                        val_ = a_ij_val + b_ij_val * temperature + \
+                            c_ij_val * pow(temperature, 2)
 
                         # component id
                         comp_id_i = self.comp_idx[self.components[i]]
@@ -439,9 +510,14 @@ class NRTL:
     def cal_tau_ij_M1(self,
                       temperature: float,
                       dg_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      dg_ij_symbol: Literal['dg', 'dg_ij'] = 'dg',
+                      dg_ij_symbol: Literal[
+                          'dg', 'dg_ij'
+                      ] = 'dg',
                       R_CONST: float = 8.314,
-                      symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+                      symbol_delimiter: Literal[
+                          "|", "_"
+                      ] = "|"
+                      ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction parameters `tau_ij` matrix for NRTL model.
 
@@ -454,7 +530,7 @@ class NRTL:
         dg_ij_symbol : str
             Interaction energy parameter symbol. Default is 'dg'.
         R_CONST : float
-            Univeral gas constant [J/mol/K], default R_CONST = 8.314
+            Universal gas constant [J/mol/K], default R_CONST = 8.314
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
 
@@ -480,7 +556,9 @@ class NRTL:
         """
         try:
             # check
-            if not isinstance(dg_ij, np.ndarray) and not isinstance(dg_ij, dict) and not isinstance(dg_ij, TableMatrixData):
+            if (not isinstance(dg_ij, np.ndarray) and
+                not isinstance(dg_ij, dict) and
+                    not isinstance(dg_ij, TableMatrixData)):
                 raise TypeError(
                     "dg_ij must be numpy array, dict or TableMatrixData")
 
@@ -490,10 +568,10 @@ class NRTL:
             # components
             components = self.components
 
-            # Initialize tauij matrix
-            tau_ij = np.zeros((comp_num, comp_num))
+            # Initialize tau_ij matrix
+            tau_ij = np.zeros((comp_num, comp_num), dtype=float)
 
-            # tauij components
+            # tau_ij components
             tau_ij_comp = {}
 
             # check delimiter
@@ -504,7 +582,7 @@ class NRTL:
             else:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
-            # Calculate tauij values
+            # Calculate tau_ij values
             # SECTION: if dg_ij is numpy array
             if isinstance(dg_ij, np.ndarray):
                 for i in range(comp_num):
@@ -560,7 +638,14 @@ class NRTL:
                         key_comp = f"{components[i]}{symbol_delimiter_set}{components[j]}"
 
                         # val
-                        val_ = dg_ij.ij(key_)
+                        dg_ij_ = dg_ij.ij(key_)
+
+                        # val
+                        if dg_ij_ is not None and dg_ij_["value"] is not None:
+                            val_ = float(dg_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for dg_ij: {dg_ij_} for key: {key_}")
 
                         # component id
                         comp_id_i = self.comp_idx[components[i]]
@@ -591,7 +676,10 @@ class NRTL:
                       b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                       c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
                       d_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      symbol_delimiter: Literal["|", "_"] = "|") -> Tuple[np.ndarray, Dict[str, float]]:
+                      symbol_delimiter: Literal[
+                          "|", "_"
+                      ] = "|"
+                      ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction parameters `tau_ij` matrix for NRTL model.
 
@@ -632,19 +720,27 @@ class NRTL:
         """
         try:
             # SECTION: check
-            if not isinstance(a_ij, np.ndarray) and not isinstance(a_ij, dict) and not isinstance(a_ij, TableMatrixData):
+            if (not isinstance(a_ij, np.ndarray) and
+                not isinstance(a_ij, dict) and
+                    not isinstance(a_ij, TableMatrixData)):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(b_ij, np.ndarray) and not isinstance(b_ij, dict) and not isinstance(b_ij, TableMatrixData):
+            if (not isinstance(b_ij, np.ndarray) and
+                not isinstance(b_ij, dict) and
+                    not isinstance(b_ij, TableMatrixData)):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(c_ij, np.ndarray) and not isinstance(c_ij, dict) and not isinstance(c_ij, TableMatrixData):
+            if (not isinstance(c_ij, np.ndarray) and
+                not isinstance(c_ij, dict) and
+                    not isinstance(c_ij, TableMatrixData)):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
-            if not isinstance(d_ij, np.ndarray) and not isinstance(d_ij, dict) and not isinstance(d_ij, TableMatrixData):
+            if (not isinstance(d_ij, np.ndarray) and
+                not isinstance(d_ij, dict) and
+                    not isinstance(d_ij, TableMatrixData)):
                 raise TypeError(
                     "d_ij must be numpy array, dict or TableMatrixData")
 
@@ -654,10 +750,10 @@ class NRTL:
             # components
             components = self.components
 
-            # Initialize tauij matrix
+            # Initialize tau_ij matrix
             tau_ij = np.zeros((comp_num, comp_num))
 
-            # tauij components
+            # tau_ij components
             tau_ij_comp = {}
 
             # check delimiter
@@ -668,8 +764,11 @@ class NRTL:
             else:
                 raise ValueError("symbol_delimiter must be '|' or '_'")
 
-            # SECTION: Calculate tauij values
-            if isinstance(a_ij, np.ndarray) and isinstance(b_ij, np.ndarray) and isinstance(c_ij, np.ndarray) and isinstance(d_ij, np.ndarray):
+            # SECTION: Calculate tau_ij values
+            if (isinstance(a_ij, np.ndarray) and
+                isinstance(b_ij, np.ndarray) and
+                isinstance(c_ij, np.ndarray) and
+                    isinstance(d_ij, np.ndarray)):
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -691,7 +790,10 @@ class NRTL:
                             # set by name
                             tau_ij_comp[key_] = 0
             # SECTION: if dg_ij is dict
-            elif isinstance(a_ij, dict) and isinstance(b_ij, dict) and isinstance(c_ij, dict) and isinstance(d_ij, dict):
+            elif (isinstance(a_ij, dict) and
+                  isinstance(b_ij, dict) and
+                  isinstance(c_ij, dict) and
+                  isinstance(d_ij, dict)):
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -717,7 +819,10 @@ class NRTL:
                             # set by name
                             tau_ij_comp[key_] = 0
             # SECTION: if dg_ij is TableMatrixData
-            elif isinstance(a_ij, TableMatrixData) and isinstance(b_ij, TableMatrixData) and isinstance(c_ij, TableMatrixData) and isinstance(d_ij, TableMatrixData):
+            elif (isinstance(a_ij, TableMatrixData) and
+                  isinstance(b_ij, TableMatrixData) and
+                  isinstance(c_ij, TableMatrixData) and
+                  isinstance(d_ij, TableMatrixData)):
                 # convert to numpy array and dict
                 for i in range(comp_num):
                     for j in range(comp_num):
@@ -726,9 +831,42 @@ class NRTL:
                         # dict
                         key_comp = f"{components[i]}{symbol_delimiter_set}{components[j]}"
 
+                        # TODO: extract val
+                        # a_ij
+                        a_ij_ = a_ij.ij(key_)
+                        if a_ij_ is not None and a_ij_["value"] is not None:
+                            a_ij_val = float(a_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for a_ij: {a_ij_} for key: {key_}")
+
+                        # b_ij
+                        b_ij_ = b_ij.ij(key_)
+                        if b_ij_ is not None and b_ij_["value"] is not None:
+                            b_ij_val = float(b_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for b_ij: {b_ij_} for key: {key_}")
+
+                        # c_ij
+                        c_ij_ = c_ij.ij(key_)
+                        if c_ij_ is not None and c_ij_["value"] is not None:
+                            c_ij_val = float(c_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for c_ij: {c_ij_} for key: {key_}")
+
+                        # d_ij
+                        d_ij_ = d_ij.ij(key_)
+                        if d_ij_ is not None and d_ij_["value"] is not None:
+                            d_ij_val = float(d_ij_["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for d_ij: {d_ij_} for key: {key_}")
+
                         # val
-                        val_ = a_ij.ij(key_) + b_ij.ij(key_) / temperature + c_ij.ij(
-                            key_) * log(temperature) + d_ij.ij(key_) * temperature
+                        val_ = a_ij_val + b_ij_val / temperature + c_ij_val * \
+                            log(temperature) + d_ij_val * temperature
 
                         # component id
                         comp_id_i = self.comp_idx[components[i]]
@@ -754,7 +892,13 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in cal_tauij: {str(e)}")
 
-    def cal_G_ij(self, tau_ij: np.ndarray, alpha_ij: np.ndarray, symbol_delimiter: Literal["|", "_"] = "|"):
+    def cal_G_ij(self,
+                 tau_ij: np.ndarray,
+                 alpha_ij: np.ndarray,
+                 symbol_delimiter: Literal[
+                     "|", "_"
+                 ] = "|"
+                 ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate non-randomness parameters `G_ij` matrix for NRTL model according to `the component id`.
 
@@ -839,8 +983,7 @@ class NRTL:
             calculation_mode: Literal['V1', 'V2'] = 'V1',
             symbol_delimiter: Literal["|", "_"] = "|",
             message: Optional[str] = None,
-            res_format: Literal['dict', 'str', 'json'] = 'dict',
-            **kwargs):
+            **kwargs) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         '''
         Calculate activity coefficients for a multi-component mixture using the NRTL model.
 
@@ -862,8 +1005,6 @@ class NRTL:
             Delimiter for the component id. Default is "|".
         message: Optional[str]
             Message to be displayed. Default is None.
-        res_format: Literal['dict', 'str', 'json']
-            Format of the result. Default is 'dict'.
         **kwargs: Optional
             Additional keyword arguments for the calculation.
 
@@ -871,6 +1012,16 @@ class NRTL:
         -------
         res: Dict[str, float | Dict]
             Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+
+        Notes
+        -----
+        The activity coefficients are calculated using the NRTL model based on the provided input parameters as:
+
+        - `tau_ij`: np.ndarray
+        - `alpha_ij`: np.ndarray
+
+        If the `tau_ij` and `alpha_ij` are not provided, they are generated using the `inputs_generator` method.
+        The `inputs_generator` method generates the required input parameters based on the provided temperature and model input values.
 
         Examples
         --------
@@ -957,8 +1108,7 @@ class NRTL:
                 alpha_ij_data=alpha_ij_data,
                 calculation_mode=calculation_mode,
                 symbol_delimiter=symbol_delimiter,
-                message=message,
-                res_format=res_format
+                message=message
             )
         except Exception as e:
             raise Exception(f"Error in launch_calculation: {str(e)}")
@@ -970,7 +1120,7 @@ class NRTL:
                                           calculation_mode: Literal['V1', 'V2'],
                                           symbol_delimiter: Literal["|", "_"],
                                           message: Optional[str],
-                                          res_format: Literal['dict', 'str', 'json']) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
+                                          ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Calculate activity coefficients for a multi-component mixture using the NRTL model.
 
@@ -988,12 +1138,10 @@ class NRTL:
             Delimiter for the component id. Default is "|".
         message : Optional[str]
             Message to be displayed. Default is None.
-        res_format : Literal['dict', 'str', 'json']
-            Format of the result. Default is 'dict'.
 
         Returns
         --------
-        res : Dict[str, float | Dict]
+        res :
             Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
 
         Notes
@@ -1036,10 +1184,15 @@ class NRTL:
                 tau_ij = tau_ij_data
                 # to dict
                 tau_ij_comp = self.to_dict_ij(
-                    tau_ij_data, symbol_delimiter=symbol_delimiter)
-            elif isinstance(tau_ij_data, TableMatrixData):
+                    tau_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif isinstance(tau_ij_data, TableMatrixData):  # ! PyThermoDB
                 # convert to numpy array and dict
-                res_ = self.to_ij(data=tau_ij_data)
+                res_ = self.to_ij(
+                    data=tau_ij_data,
+                    prop_symbol="tau"
+                )
                 # set
                 tau_ij = res_[0]
                 # to dict
@@ -1047,7 +1200,9 @@ class NRTL:
             elif isinstance(tau_ij_data, dict):
                 # convert dict to numpy array
                 tau_ij = self.to_matrix_ij(
-                    data=tau_ij_data, symbol_delimiter=symbol_delimiter)
+                    data=tau_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
                 # to dict
                 tau_ij_comp = tau_ij_data
             else:
@@ -1065,10 +1220,14 @@ class NRTL:
                 alpha_ij = alpha_ij_data
                 # to dict
                 alpha_ij_comp = self.to_dict_ij(
-                    alpha_ij_data, symbol_delimiter=symbol_delimiter)
-            elif isinstance(alpha_ij_data, TableMatrixData):
+                    alpha_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif isinstance(alpha_ij_data, TableMatrixData):  # ! PyThermoDB
                 # convert to numpy array and dict
-                res_ = self.to_ij(data=alpha_ij_data)
+                res_ = self.to_ij(
+                    data=alpha_ij_data,
+                    prop_symbol="alpha")
                 # set
                 alpha_ij = res_[0]
                 # to dict
@@ -1076,7 +1235,9 @@ class NRTL:
             elif isinstance(alpha_ij_data, dict):
                 # convert dict to numpy array
                 alpha_ij = self.to_matrix_ij(
-                    data=alpha_ij_data, symbol_delimiter=symbol_delimiter)
+                    data=alpha_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
                 # to dict
                 alpha_ij_comp = alpha_ij_data
             else:
@@ -1090,7 +1251,10 @@ class NRTL:
             # SECTION
             # set G_ij matrix for NRTL model
             G_ij, G_ij_comp = self.cal_G_ij(
-                tau_ij=tau_ij, alpha_ij=alpha_ij, symbol_delimiter=symbol_delimiter)
+                tau_ij=tau_ij,
+                alpha_ij=alpha_ij,
+                symbol_delimiter=symbol_delimiter
+            )
 
             # NOTE: store in class
             self.__G_ij = G_ij
@@ -1137,28 +1301,18 @@ class NRTL:
                 'message': message,
             }
 
-            # NOTE: check res_format
-            if res_format == 'dict':
-                # return as dict
-                return res, other_values
-            elif res_format == 'json':
-                # return as json string
-                res = json.dumps(res, indent=4)
-                other_values = json.dumps(other_values, indent=4)
-                return res, other_values
-            elif res_format == 'str':
-                # return as string
-                res = str(res)
-                other_values = str(other_values)
-                return res, other_values
-            else:
-                raise ValueError("res_format not supported!")
+            # res
+            return res, other_values
 
         except Exception as e:
             raise Exception(
                 f"Error in calculate_activity_coefficients: {str(e)}")
 
-    def CalAcCo_V1(self, xi: List[float], tau_ij: np.ndarray, G_ij: np.ndarray) -> np.ndarray:
+    def CalAcCo_V1(self,
+                   xi: List[float],
+                   tau_ij: np.ndarray,
+                   G_ij: np.ndarray
+                   ) -> np.ndarray:
         '''
         Calculate activity coefficient (AcCo) using Non-random two-liquid (NRTL) model.
 
@@ -1230,9 +1384,13 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in CalAcCo_V1: {str(e)}")
 
-    def CalAcCo_V2(self, xi: list[float], tau_ij: np.ndarray, G_ij: np.ndarray) -> np.ndarray:
+    def CalAcCo_V2(self,
+                   xi: list[float],
+                   tau_ij: np.ndarray,
+                   G_ij: np.ndarray
+                   ) -> np.ndarray:
         """
-        Calculate activity coefficients for a multicomponent mixture using the NRTL model.
+        Calculate activity coefficients for a multi-component mixture using the NRTL model.
 
         Parameters:
         -----------
@@ -1287,12 +1445,16 @@ class NRTL:
             raise Exception(f"Error in CalAcCoV2: {str(e)}")
 
     def excess_gibbs_free_energy(self,
-                                 mole_fraction: Optional[Dict[str,
-                                                              float]] = None,
+                                 mole_fraction: Optional[
+                                     Dict[str, float]
+                                 ] = None,
                                  G_ij: Optional[np.ndarray] = None,
                                  tau_ij: Optional[np.ndarray] = None,
                                  message: Optional[str] = None,
-                                 res_format: Literal['str', 'json', 'dict'] = 'dict') -> Dict[str, float | Dict] | str:
+                                 res_format: Literal[
+                                     'str', 'json', 'dict'
+                                 ] = 'dict'
+                                 ) -> Dict[str, float | Dict] | str:
         """
         Calculate excess Gibbs energy for a multi-component mixture using the NRTL model.
 
@@ -1323,6 +1485,10 @@ class NRTL:
             # check
             if mole_fraction is None:
                 mole_fraction = self.__mole_fraction
+
+            # check
+            if not isinstance(mole_fraction, dict):
+                raise TypeError("mole_fraction must be dict")
 
             # set
             xi = [mole_fraction[components[i]] for i in range(len(components))]
@@ -1389,8 +1555,11 @@ class NRTL:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
 
     def inputs_generator(self,
-                         temperature: Optional[List[float | str]] = None,
-                         **kwargs):
+                         temperature: Optional[
+                             List[float | str]
+                         ] = None,
+                         **kwargs
+                         ):
         '''
         Prepares inputs for the NRTL activity model for calculating activity coefficients.
 
@@ -1441,8 +1610,13 @@ class NRTL:
                     raise ValueError(
                         "temperature must be a list of floats or strings.")
 
+                # temperature
+                T_value = float(temperature[0])
+                T_unit = str(temperature[1])
+
                 # convert temperature to Kelvin
-                T = pycuc.convert_from_to(temperature[0], temperature[1], 'K')
+                T = pycuc.convert_from_to(
+                    T_value, T_unit, 'K')
 
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
@@ -1461,6 +1635,7 @@ class NRTL:
                 'd_ij', None) or datasource.get('d', None)
 
             # NOTE: α_ij, non-randomness parameter
+            # ! check if alpha_ij is provided
             alpha_ij_src = datasource.get(
                 'alpha_ij', None) or datasource.get('alpha', None)
             if alpha_ij_src is None:
@@ -1468,18 +1643,21 @@ class NRTL:
                 alpha_ij_src = None
 
             # NOTE: tau_ij, binary interaction parameter
+            # ! check if tau_ij is provided
             tau_ij_src = datasource.get(
                 'tau_ij', None) or datasource.get('tau', None)
-            if tau_ij_src is None:
-                # set default value
-                tau_ij_src = None
 
             # SECTION: extract data
             # NOTE: check method
             tau_ij_cal_method = 0
+
+            # check if dg_ij is provided
             if dg_ij_src is None:
                 # check if a_ij, b_ij, c_ij are provided
-                if a_ij_src is None or b_ij_src is None or c_ij_src is None or d_ij_src is None:
+                if (a_ij_src is None or
+                    b_ij_src is None or
+                    c_ij_src is None or
+                        d_ij_src is None):
                     raise ValueError(
                         "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, and d.")
                 # set method
@@ -1564,22 +1742,77 @@ class NRTL:
 
             # NOTE: calculate the binary interaction parameter matrix (tau_ij)
             # check
-            if tau_ij_src is not None or tau_ij_src != 'None':
+            if tau_ij_src is None or tau_ij_src == 'None':
+                # ! tau_ij is None
+                # ? check method
                 if tau_ij_cal_method == 1:
+                    # Check if dg_ij is None and convert values to float if needed
+                    if dg_ij is None:
+                        raise ValueError(
+                            "dg_ij cannot be None for calculating tau_ij")
+
+                    # If dg_ij is a dictionary with mixed value types, convert all values to float
+                    if isinstance(dg_ij, np.ndarray):
+                        dg_ij = dg_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "dg_ij must be a numpy array")
+
+                    # calculate
                     tau_ij, tau_ij_comp = self.cal_tau_ij_M1(
-                        temperature=T, dg_ij=dg_ij)
+                        temperature=T,
+                        dg_ij=dg_ij)
                 elif tau_ij_cal_method == 2:
+                    # check if a_ij, b_ij, c_ij, d_ij are None
+                    if (a_ij is None or
+                        b_ij is None or
+                        c_ij is None or
+                            d_ij is None):
+                        raise ValueError(
+                            "a_ij, b_ij, c_ij, d_ij cannot be None for calculating tau_ij")
+
+                    # If a_ij, b_ij, c_ij, d_ij are numpy array with mixed value types, convert all values to float
+                    if isinstance(a_ij, np.ndarray):
+                        a_ij = a_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "a_ij must be a numpy array")
+
+                    if isinstance(b_ij, np.ndarray):
+                        b_ij = b_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "b_ij must be a numpy array")
+
+                    if isinstance(c_ij, np.ndarray):
+                        c_ij = c_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "c_ij must be a numpy array")
+
+                    if isinstance(d_ij, np.ndarray):
+                        d_ij = d_ij.astype(float)
+                    else:
+                        raise ValueError(
+                            "d_ij must be a numpy array")
+
+                    # calculate
                     tau_ij, tau_ij_comp = self.cal_tau_ij_M2(
                         temperature=T,
-                        a_ij=a_ij, b_ij=b_ij, c_ij=c_ij, d_ij=d_ij)
+                        a_ij=a_ij,
+                        b_ij=b_ij,
+                        c_ij=c_ij,
+                        d_ij=d_ij
+                    )
                 else:
                     raise ValueError(
                         "tau_ij_cal_method not supported!")
             else:
+                # ! check if tau_ij is provided
                 # check types
                 if isinstance(tau_ij_src, TableMatrixData):
                     tau_ij = tau_ij_src.mat('tau', self.components)
-                elif isinstance(tau_ij_src, List[List[float]]):
+                elif isinstance(tau_ij_src, list):
                     tau_ij = np.array(tau_ij_src)
                 elif isinstance(tau_ij_src, np.ndarray):
                     tau_ij = tau_ij_src
@@ -1601,4 +1834,5 @@ class NRTL:
             # res
             return inputs
         except Exception as e:
-            raise Exception(f"Failed to calculate NRTL activity: {e}") from e
+            raise Exception(
+                f"Failed to generate NRTL activity inputs: {e}") from e
