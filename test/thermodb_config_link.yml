@@ -96,6 +96,17 @@ nrtl:
   EQUATIONS:
     vapor-pressure: VaPr
     heat-capacity: Cp_IG
+NRTL:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+    alpha: alpha
+    dg: dg
+    tau: tau
+  EQUATIONS:
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
 uniquac:
   DATA:
     Pc: Pc

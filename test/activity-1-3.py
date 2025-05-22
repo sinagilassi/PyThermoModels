@@ -35,7 +35,7 @@ thub1 = ptdblink.init()
 print(type(thub1))
 
 # add component thermodb
-thub1.add_thermodb('nrtl', thermodb_nrtl_1)
+thub1.add_thermodb('NRTL', thermodb_nrtl_1)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
