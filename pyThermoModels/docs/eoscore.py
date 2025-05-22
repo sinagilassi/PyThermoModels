@@ -35,7 +35,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
         return model_
 
     def cal_fugacity(self,
-                     model_name: Literal['SRK', 'PR', 'RK', 'VdW'],
+                     model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
                      model_input: Dict,
                      model_source: Dict,
                      solver_method: Literal['ls',
@@ -51,7 +51,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             eos model name,
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
                 - `RK`: Redlich-Kwong
         model_input: dict
             model input
@@ -257,7 +257,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def check_eos_roots_single_component(self,
-                                         model_name: Literal['SRK', 'PR', 'VdW', 'RK'],
+                                         model_name: Literal['SRK', 'PR', 'vdW', 'RK'],
                                          model_input: Dict,
                                          model_source: Dict,
                                          **kwargs) -> Dict:
@@ -271,7 +271,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson
                 - `RK`: Redlich-Kwong
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
         model_input: Dict
             model input as:
                 - component: str, component name
@@ -385,13 +385,15 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def cal_fugacity_mixture(self,
-                             model_name: Literal['SRK', 'PR', 'RK', 'VdW'],
+                             model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
                              model_input: Dict,
                              model_source: Dict,
-                             solver_method: Literal['ls',
-                                                    'newton', 'fsolve', 'root'] = 'ls',
-                             liquid_fugacity_mode: Literal['EOS',
-                                                           'Poynting'] = 'EOS',
+                             solver_method: Literal[
+                                 'ls', 'newton', 'fsolve', 'root'
+                             ] = 'ls',
+                             liquid_fugacity_mode: Literal[
+                                 'EOS', 'Poynting'
+                             ] = 'EOS',
                              **kwargs) -> Dict:
         '''
         Starts calculating fugacity for the single and multi-component systems
@@ -403,7 +405,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson
                 - `RK`: Redlich-Kwong
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
         model_input: dict
             model input
                 - `phase`: str | None, `VAPOR`: vapor phase, `LIQUID`: liquid phase, `VAPOR-LIQUID`: vapor-liquid phase, `SUPERCRITICAL`: supercritical phase
@@ -638,7 +640,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson,
                 - `RK`: Redlich-Kwong
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
         model_input: Dict
             model input
                 - `feed-specification`: dict, feed specification such as `{'CO2': 1.0}` or `{'CO2': 0.5, 'N2': 0.5}`

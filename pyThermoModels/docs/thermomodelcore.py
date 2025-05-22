@@ -1,5 +1,5 @@
 # import package/modules
-from typing import Dict, List, Union, Literal, Optional, Tuple, Any
+from typing import Dict, List, Union, Literal, Optional, Any
 import pycuc
 import json
 # local
@@ -57,9 +57,11 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception('Checking thermodb failed! ', e)
 
-    def check_fugacity_reference(self, eos_model: str,
-                                 res_format: Literal['dict',
-                                                     'json', 'string'] = 'dict'
+    def check_fugacity_reference(self,
+                                 eos_model: Literal['SRK', 'PR', 'RK', 'vdW'],
+                                 res_format: Literal[
+                                     'dict', 'json', 'string'
+                                 ] = 'dict'
                                  ) -> Union[Dict, str]:
         '''
         Check fugacity reference
@@ -81,8 +83,6 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             if not eos_model:
                 raise Exception('Empty equation of state name!')
 
-            # eos model
-            eos_model = eos_model.upper()
             # reference
             reference = self._references.get(eos_model, None)
 
@@ -103,13 +103,17 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Calculating the Fugacity failed!, ", e)
 
     def cal_fugacity(self,
-                     model_name: Literal['SRK', 'PR', 'RK', 'VdW'],
+                     model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
                      model_input: Dict,
                      model_source: Dict,
-                     solver_method: Literal['ls',
-                                            'newton', 'fsolve', 'root'] = 'ls',
-                     liquid_fugacity_mode: Literal['EOS', 'Poynting'] = 'EOS',
-                     **kwargs) -> Dict:
+                     solver_method: Literal[
+                         'ls', 'newton', 'fsolve', 'root'
+                     ] = 'ls',
+                     liquid_fugacity_mode: Literal[
+                         'EOS', 'Poynting'
+                     ] = 'EOS',
+                     **kwargs
+                     ) -> Dict:
         '''
         Starts calculating fugacity for the single component
 
@@ -119,7 +123,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             eos model name,
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
                 - `RK`: Redlich-Kwong
         model_input: dict
             model input
@@ -219,8 +223,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
             # SECTION: set input parameters
             # eos
-            eos_model = model_name.upper()
-            eos_model = eos_model_name(eos_model)
+            eos_model = eos_model_name(model_name)
 
             # SECTION: phase
             phase = model_input.get('phase', None)
@@ -265,7 +268,8 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             if phase is None:
                 # check eos roots for single component
                 eos_roots_analysis = self.check_eos_roots_single_component(
-                    model_name=eos_model, model_input=model_input,
+                    model_name=model_name,
+                    model_input=model_input,
                     model_source=model_source,
                     tolerance=tolerance)
 
@@ -325,10 +329,11 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def check_eos_roots_single_component(self,
-                                         model_name: Literal['SRK', 'PR', 'VdW', 'RK'],
+                                         model_name: Literal['SRK', 'PR', 'vdW', 'RK'],
                                          model_input: Dict,
                                          model_source: Dict,
-                                         **kwargs) -> Dict:
+                                         **kwargs
+                                         ) -> Dict:
         '''
         Check eos roots for the single component at different temperature and pressure.
 
@@ -339,7 +344,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson
                 - `RK`: Redlich-Kwong
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
         model_input: Dict
             model input as:
                 - component: str, component name
@@ -386,8 +391,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
             # SECTION: set input parameters
             # NOTE: eos model
-            eos_model = model_name.upper()
-            eos_model = eos_model_name(eos_model)
+            eos_model = eos_model_name(model_name)
 
             # NOTE: component list
             component = model_input.get('component', None)
@@ -453,14 +457,17 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def cal_fugacity_mixture(self,
-                             model_name: Literal['SRK', 'PR', 'RK', 'VdW'],
+                             model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
                              model_input: Dict,
                              model_source: Dict,
-                             solver_method: Literal['ls',
-                                                    'newton', 'fsolve', 'root'] = 'ls',
-                             liquid_fugacity_mode: Literal['EOS',
-                                                           'Poynting'] = 'EOS',
-                             **kwargs) -> Dict:
+                             solver_method: Literal[
+                                 'ls', 'newton', 'fsolve', 'root'
+                             ] = 'ls',
+                             liquid_fugacity_mode: Literal[
+                                 'EOS', 'Poynting'
+                             ] = 'EOS',
+                             **kwargs
+                             ) -> Dict:
         '''
         Starts calculating fugacity for the single and multi-component systems
 
@@ -471,7 +478,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson
                 - `RK`: Redlich-Kwong
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
         model_input: dict
             model input
                 - phase: str, `VAPOR`: vapor phase, `LIQUID`: liquid phase, `VAPOR-LIQUID`: vapor-liquid phase, `SUPERCRITICAL`: supercritical phase
@@ -567,8 +574,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
             # SECTION: set input parameters
             # eos
-            eos_model = model_name.upper()
-            eos_model = eos_model_name(eos_model)
+            eos_model = eos_model_name(model_name)
 
             # SECTION: phase
             phase = model_input.get('phase', None)
@@ -631,8 +637,10 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             if phase is None:
                 # check eos roots for single component
                 eos_roots_analysis = self.check_eos_roots_multi_component(
-                    model_name=eos_model, model_input=model_input,
-                    model_source=model_source)
+                    model_name=model_name,
+                    model_input=model_input,
+                    model_source=model_source
+                )
 
                 # NOTE: eos parms
                 # set phase
@@ -690,12 +698,19 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             raise Exception("Fugacity calculation failed!, ", e)
 
     def check_eos_roots_multi_component(self,
-                                        model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
+                                        model_name: Literal[
+                                            'SRK', 'PR', 'RK', 'vdW'
+                                        ],
                                         model_input: Dict,
                                         model_source: Dict,
-                                        bubble_point_pressure_mode: Literal["Raoult"] = "Raoult",
-                                        dew_point_pressure_mode: Literal["Raoult"] = "Raoult",
-                                        **kwargs) -> List[Dict]:
+                                        bubble_point_pressure_mode: Literal[
+                                            "Raoult"
+                                        ] = "Raoult",
+                                        dew_point_pressure_mode: Literal[
+                                            "Raoult"
+                                        ] = "Raoult",
+                                        **kwargs
+                                        ) -> Dict[str, Any]:
         '''
         Check eos roots for the multi-components at different temperature and pressure. To do so, the bubble point and dew point pressure are calculated using Raoult's law. Assuming that the mixture is ideal, the bubble point pressure is equal to the vapor pressure of the component at the bubble point temperature. The dew point pressure is equal to the vapor pressure of the component at the dew point temperature.
 
@@ -706,7 +721,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 - `SRK`: Soave-Redlich-Kwong
                 - `PR`: Peng-Robinson,
                 - `RK`: Redlich-Kwong
-                - `VdW`: Van der Waals
+                - `vdW`: Van der Waals
         model_input: Dict
             model input
                 - feed-specification: dict, such as `{'CO2': 1.0}` or `{'CO2': 0.5, 'N2': 0.5}`
@@ -723,7 +738,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
         Returns
         -------
-        res: list
+        res: Dict
             eos root analysis
 
         Notes
@@ -752,8 +767,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
             # SECTION: set input parameters
             # NOTE: eos model
-            eos_model = model_name.upper()
-            eos_model = eos_model_name(eos_model)
+            eos_model = eos_model_name(model_name)
 
             # NOTE: component number
             component_num = 0
@@ -874,7 +888,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
     def init_activity(self,
                       components: List[str],
                       model_name: Literal['NRTL', 'UNIQUAC'],
-                      model_source: Optional[Dict[str, Any]] = None,
+                      model_source: Optional[
+                          Dict[str, Any]
+                      ] = None,
                       **kwargs):
         '''
         Initializes activity coefficient calculation
@@ -953,7 +969,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
     def init_activities(self,
                         components: List[str],
                         model_name: Literal['NRTL', 'UNIQUAC'],
-                        model_source: Optional[Dict[str, Any]] = None,
+                        model_source: Optional[
+                            Dict[str, Any]
+                        ] = None,
                         **kwargs) -> NRTL | UNIQUAC:
         '''
         Initializes activity coefficient calculation

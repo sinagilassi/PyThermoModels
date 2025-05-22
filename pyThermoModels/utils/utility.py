@@ -3,6 +3,7 @@
 
 # import packages/modules
 import numpy as np
+from typing import Literal, Optional
 # internal
 from ..configs import ROUND_FUN_ACCURACY
 from ..configs import PENG_ROBINSON, SOAVE_REDLICH_KWONG, VAN_DER_WAALS, REDLICH_KWONG
@@ -44,7 +45,7 @@ def removeDuplicatesList(value):
     return list(dict.fromkeys(value))
 
 
-def eos_model_name(model_name):
+def eos_model_name(model_name: str) -> str:
     '''
     Sets eos model name
 
@@ -59,13 +60,12 @@ def eos_model_name(model_name):
         name of eos model
     '''
     try:
-        model_name_set = ''
+        # init model name
+        model_name_set: Optional[Literal['PR', 'SRK', 'RK', 'vdW']] = None
         # check
         if model_name is None:
             raise Exception('Empty equation of state name!')
         else:
-            # upper
-            model_name = model_name.upper()
             # PR
             if model_name == 'PENG_ROBINSON' or model_name == 'PENG-ROBINSON':
                 model_name_set = PENG_ROBINSON
@@ -84,7 +84,7 @@ def eos_model_name(model_name):
             elif model_name == 'VAN_DER_WAALS' or model_name == 'VAN-DEER-WAALS':
                 model_name_set = VAN_DER_WAALS
 
-            elif model_name == 'VDW':
+            elif model_name == 'vdW':
                 model_name_set = VAN_DER_WAALS
 
             # RK

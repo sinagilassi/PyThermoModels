@@ -8,7 +8,7 @@ import math
 PENG_ROBINSON = "PR"
 SOAVE_REDLICH_KWONG = "SRK"
 REDLICH_KWONG = "RK"
-VAN_DER_WAALS = "VDW"
+VAN_DER_WAALS = "vdW"
 
 # ! vle models
 RAOULT_MODEL = 'raoult'
