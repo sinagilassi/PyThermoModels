@@ -1133,13 +1133,12 @@ class UNIQUAC:
             model_input: Dict,
             Z: Optional[float | int] = None,
             calculation_mode: Literal['V1'] = 'V1',
-            symbol_delimiter: Literal["|",
-                                      "_"] = "|",
+            symbol_delimiter: Literal[
+                "|", "_"
+            ] = "|",
             message: Optional[str] = None,
             **kwargs
-            ) -> Tuple[
-                Dict[str, str | float | Dict], Dict[str, str | float | Dict]
-    ] | str:
+            ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
 
@@ -1171,7 +1170,78 @@ class UNIQUAC:
         Returns
         -------
         res: Dict[str, float | Dict]
-            Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+            Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients as:
+                - property_name: str
+                    Name of the property. Default is 'activity coefficients'.
+                - components: List[str]
+                    List of component names.
+                - mole_fraction: Dict[str, float]
+                    Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
+                - value: np.ndarray
+                    Activity coefficients (AcCo_i) for each component.
+                - unit: int
+                    Unit of the property. Default is 1.
+                - symbol: str
+                    Symbol of the property. Default is 'AcCo_i'.
+                - message: str
+                    Message to be displayed. Default is None.
+        other_values: Dict[str, Any]
+            Dictionary of other values used for the calculation as:
+                - AcCo_i_comp: Dict[str, float]
+                    Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+                - tau_ij: np.ndarray
+                    Interaction parameters (tau_ij) between component i and j.
+                - tau_ij_comp: Dict[str, float]
+                    Dictionary of interaction parameters where keys are component pairs and values are their respective tau_ij values.
+                - r_i: np.ndarray
+                    relative van der Waals volume of component i
+                - r_i_comp: Dict[str, float]
+                    Dictionary of relative van der Waals volume of component i where keys are component names and values are their respective values.
+                - q_i: np.ndarray
+                    relative surface area of component i
+                - q_i_comp: Dict[str, float]
+                    Dictionary of relative surface area of component i where keys are component names and values are their respective values.
+                - calculation_mode: str
+                    Mode of calculation. If 'V1', use the first version of the UNIQUAC model. If 'V2', use the second version.
+
+        Examples
+        --------
+        >>> model_input = {
+        ...     'mole_fraction': {'A': 0.5, 'B': 0.5},
+        ...     'tau_ij': np.array([[0, 1], [1, 0]]),
+        ...     'r_i': r_i,
+        ...     'q_i': q_i
+        ... }
+        >>> calculation_mode = 'V1'
+        >>> message = 'Calculating activity coefficients'
+        >>> result = activity_uniquac.cal(model_input=model_input)
+        >>> print(result)
+
+        ```python
+        # input values
+        other_values = {
+            "AcCo_i_comp": AcCo_i_comp,
+            'tau_ij': tau_ij,
+            'tau_ij_comp': tau_ij_comp,
+            'r_i': r_i,
+            'r_i_comp': r_i_comp,
+            'q_i': q_i,
+            'q_i_comp': q_i_comp,
+            'Z': Z,
+            'calculation_mode': calculation_mode,
+        }
+
+        # res
+        res = {
+            'property_name': 'activity coefficients',
+            'components': components,
+            'mole_fraction': xi,
+            'value': AcCo_i,
+            'unit': 1,
+            'symbol': "AcCo_i",
+            'message': message,
+        }
+        ```
         """
         try:
             # SECTION: check
@@ -1265,7 +1335,9 @@ class UNIQUAC:
                                           calculation_mode: Literal['V1'],
                                           symbol_delimiter: Literal["|", "_"],
                                           message: Optional[str],
-                                          ) -> Tuple[Dict[str, str | float | Dict], Dict[str, str | float | Dict]] | str:
+                                          ) -> Tuple[
+                                              Dict[str, Any], Dict[str, Any]
+    ]:
         """
         Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
 
@@ -1290,8 +1362,26 @@ class UNIQUAC:
 
         Returns
         --------
-        res : Dict[str, float | Dict]
+        res: Dict[str, float | Dict]
             Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+        other_values: Dict[str, Any]
+            Dictionary of other values used for the calculation as:
+                - AcCo_i_comp: Dict[str, float]
+                    Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+                - tau_ij: np.ndarray
+                    Interaction parameters (tau_ij) between component i and j.
+                - tau_ij_comp: Dict[str, float]
+                    Dictionary of interaction parameters where keys are component pairs and values are their respective tau_ij values.
+                - r_i: np.ndarray
+                    relative van der Waals volume of component i
+                - r_i_comp: Dict[str, float]
+                    Dictionary of relative van der Waals volume of component i where keys are component names and values are their respective values.
+                - q_i: np.ndarray
+                    relative surface area of component i
+                - q_i_comp: Dict[str, float]
+                    Dictionary of relative surface area of component i where keys are component names and values are their respective values.
+                - calculation_mode: str
+                    Mode of calculation. If 'V1', use the first version of the UNIQUAC model. If 'V2', use the second version.
 
         Notes
         -----

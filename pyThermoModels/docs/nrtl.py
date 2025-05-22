@@ -1011,7 +1011,31 @@ class NRTL:
         Returns
         -------
         res: Dict[str, float | Dict]
-            Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+            Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients as:
+                - property_name: str
+                    Name of the property calculated.
+                - components: List[str]
+                    List of component names.
+                - mole_fraction: Dict[str, float]
+                    Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
+                - value: Dict[str, float]
+                    Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+                - unit: float
+                    Unit of the property calculated.
+                - symbol: str
+                    Symbol of the property calculated.
+                - message: str
+                    Message to be displayed.
+        other_values: Dict[str, float | Dict]
+            Dictionary of other values used for the calculation as:
+                - AcCo_i_comp: Dict[str, float]
+                - tau_ij: np.ndarray
+                - tau_ij_comp: Dict[str, float]
+                - alpha_ij: np.ndarray
+                - alpha_ij_comp: Dict[str, float]
+                - G_ij: np.ndarray
+                - G_ij_comp: Dict[str, float]
+                - calculation_mode: str
 
         Notes
         -----
@@ -1032,8 +1056,33 @@ class NRTL:
         ... }
         >>> calculation_mode = 'V1'
         >>> message = 'Calculating activity coefficients'
-        >>> result = cal(model_input, calculation_mode, message)
+        >>> result = activity_nrtl.cal(model_input, calculation_mode, message)
         >>> print(result)
+
+        ```python
+        # input values
+        other_values = {
+            "AcCo_i_comp": AcCo_i_comp,
+            'tau_ij': tau_ij,
+            'tau_ij_comp': tau_ij_comp,
+            'alpha_ij': alpha_ij,
+            'alpha_ij_comp': alpha_ij_comp,
+            'G_ij': G_ij,
+            'G_ij_comp': G_ij_comp,
+            'calculation_mode': calculation_mode,
+        }
+
+        # res
+        res = {
+            'property_name': 'activity coefficients',
+            'components': components,
+            'mole_fraction': xi,
+            'value': AcCo_i,
+            'unit': 1,
+            'symbol': "AcCo_i",
+            'message': message,
+        }
+        ```
         '''
         try:
             # SECTION: check
@@ -1141,8 +1190,18 @@ class NRTL:
 
         Returns
         --------
-        res :
+        res : Dict[str, float | Dict]
             Dictionary of activity coefficients where keys are component names and values are their respective activity coefficients.
+        other_values : Dict[str, float | Dict]
+            Dictionary of other values used for the calculation as:
+                - AcCo_i_comp: Dict[str, float]
+                - tau_ij: np.ndarray
+                - tau_ij_comp: Dict[str, float]
+                - alpha_ij: np.ndarray
+                - alpha_ij_comp: Dict[str, float]
+                - G_ij: np.ndarray
+                - G_ij_comp: Dict[str, float]
+                - calculation_mode: str
 
         Notes
         -----
