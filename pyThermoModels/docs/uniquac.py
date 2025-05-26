@@ -1794,7 +1794,7 @@ class UNIQUAC:
 
             # SECTION: set result format
             res = {
-                "property_name": "Excess Molar Gibbs Free Energy",
+                "property_name": "Excess Molar Gibbs Free Energy (G^E/RT)",
                 "components": components,
                 "mole_fraction": xi,
                 "value": float(gE_RT),

@@ -1515,7 +1515,7 @@ class NRTL:
                                  ] = 'dict'
                                  ) -> Dict[str, float | Dict] | str:
         """
-        Calculate excess Gibbs energy for a multi-component mixture using the NRTL model.
+        Calculate excess Gibbs energy (G^E/RT) for a multi-component mixture using the NRTL model.
 
         Parameters
         -----------
@@ -1595,7 +1595,7 @@ class NRTL:
 
             # SECTION: set result format
             res = {
-                "property_name": "Excess Molar Gibbs Free Energy",
+                "property_name": "Excess Molar Gibbs Free Energy (G^E/RT)",
                 "components": components,
                 "mole_fraction": xi,
                 "value": float(gE_RT),

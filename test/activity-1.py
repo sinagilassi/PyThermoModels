@@ -130,10 +130,15 @@ res_, others_ = activity_nrtl.cal(model_input=model_input)
 # print the results
 print(f"res_: {res_}")
 print("-" * 50)
+# activity coefficients
+activity_coefficients = others_['AcCo_i_comp']
+print(f"activity coefficients: {activity_coefficients}")
+print("-" * 50)
 G_ij = others_['G_ij']
 print(f"G_ij: {G_ij}")
 print("-" * 50)
 
+# SECTION: calculate excess gibbs free energy
 # NOTE: excess gibbs free energy
 gibbs_energy = activity_nrtl.excess_gibbs_free_energy(
     mole_fraction=mole_fraction, G_ij=G_ij, tau_ij=tau_ij)
@@ -141,4 +146,10 @@ print(f"excess gibbs free energy method 1: {gibbs_energy}")
 print("-" * 50)
 gibbs_energy = activity_nrtl.excess_gibbs_free_energy()
 print(f"excess gibbs free energy method 1: {gibbs_energy}")
+print("-" * 50)
+
+# NOTE: general excess gibbs free energy
+gibbs_energy = activity.general_excess_molar_gibbs_free_energy(
+    mole_fraction=mole_fraction, activity_coefficients=activity_coefficients)
+print(f"general excess gibbs free energy: {gibbs_energy}")
 print("-" * 50)
