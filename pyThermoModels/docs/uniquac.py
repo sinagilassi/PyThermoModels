@@ -1895,33 +1895,35 @@ class UNIQUAC:
 
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
-            dU_ij_src = datasource.get(
-                'dU_ij', None) or datasource.get('dU', None)
+            dU_ij_src = datasource.get('dU_ij', None)
+            if dU_ij_src is None:
+                dU_ij_src = datasource.get('dU', None)
 
             # NOTE: method 2
             # ! constants a, b, c, and d
-            a_ij_src = datasource.get(
-                'a_ij', None) or datasource.get('a', None)
-            b_ij_src = datasource.get(
-                'b_ij', None) or datasource.get('b', None)
-            c_ij_src = datasource.get(
-                'c_ij', None) or datasource.get('c', None)
-            d_ij_src = datasource.get(
-                'd_ij', None) or datasource.get('d', None)
+            a_ij_src = datasource.get('a_ij', None)
+            if a_ij_src is None:
+                a_ij_src = datasource.get('a', None)
+            b_ij_src = datasource.get('b_ij', None)
+            if b_ij_src is None:
+                b_ij_src = datasource.get('b', None)
+            c_ij_src = datasource.get('c_ij', None)
+            if c_ij_src is None:
+                c_ij_src = datasource.get('c', None)
+            d_ij_src = datasource.get('d_ij', None)
+            if d_ij_src is None:
+                d_ij_src = datasource.get('d', None)
 
             # NOTE: tau_ij, binary interaction parameter
-            tau_ij_src = datasource.get(
-                'tau_ij', None) or datasource.get('tau', None)
+            tau_ij_src = datasource.get('tau_ij', None)
             if tau_ij_src is None:
-                # set default value
-                tau_ij_src = None
+                tau_ij_src = datasource.get('tau', None)
 
             # NOTE: r_i, relative van der Waals volume of component i
-            r_i_src = datasource.get(
-                'r_i', None) or datasource.get('r', None)
+            r_i_src = datasource.get('r_i', None)
             if r_i_src is None:
                 # set default value
-                r_i_src = None
+                r_i_src = datasource.get('r', None)
 
             # check if r_i is a list or numpy array
             if r_i_src is not None:
@@ -1934,11 +1936,10 @@ class UNIQUAC:
                         "r_i must be a list or numpy array.")
 
             # NOTE: q_i, relative van der Waals area of component i
-            q_i_src = datasource.get(
-                'q_i', None) or datasource.get('q', None)
+            q_i_src = datasource.get('q_i', None)
             if q_i_src is None:
                 # set default value
-                q_i_src = None
+                q_i_src = datasource.get('q', None)
 
             # check if q_i is a list or numpy array
             if q_i_src is not None:

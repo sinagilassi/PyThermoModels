@@ -1679,32 +1679,36 @@ class NRTL:
 
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
-            dg_ij_src = datasource.get(
-                'dg_ij', None) or datasource.get('dg', None)
+            dg_ij_src = datasource.get('dg_ij', None)
+            if dg_ij_src is None:
+                dg_ij_src = datasource.get('dg', None)
 
             # NOTE: method 2
             # ! constants a, b, c, and d
-            a_ij_src = datasource.get(
-                'a_ij', None) or datasource.get('a', None)
-            b_ij_src = datasource.get(
-                'b_ij', None) or datasource.get('b', None)
-            c_ij_src = datasource.get(
-                'c_ij', None) or datasource.get('c', None)
-            d_ij_src = datasource.get(
-                'd_ij', None) or datasource.get('d', None)
+            a_ij_src = datasource.get('a_ij', None)
+            if a_ij_src is None:
+                a_ij_src = datasource.get('a', None)
+            b_ij_src = datasource.get('b_ij', None)
+            if b_ij_src is None:
+                b_ij_src = datasource.get('b', None)
+            c_ij_src = datasource.get('c_ij', None)
+            if c_ij_src is None:
+                c_ij_src = datasource.get('c', None)
+            d_ij_src = datasource.get('d_ij', None)
+            if d_ij_src is None:
+                d_ij_src = datasource.get('d', None)
 
             # NOTE: α_ij, non-randomness parameter
             # ! check if alpha_ij is provided
-            alpha_ij_src = datasource.get(
-                'alpha_ij', None) or datasource.get('alpha', None)
+            alpha_ij_src = datasource.get('alpha_ij', None)
             if alpha_ij_src is None:
-                # set default value
-                alpha_ij_src = None
+                alpha_ij_src = datasource.get('alpha', None)
 
             # NOTE: tau_ij, binary interaction parameter
             # ! check if tau_ij is provided
-            tau_ij_src = datasource.get(
-                'tau_ij', None) or datasource.get('tau', None)
+            tau_ij_src = datasource.get('tau_ij', None)
+            if tau_ij_src is None:
+                tau_ij_src = datasource.get('tau', None)
 
             # SECTION: extract data
             # NOTE: check method
