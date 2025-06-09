@@ -1,27 +1,5 @@
 REFERENCES:
   vdW:
-    ARGS:
-      temperature:
-        name: temperature
-        symbol: T
-        unit: K
-      pressure:
-        name: pressure
-        symbol: P
-        unit: Pa
-      phase:
-        name: phase
-        symbol: Ph
-        unit: None
-      feed-specification:
-        name: feed specification
-        symbol: FeSp
-        unit: None
-    RETURNS:
-      fugacity:
-        name: fugacity
-        symbol: Fug
-        unit: None
     DEPENDANT-DATA:
       critical-temperature:
         name: critical temperature
@@ -37,28 +15,6 @@ REFERENCES:
         symbol: VaPr
         unit: Pa
   PR:
-    ARGS:
-      temperature:
-        name: temperature
-        symbol: T
-        unit: K
-      pressure:
-        name: pressure
-        symbol: P
-        unit: Pa
-      phase:
-        name: phase
-        symbol: Ph
-        unit: None
-      feed-specification:
-        name: feed specification
-        symbol: FeSp
-        unit: None
-    RETURNS:
-      fugacity:
-        name: fugacity
-        symbol: Fug
-        unit: None
     DEPENDANT-DATA:
       critical-temperature:
         name: critical temperature
@@ -78,28 +34,6 @@ REFERENCES:
           symbol: VaPr
           unit: Pa
   SRK:
-    ARGS:
-      temperature:
-        name: temperature
-        symbol: T
-        unit: K
-      pressure:
-        name: pressure
-        symbol: P
-        unit: Pa
-      phase:
-        name: phase
-        symbol: Ph
-        unit: None
-      feed-specification:
-        name: feed specification
-        symbol: FeSp
-        unit: None
-    RETURNS:
-      fugacity:
-        name: fugacity
-        symbol: Fug
-        unit: None
     DEPENDANT-DATA:
       critical-temperature:
         name: critical temperature
@@ -119,28 +53,6 @@ REFERENCES:
         symbol: VaPr
         unit: Pa
   RK:
-    ARGS:
-      temperature:
-        name: temperature
-        symbol: T
-        unit: K
-      pressure:
-        name: pressure
-        symbol: P
-        unit: Pa
-      phase:
-        name: phase
-        symbol: Ph
-        unit: None
-      feed-specification:
-        name: feed specification
-        symbol: FeSp
-        unit: None
-    RETURNS:
-      fugacity:
-        name: fugacity
-        symbol: Fug
-        unit: None
     DEPENDANT-DATA:
       critical-temperature:
         name: critical temperature
@@ -160,20 +72,6 @@ REFERENCES:
         symbol: VaPr
         unit: Pa
   NRTL:
-    ARGS:
-      non-randomness-parameter:
-        name: non-randomness parameter
-        symbol: alpha
-        unit: None
-      binary-interaction-parameter:
-        name: binary interaction parameter
-        symbol: tau
-        unit: None
-      RETURNS:
-        activity-coefficient:
-          name: activity coefficient
-          symbol: AcCo
-          unit: None
     DEPENDANT-DATA:
       alpha:
         name: non-randomness parameter
@@ -199,13 +97,13 @@ REFERENCES:
         name: d
         symbol: d
         unit: None
-      tau:
-        name: tau
+      binary-interaction-parameter:
+        name: binary interaction parameter
         symbol: tau
         unit: None
     DEPENDANT-EQUATIONS: None
   UNIQUAC:
-    ARGS:
+    DEPENDANT-DATA:
       volume-parameter:
         name: volume parameter
         symbol: r
@@ -214,14 +112,28 @@ REFERENCES:
         name: surface area parameter
         symbol: q
         unit: None
+      dU:
+        name: dU
+        symbol: dU
+        unit: None
+      a:
+        name: a
+        symbol: a
+        unit: None
+      b:
+        name: b
+        symbol: b
+        unit: None
+      c:
+        name: c
+        symbol: c
+        unit: None
+      d:
+        name: d
+        symbol: d
+        unit: None
       binary-interaction-parameter:
         name: binary interaction parameter
         symbol: tau
         unit: None
-      RETURNS:
-        activity-coefficient:
-          name: activity coefficient
-          symbol: AcCo
-          unit: None
-    DEPENDANT-DATA: None
     DEPENDANT-EQUATIONS: None

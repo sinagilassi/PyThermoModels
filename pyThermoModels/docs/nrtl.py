@@ -1,5 +1,6 @@
 # import libs
 import numpy as np
+import yaml
 import json
 from math import pow, exp, log
 from typing import List, Dict, Tuple, Literal, Optional, Any
@@ -8,7 +9,6 @@ from pyThermoDB import (
     TableMatrixData, TableData, TableEquation, TableMatrixEquation
 )
 # local
-from .extractor import Extractor
 
 
 class NRTL:
@@ -110,6 +110,34 @@ class NRTL:
         Universal gas constant (R) is defined as 8.314 J/mol/K.
         """
         return model_
+
+    def parse_model_inputs(self, model_inputs: str) -> Dict[str, Any]:
+        '''
+        Convert model inputs from string to dictionary format.
+
+        Parameters
+        ----------
+        model_inputs: str
+            Model inputs in string format, such as:
+            - { mole_fraction: { ethanol: 0.4, butyl-methyl-ether: 0.6 }, temperature: [323.15, 'K'], tau_ij: [[],[]], alpha_ij: [[],[]] }
+
+        Returns
+        -------
+        model_input_parsed: dict
+            Parsed model inputs in dictionary format.
+        '''
+        try:
+            # check if model_inputs is None or model_inputs == 'None'
+            if model_inputs is None or model_inputs == 'None':
+                raise Exception('Model inputs are not provided!')
+
+            # strip
+            model_inputs = model_inputs.strip()
+            model_input_parsed = yaml.safe_load(model_inputs)
+
+            return model_input_parsed
+        except Exception as e:
+            raise Exception("Parsing model inputs failed!, ", e)
 
     def to_ij(self,
               data: TableMatrixData,
@@ -980,10 +1008,15 @@ class NRTL:
 
     def cal(self,
             model_input: Dict,
-            calculation_mode: Literal['V1', 'V2'] = 'V1',
-            symbol_delimiter: Literal["|", "_"] = "|",
+            calculation_mode: Literal[
+                'V1', 'V2'
+            ] = 'V1',
+            symbol_delimiter: Literal[
+                "|", "_"
+            ] = "|",
             message: Optional[str] = None,
-            **kwargs) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+            **kwargs
+            ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         '''
         Calculate activity coefficients for a multi-component mixture using the NRTL model.
 
@@ -1162,14 +1195,15 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in launch_calculation: {str(e)}")
 
-    def __calculate_activity_coefficients(self,
-                                          mole_fraction: Dict[str, float],
-                                          tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                          alpha_ij_data: TableMatrixData | np.ndarray | Dict[str, float],
-                                          calculation_mode: Literal['V1', 'V2'],
-                                          symbol_delimiter: Literal["|", "_"],
-                                          message: Optional[str],
-                                          ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def __calculate_activity_coefficients(
+        self,
+        mole_fraction: Dict[str, float],
+        tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float | int | str]],
+        alpha_ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float | int | str]],
+        calculation_mode: Literal['V1', 'V2'],
+        symbol_delimiter: Literal["|", "_"],
+        message: Optional[str],
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Calculate activity coefficients for a multi-component mixture using the NRTL model.
 
@@ -1238,12 +1272,20 @@ class NRTL:
 
             # SECTION
             # set the interaction parameter matrix (tau_ij) for the NRTL model
-            if isinstance(tau_ij_data, np.ndarray):
+            if isinstance(tau_ij_data, np.ndarray):  # ! numpy array
                 # set
                 tau_ij = tau_ij_data
                 # to dict
                 tau_ij_comp = self.to_dict_ij(
                     tau_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif isinstance(tau_ij_data, list):  # ! list
+                # convert list to numpy array
+                tau_ij = np.array(tau_ij_data)
+                # to dict
+                tau_ij_comp = self.to_dict_ij(
+                    tau_ij,
                     symbol_delimiter=symbol_delimiter
                 )
             elif isinstance(tau_ij_data, TableMatrixData):  # ! PyThermoDB
@@ -1256,7 +1298,7 @@ class NRTL:
                 tau_ij = res_[0]
                 # to dict
                 tau_ij_comp = res_[1]
-            elif isinstance(tau_ij_data, dict):
+            elif isinstance(tau_ij_data, dict):  # ! dict
                 # convert dict to numpy array
                 tau_ij = self.to_matrix_ij(
                     data=tau_ij_data,
@@ -1274,12 +1316,20 @@ class NRTL:
 
             # SECTION
             # set the non-randomness parameter matrix (alpha_ij) for the NRTL model
-            if isinstance(alpha_ij_data, np.ndarray):
+            if isinstance(alpha_ij_data, np.ndarray):  # ! numpy array
                 # set
                 alpha_ij = alpha_ij_data
                 # to dict
                 alpha_ij_comp = self.to_dict_ij(
                     alpha_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif isinstance(alpha_ij_data, list):  # ! list
+                # convert list to numpy array
+                alpha_ij = np.array(alpha_ij_data)
+                # to dict
+                alpha_ij_comp = self.to_dict_ij(
+                    alpha_ij,
                     symbol_delimiter=symbol_delimiter
                 )
             elif isinstance(alpha_ij_data, TableMatrixData):  # ! PyThermoDB
@@ -1291,7 +1341,7 @@ class NRTL:
                 alpha_ij = res_[0]
                 # to dict
                 alpha_ij_comp = res_[1]
-            elif isinstance(alpha_ij_data, dict):
+            elif isinstance(alpha_ij_data, dict):  # ! dict
                 # convert dict to numpy array
                 alpha_ij = self.to_matrix_ij(
                     data=alpha_ij_data,

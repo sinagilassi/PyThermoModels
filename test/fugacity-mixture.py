@@ -55,9 +55,11 @@ tm = ptm.init()
 # log
 print("tm: ", tm)
 
-# init
-eos = ptm.eos()
-print("eos: ", eos)
+# NOTE: CHECK REFERENCES
+eos_model = 'PR'  # example: 'PR', 'SRK', 'RK'
+# check reference
+res_ = tm.check_fugacity_reference(eos_model)
+print(res_)
 
 # =======================================
 # SECTION: THERMODB LINK CONFIGURATION
@@ -90,6 +92,10 @@ datasource, equationsource = thub1.build()
 # Example 10.7 (page 378) in Introduction to Chemical Engineering Thermodynamics
 # by J.M. Smith, H.C. Van Ness, M.M. Abbott
 # Example 15.2 (page 587) in Introductory Chemical Engineering Thermodynamics
+
+# init
+eos = ptm.eos()
+print("eos: ", eos)
 
 # model input
 # eos model
@@ -136,6 +142,16 @@ P = 10
 k_ij = [[0, 0.18],
         [0.18, 0]]
 
+# SECTION: model input content
+model_input_content = """
+feed-specification: {CO2: 0.15, n-butane: 0.85}
+pressure: [10, 'bar']
+temperature: [444, 'K']
+"""
+
+# parse model input content
+model_inputs_parsed = eos.parse_model_inputs(model_input_content)
+
 # SECTION: model input
 model_input = {
     "feed-specification": N0s,
@@ -150,27 +166,24 @@ model_source = {
 }
 
 # =======================================
-# ! CHECK REFERENCES
-# =======================================
-# check reference
-res_ = tm.check_fugacity_reference(eos_model)
-print(res_)
-
-# =======================================
 # ! EOS ROOT ANALYSIS
 # =======================================
 # eos root analysis
-res_ = eos.check_eos_roots_multi_component(model_name=eos_model,
-                                           model_input=model_input,
-                                           model_source=model_source)
+res_ = eos.check_eos_roots_multi_component(
+    model_name=eos_model,
+    model_input=model_input,
+    model_source=model_source
+)
 print(res_)
 
 # =======================================
 # ! FUGACITY CALCULATION
 # =======================================
 # calculate fugacity
-res = eos.cal_fugacity_mixture(model_name=eos_model,
-                               model_input=model_input,
-                               model_source=model_source,
-                               k_ij=k_ij)
+res = eos.cal_fugacity_mixture(
+    model_name=eos_model,
+    model_input=model_inputs_parsed,
+    model_source=model_source,
+    k_ij=k_ij
+)
 print(res)

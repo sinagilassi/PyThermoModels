@@ -108,13 +108,21 @@ tm = ptm.init()
 # log
 print("tm: ", tm)
 
-# init
-eos = ptm.eos()
+# NOTE: check reference
+# all reference
+res_ = tm.references
+print(res_)
+
+# eos model
+eos_model = 'PR'
+
+res_ = tm.check_fugacity_reference(eos_model)
+print(res_)
 
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
-# NOTE:
+# NOTE: examples
 # Example 3.9 (page 100), Introduction to Chemical Engineering Thermodynamics
 # by J.M. Smith, H.C. Van Ness, M.M. Abbott
 
@@ -122,6 +130,8 @@ eos = ptm.eos()
 
 # Example 3.11 (page 68), The Thermodynamics of Phase and Reaction Equilibria
 
+# NOTE: init eos
+eos = ptm.eos()
 
 # model input
 # eos model
@@ -162,6 +172,16 @@ P = 9.99
 # # pressure [bar]
 # P = 30
 
+# SECTION: model input content
+model_input_content = """
+component: propane
+temperature: [300.1, 'K']
+pressure: [9.99, 'bar']
+"""
+
+# parse model input content
+model_inputs_parsed = eos.parse_model_inputs(model_input_content)
+
 
 # SECTION: model input
 model_input = {
@@ -177,11 +197,6 @@ model_source = {
     "equationsource": equationsource
 }
 
-# ------------------------------------------------
-# NOTE: check reference
-# ------------------------------------------------
-res_ = tm.check_fugacity_reference(eos_model)
-print(res_)
 
 # ------------------------------------------------
 # NOTE: eos root analysis
@@ -198,6 +213,6 @@ print(res)
 # NOTE: gas fugacity calculation method
 res = eos.cal_fugacity(
     model_name=eos_model,
-    model_input=model_input,
+    model_input=model_inputs_parsed,
     model_source=model_source)
 print(res)

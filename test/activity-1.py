@@ -116,6 +116,17 @@ tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(temperature=T, dg_ij=dg_ij)
 print(f"tau_ij: {tau_ij}")
 print(f"tau_ij_comp: {tau_ij_comp}")
 
+# SECTION: parse model input
+model_input_content = """
+mole_fraction: {ethanol: 0.4, butyl-methyl-ether: 0.6}
+tau_ij: [[0.        , 1.21670526],
+       [0.65831047, 0.        ]]
+alpha_ij: {'ethanol | ethanol': 0.0, 'ethanol | butyl-methyl-ether': 0.680715, 'butyl-methyl-ether | ethanol': 0.680715, 'butyl-methyl-ether | butyl-methyl-ether': 0.0}
+"""
+
+# parse model input
+model_input_parsed = activity_nrtl.parse_model_inputs(model_input_content)
+
 # SECTION: model input
 model_input = {
     "mole_fraction": mole_fraction,
@@ -124,7 +135,7 @@ model_input = {
 }
 
 # NOTE: calculate activity
-res_, others_ = activity_nrtl.cal(model_input=model_input)
+res_, others_ = activity_nrtl.cal(model_input=model_input_parsed)
 # print(res_)
 
 # print the results

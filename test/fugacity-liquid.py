@@ -73,9 +73,10 @@ tm = ptm.init()
 # log
 print("tm: ", tm)
 
-# init
-eos = ptm.eos()
-print("eos: ", eos)
+# NOTE: check reference
+eos_model = 'PR'
+res_ = tm.check_fugacity_reference(eos_model)
+print(res_)
 
 # =======================================
 # SECTION: THERMODB LINK CONFIGURATION
@@ -107,6 +108,10 @@ datasource, equationsource = thub1.build()
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
+# init
+eos = ptm.eos()
+print("eos: ", eos)
+
 # model input
 # eos model
 eos_model = 'PR'
@@ -130,6 +135,17 @@ T = 300.1
 # pressure [bar]
 P = 10
 
+# SECTION: model input content
+model_input_content = """
+phase: LIQUID
+component: propane
+pressure: [10, 'bar']
+temperature: [300.1, 'K']
+"""
+
+# parse model input content
+model_inputs_parsed = eos.parse_model_inputs(model_input_content)
+
 # SECTION: model input
 model_input = {
     # "phase": phase,
@@ -143,12 +159,6 @@ model_source = {
     "datasource": datasource,
     "equationsource": equationsource
 }
-
-# ------------------------------------------------
-# NOTE: check reference
-# ------------------------------------------------
-res_ = tm.check_fugacity_reference(eos_model)
-print(res_)
 
 # ------------------------------------------------
 # NOTE: eos root analysis

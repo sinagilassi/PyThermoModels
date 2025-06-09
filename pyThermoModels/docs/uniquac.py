@@ -1,11 +1,10 @@
 # import libs
 import numpy as np
 import json
-import os
+import yaml
 from math import pow, exp, log
 from typing import List, Dict, Tuple, Any, Literal, Optional, Union
 import pycuc
-import pyThermoDB
 from pyThermoDB import (
     TableMatrixData, TableData, TableEquation, TableMatrixEquation
 )
@@ -139,6 +138,34 @@ class UNIQUAC:
         Z is a constant used in the model, default value is 10.0.
         """
         return model_
+
+    def parse_model_inputs(self, model_inputs: str) -> Dict[str, Any]:
+        '''
+        Convert model inputs from string to dictionary format.
+
+        Parameters
+        ----------
+        model_inputs: str
+            Model inputs in string format, such as:
+            - { mole_fraction: { ethanol: 0.4, butyl-methyl-ether: 0.6 }, temperature: [323.15, 'K'], tau_ij: [[],[]], r_i: [[],[]] }
+
+        Returns
+        -------
+        model_input_parsed: dict
+            Parsed model inputs in dictionary format.
+        '''
+        try:
+            # check if model_inputs is None or model_inputs == 'None'
+            if model_inputs is None or model_inputs == 'None':
+                raise Exception('Model inputs are not provided!')
+
+            # strip
+            model_inputs = model_inputs.strip()
+            model_input_parsed = yaml.safe_load(model_inputs)
+
+            return model_input_parsed
+        except Exception as e:
+            raise Exception("Parsing model inputs failed!, ", e)
 
     def to_ij(self, data: TableMatrixData,
               prop_symbol: str,
@@ -1326,17 +1353,18 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in uniquac model cal: {str(e)}")
 
-    def __calculate_activity_coefficients(self,
-                                          mole_fraction: Dict[str, float],
-                                          tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]],
-                                          r_i_data: List[float] | Dict[str, float] | np.ndarray,
-                                          q_i_data: List[float] | Dict[str, float] | np.ndarray,
-                                          Z: Optional[float | int],
-                                          calculation_mode: Literal['V1'],
-                                          symbol_delimiter: Literal["|", "_"],
-                                          message: Optional[str],
-                                          ) -> Tuple[
-                                              Dict[str, Any], Dict[str, Any]
+    def __calculate_activity_coefficients(
+        self,
+        mole_fraction: Dict[str, float],
+        tau_ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float | int | str]],
+        r_i_data: List[float] | Dict[str, float] | np.ndarray,
+        q_i_data: List[float] | Dict[str, float] | np.ndarray,
+        Z: Optional[float | int],
+        calculation_mode: Literal['V1'],
+        symbol_delimiter: Literal["|", "_"],
+        message: Optional[str],
+    ) -> Tuple[
+        Dict[str, Any], Dict[str, Any]
     ]:
         """
         Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
@@ -1421,13 +1449,13 @@ class UNIQUAC:
 
             # SECTION
             # set the interaction parameter matrix (tau_ij) for the UNIQUAC model
-            if isinstance(tau_ij_data, np.ndarray):
+            if isinstance(tau_ij_data, np.ndarray):  # ! numpy array
                 # set
                 tau_ij = tau_ij_data
                 # to dict
                 tau_ij_comp = self.to_dict_ij(
                     tau_ij_data, symbol_delimiter=symbol_delimiter)
-            elif isinstance(tau_ij_data, TableMatrixData):
+            elif isinstance(tau_ij_data, TableMatrixData):  # ! TableMatrixData
                 # convert to numpy array and dict
                 res_ = self.to_ij(
                     data=tau_ij_data,
@@ -1437,7 +1465,7 @@ class UNIQUAC:
                 tau_ij = res_[0]
                 # to dict
                 tau_ij_comp = res_[1]
-            elif isinstance(tau_ij_data, dict):
+            elif isinstance(tau_ij_data, dict):  # ! dict
                 # convert dict to numpy array
                 tau_ij = self.to_matrix_ij(
                     data=tau_ij_data,
@@ -1445,7 +1473,7 @@ class UNIQUAC:
                 )
                 # to dict
                 tau_ij_comp = tau_ij_data
-            elif isinstance(tau_ij_data, List):
+            elif isinstance(tau_ij_data, list):  # ! list
                 # convert list to numpy array
                 tau_ij = np.array(tau_ij_data)
                 # to dict
@@ -1461,17 +1489,17 @@ class UNIQUAC:
 
             # SECTION
             # set relative van der Waals volume of component i (r_i) for the UNIQUAC model
-            if isinstance(r_i_data, np.ndarray):
+            if isinstance(r_i_data, np.ndarray):  # ! numpy array
                 # set
                 r_i = r_i_data
                 # to dict
                 r_i_comp = self.to_dict_i(r_i_data)
-            elif isinstance(r_i_data, List):
+            elif isinstance(r_i_data, list):  # ! list
                 # set
                 r_i = np.array(r_i_data)
                 # to dict
                 r_i_comp = self.to_dict_i(r_i_data)
-            elif isinstance(r_i_data, dict):
+            elif isinstance(r_i_data, dict):  # ! dict
                 # convert dict to numpy array
                 r_i = self.to_i(data=r_i_data)
                 # to dict
@@ -1485,17 +1513,17 @@ class UNIQUAC:
 
             # SECTION
             # set relative surface area of component i (q_i) for the UNIQUAC model
-            if isinstance(q_i_data, np.ndarray):
+            if isinstance(q_i_data, np.ndarray):  # ! numpy array
                 # set
                 q_i = q_i_data
                 # to dict
                 q_i_comp = self.to_dict_i(q_i_data)
-            elif isinstance(q_i_data, list):
+            elif isinstance(q_i_data, list):  # ! list
                 # set
                 q_i = np.array(q_i_data)
                 # to dict
                 q_i_comp = self.to_dict_i(q_i_data)
-            elif isinstance(q_i_data, dict):
+            elif isinstance(q_i_data, dict):  # ! dict
                 # convert dict to numpy array
                 q_i = self.to_i(data=q_i_data)
                 # to dict

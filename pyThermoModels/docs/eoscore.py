@@ -1,9 +1,8 @@
 # import package/modules
-from typing import Dict, List, Union, Literal, Optional, Tuple
-import numpy as np
+from typing import Dict, List, Union, Literal, Optional, Tuple, Any
+import yaml
 import pycuc
 # internals
-from ..configs import constants as CONST
 from .fugacitycore import FugacityCore
 from .thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager
@@ -34,14 +33,49 @@ class eosCore(ThermoLinkDB, ReferenceManager):
         model_ = "eosCore class for calculating properties of fluids using different equations of state (EOS)."
         return model_
 
+    def parse_model_inputs(self, model_inputs: str) -> Dict[str, Any]:
+        '''
+        Convert model inputs from string to dictionary format.
+
+        Parameters
+        ----------
+        model_inputs: str
+            Model inputs in string format, such as:
+            - `{"component": "CO2", "phase": "VAPOR", "pressure": [1.2*1e5, 'Pa'], "temperature": [300, 'K']}`
+            - `{"feed-specification": {"CO2": 0.5, "N2": 0.5}, "pressure": [1.2*1e5, 'Pa'], "temperature": [300, 'K']}`
+
+        Returns
+        -------
+        model_input_parsed: dict
+            Parsed model inputs in dictionary format.
+        '''
+        try:
+            # check if model_inputs is None or model_inputs == 'None'
+            if model_inputs is None or model_inputs == 'None':
+                raise Exception('Model inputs are not provided!')
+
+            # strip
+            model_inputs = model_inputs.strip()
+            model_input_parsed = yaml.safe_load(model_inputs)
+
+            return model_input_parsed
+        except Exception as e:
+            raise Exception("Parsing model inputs failed!, ", e)
+
     def cal_fugacity(self,
-                     model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
+                     model_name: Literal[
+                         'SRK', 'PR', 'RK', 'vdW'
+                     ],
                      model_input: Dict,
                      model_source: Dict,
-                     solver_method: Literal['ls',
-                                            'newton', 'fsolve', 'root'] = 'ls',
-                     liquid_fugacity_mode: Literal['EOS', 'Poynting'] = 'EOS',
-                     **kwargs) -> Dict:
+                     solver_method: Literal[
+                         'ls', 'newton', 'fsolve', 'root'
+                     ] = 'ls',
+                     liquid_fugacity_mode: Literal[
+                         'EOS', 'Poynting'
+                     ] = 'EOS',
+                     **kwargs
+                     ) -> Dict[str, Any]:
         '''
         Starts calculating fugacity for the single component
 
@@ -197,9 +231,11 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             if phase is None:
                 # check eos roots for single component
                 eos_roots_analysis = self.check_eos_roots_single_component(
-                    model_name=eos_model, model_input=model_input,
+                    model_name=eos_model,
+                    model_input=model_input,
                     model_source=model_source,
-                    tolerance=tolerance)
+                    tolerance=tolerance
+                )
 
                 # NOTE: eos parms
                 # set phase
@@ -250,17 +286,21 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             # SECTION: calculation mode
             res = FugacityCoreC.fugacity_cal(
                 mole_fraction,
-                solver_method=solver_method)
+                solver_method=solver_method
+            )
 
             return res
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
     def check_eos_roots_single_component(self,
-                                         model_name: Literal['SRK', 'PR', 'vdW', 'RK'],
+                                         model_name: Literal[
+                                             'SRK', 'PR', 'vdW', 'RK'
+                                         ],
                                          model_input: Dict,
                                          model_source: Dict,
-                                         **kwargs) -> Dict:
+                                         **kwargs
+                                         ) -> Dict[str, Any]:
         '''
         Check eos roots for the single component at different temperature and pressure.
 
@@ -349,7 +389,10 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             # equationsource
             equationsource = model_source.get('equationsource', {})
             # set thermodb link
-            link_status = self.set_thermodb_link(datasource, equationsource)
+            link_status = self.set_thermodb_link(
+                datasource,
+                equationsource
+            )
             # check
             if not link_status:
                 raise Exception('Thermodb link failed!')
@@ -358,10 +401,15 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             reference = self._references.get(eos_model, None)
 
             # build datasource
-            component_datasource = self.set_datasource(components, reference)
+            component_datasource = self.set_datasource(
+                components,
+                reference
+            )
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: operating conditions
             # pressure [Pa]
@@ -374,18 +422,27 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 f"{operating_conditions['temperature'][1]} => K")
 
             # SECTION: init
-            EOSUtilsC = EOSUtils(component_datasource, equation_equationsource)
+            EOSUtilsC = EOSUtils(
+                component_datasource,
+                equation_equationsource
+            )
 
             # SECTION: eos root analysis
             res = EOSUtilsC.eos_root_analysis(
-                P, T, components, tolerance=tolerance)
+                P,
+                T,
+                components,
+                tolerance=tolerance
+            )
 
             return res[component]
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
     def cal_fugacity_mixture(self,
-                             model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
+                             model_name: Literal[
+                                 'SRK', 'PR', 'RK', 'vdW'
+                             ],
                              model_input: Dict,
                              model_source: Dict,
                              solver_method: Literal[
@@ -394,7 +451,8 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                              liquid_fugacity_mode: Literal[
                                  'EOS', 'Poynting'
                              ] = 'EOS',
-                             **kwargs) -> Dict:
+                             **kwargs
+                             ) -> Dict[str, Any]:
         '''
         Starts calculating fugacity for the single and multi-component systems
 
@@ -565,8 +623,10 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             if phase is None:
                 # check eos roots for single component
                 eos_roots_analysis = self.check_eos_roots_multi_component(
-                    model_name=eos_model, model_input=model_input,
-                    model_source=model_source)
+                    model_name=eos_model,
+                    model_input=model_input,
+                    model_source=model_source
+                )
 
                 # NOTE: eos parms
                 # set phase
@@ -612,24 +672,33 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 components,
                 operating_conditions,
                 eos_parms,
-                **kwargs)
+                **kwargs
+            )
 
             # SECTION: calculation mode
             res = FugacityCoreC.fugacity_cal(
                 mole_fraction,
-                solver_method=solver_method)
+                solver_method=solver_method
+            )
 
             return res
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
     def check_eos_roots_multi_component(self,
-                                        model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
+                                        model_name: Literal[
+                                            'SRK', 'PR', 'RK', 'vdW'
+                                        ],
                                         model_input: Dict,
                                         model_source: Dict,
-                                        bubble_point_pressure_mode: Literal["Raoult"] = "Raoult",
-                                        dew_point_pressure_mode: Literal["Raoult"] = "Raoult",
-                                        **kwargs) -> List[Dict]:
+                                        bubble_point_pressure_mode: Literal[
+                                            "Raoult"
+                                        ] = "Raoult",
+                                        dew_point_pressure_mode: Literal[
+                                            "Raoult"
+                                        ] = "Raoult",
+                                        **kwargs
+                                        ) -> Dict[str, Any]:
         '''
         Check eos roots for the multi-components at different temperature and pressure. To do so, the bubble point and dew point pressure are calculated using Raoult's law. Assuming that the mixture is ideal, the bubble point pressure is equal to the vapor pressure of the component at the bubble point temperature. The dew point pressure is equal to the vapor pressure of the component at the dew point temperature.
 
@@ -657,7 +726,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
 
         Returns
         -------
-        res: list
+        res: Dict
             eos root analysis
 
         Notes
@@ -770,13 +839,15 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             EOSUtilsC = EOSUtils(component_datasource, equation_equationsource)
 
             # SECTION: eos root analysis
-            res = EOSUtilsC.eos_root_analysis(P,
-                                              T,
-                                              components,
-                                              tolerance=tolerance,
-                                              bubble_point_pressure_mode=bubble_point_pressure_mode,
-                                              dew_point_pressure_mode=dew_point_pressure_mode,
-                                              mole_fraction=mole_fraction)
+            res = EOSUtilsC.eos_root_analysis(
+                P,
+                T,
+                components,
+                tolerance=tolerance,
+                bubble_point_pressure_mode=bubble_point_pressure_mode,
+                dew_point_pressure_mode=dew_point_pressure_mode,
+                mole_fraction=mole_fraction
+            )
             # res
             return res
         except Exception as e:

@@ -40,14 +40,17 @@ class EOSManager(EOSModels):
     def __call__(self):
         pass
 
-    def eos_roots(self, P: float, T: float,
+    def eos_roots(self,
+                  P: float,
+                  T: float,
                   components: List[str],
-                  root_analysis: int,
+                  root_analysis: dict,
                   xi=[],
                   eos_model: str = "SRK",
                   solver_method: str = "ls",
                   mode: str = "single",
-                  **kwargs) -> Union[float, List[float], Dict[str, float]]:
+                  **kwargs
+                  ):
         '''
         Estimates fugacity coefficient at fixed temperature and pressure through finding Z (lowest: for liquid, largest: for vapor)
 
@@ -149,8 +152,6 @@ class EOSManager(EOSModels):
         guess_no = 50
         zList = np.zeros(guess_no)
         Z = []
-        _bound = guess_no*[(0, 0)]
-        fZ_cost = np.zeros(guess_no)
         k = 0
 
         # SECTION: set functions & coefficients
@@ -171,7 +172,14 @@ class EOSManager(EOSModels):
 
         # SECTION: *** least-square ***
         if solver_method == 'ls':
-            # root finding initialization
+            # check eos params
+            if _eos_params_0 is None:
+                raise Exception("eos_params is None!")
+
+            if not isinstance(_eos_params_0, dict):
+                raise Exception("eos_params must be a dictionary!")
+
+            # ! root finding
             Z = self.root_ls(
                 root_id=_root_0,
                 fZ=fZ,
@@ -182,36 +190,67 @@ class EOSManager(EOSModels):
             if len(Z) == 0:
                 raise Exception("root analysis failed!")
 
-            # SECTION: *** newton method ***
+        # SECTION: *** newton method ***
         elif solver_method == 'newton':
             # initial guess
             zGuess, steps = np.linspace(1e-5, 2, guess_no, retstep=True)
 
-            k = 0
-            for item in zGuess:
+            # loop through initial guess
+            for k, item in enumerate(zGuess):
                 _x0 = item
-                _res = optimize.newton(fZ, _x0, fprime=fpZ,
-                                       fprime2=fp2Z, args=(_eos_params_0,))
+                # ! root finding
+                _res = optimize.newton(
+                    fZ,
+                    _x0,
+                    fprime=fpZ,
+                    fprime2=fp2Z,
+                    args=(_eos_params_0,)
+                )
+
                 zList[k] = _res
-                k += 1
+
+            # NOTE: root analysis
+            # Filter real and positive roots, and remove duplicates
+            Z_ = np.array([z for z in zList if np.isreal(z) and z > 0])
+            # Remove duplicates (with tolerance for floating point)
+            if len(Z_) > 0:
+                # Use .real to handle complex numbers safely
+                Z = np.unique(np.round(Z_.real, 5))
+            else:
+                raise Exception("No valid roots found in the Newton method.")
 
         # SECTION: *** fsolve method ***
         elif solver_method == 'fsolve':
             # initial guess
             zGuess, steps = np.linspace(1e-5, 2, guess_no, retstep=True)
 
-            k = 0
-            for item in zGuess:
+            # loop through initial guess
+            for k, item in enumerate(zGuess):
                 _x0 = item
-                _res = optimize.fsolve(fZ, _x0, args=(_eos_params_0,))
+                # ! root finding
+                _res = optimize.fsolve(
+                    fZ,
+                    _x0,
+                    args=(_eos_params_0,)
+                )
                 # result checks
                 if _res:
-                    zList[k] = _res
-                # set
-                k += 1
+                    if len(_res) == 1:
+                        zList[k] = _res[0]
+
+            # NOTE: root analysis
+            # Filter real and positive roots, and remove duplicates
+            Z_ = np.array([z for z in zList if np.isreal(z) and z > 0])
+            # Remove duplicates (with tolerance for floating point)
+            if len(Z_) > 0:
+                # Use .real to handle complex numbers safely
+                Z = np.unique(np.round(Z_.real, 5))
+            else:
+                raise Exception("No valid roots found in the fsolve method.")
+
         # SECTION: *** root method ***
         elif solver_method == 'root':
-            # initial guess
+            # ! root finding
             _res = np.roots(fZ_coeff)
             # save
             _res = list(_res[_res > 0])
@@ -226,13 +265,15 @@ class EOSManager(EOSModels):
         # res
         return np.array(Z), _eos_params, _eos_params_comp
 
-    def root_ls(self, root_id: Literal[1, 2, 3, 4],
+    def root_ls(self,
+                root_id: Literal[1, 2, 3, 4],
                 fZ: Callable,
                 eos_params: Dict,
                 guess_no: int = 50,
                 ftol=1e-8,
                 xtol=1e-8,
-                **kwargs):
+                **kwargs
+                ):
         '''
         Finds the roots of a function using the least-squares method.
 
@@ -352,7 +393,8 @@ class EOSManager(EOSModels):
                     args=(eos_params,),
                     bounds=bound[k],
                     ftol=ftol,
-                    xtol=xtol)
+                    xtol=xtol
+                )
 
                 # NOTE: result checks
                 if (_res.success is True and _res.x > 0):
@@ -380,7 +422,10 @@ class EOSManager(EOSModels):
         except Exception as e:
             raise Exception(f"Error in find_rooting_ls: {e}") from e
 
-    def eos_root_analysis(self, root_id: Literal[1, 2, 3, 4], Zi: List[float]):
+    def eos_root_analysis(self,
+                          root_id: int,
+                          Zi: List[float]
+                          ) -> List[float]:
         '''
         Determines the number of roots based on the root ID and Z values.
         The root ID indicates the type of root analysis performed, and the Z values are the results of the analysis.
@@ -429,13 +474,17 @@ class EOSManager(EOSModels):
         except Exception as e:
             raise Exception(f"Error in eos_root_analysis: {e}") from e
 
-    def eos_fugacity(self, P: float, T: float, Z,
+    def eos_fugacity(self,
+                     P: float,
+                     T: float,
+                     Z,
                      params,
                      components: List,
                      yi=[],
                      eos_model: str = "SRK",
                      mode: str = "single",
-                     **kwargs):
+                     **kwargs
+                     ):
         '''
         Determines fugacity coefficient
 
@@ -529,7 +578,8 @@ class EOSManager(EOSModels):
             Z: float,
             params,
             components: List,
-            yi):
+            yi
+            ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the SRK EOS.
 
@@ -612,7 +662,8 @@ class EOSManager(EOSModels):
             Z: float,
             params,
             components: List,
-            yi):
+            yi
+           ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the PR EOS.
 
@@ -695,7 +746,8 @@ class EOSManager(EOSModels):
             Z: float,
             params,
             components: List,
-            yi):
+            yi
+           ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the RK EOS.
 
@@ -778,7 +830,8 @@ class EOSManager(EOSModels):
             Z: float,
             params,
             components: List,
-            yi):
+            yi
+            ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the vdW EOS.
 

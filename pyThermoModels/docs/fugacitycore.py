@@ -5,8 +5,9 @@
 import numpy as np
 import pycuc
 from math import exp
+from typing import Dict, Any
 # local
-from ..configs import Tref, R_CONST
+from ..configs import R_CONST
 from .eosmanager import EOSManager
 from .eosutils import EOSUtils
 from .thermo import calMolarVolume
@@ -20,7 +21,14 @@ class FugacityCore(EOSManager):
     fugacity coefficients for different phases (vapor, liquid, solid) using various EOS models.
     '''
 
-    def __init__(self, datasource, equationsource, components, operating_conditions, eos_parms, **kwargs):
+    def __init__(self,
+                 datasource,
+                 equationsource,
+                 components,
+                 operating_conditions,
+                 eos_parms,
+                 **kwargs
+                 ):
         '''
         Initialize the FugacityCore class.
 
@@ -142,7 +150,10 @@ class FugacityCore(EOSManager):
         except Exception as e:
             raise Exception('Setting fugacity calculation mode failed!, ', e)
 
-    def fugacity_cal(self, yi: list, solver_method: str):
+    def fugacity_cal(self,
+                     yi: list,
+                     solver_method: str
+                     ) -> Dict[str, Any]:
         '''
         Calculate fugacity
 
@@ -197,7 +208,7 @@ class FugacityCore(EOSManager):
         except Exception as e:
             raise Exception('Fugacity calculation failed!, ', e)
 
-    def gas_fugacity(self, yi=[], **kwargs):
+    def gas_fugacity(self, yi=[], **kwargs) -> Dict[str, Any]:
         '''
         Estimate gas fugacity using eos (largest Z)
 
@@ -262,13 +273,21 @@ class FugacityCore(EOSManager):
         Zis = []
         _Zis_comp = {}
         _phi = []
-        _phi_comp = {}
+        # _phi_comp = {}
 
         # SECTION: check mode
         if mode == 'mixture':
             # Z
-            _Zi, _eos_params, _eos_params_comp = self.eos_roots(self.P, self.T, self.components, root_analysis_res,
-                                                                xi=yi, eos_model=eos_model, solver_method=solver_method, mode=mode)
+            _Zi, _eos_params, _eos_params_comp = self.eos_roots(
+                self.P,
+                self.T,
+                self.components,
+                root_analysis_res,
+                xi=yi,
+                eos_model=eos_model,
+                solver_method=solver_method,
+                mode=mode
+            )
 
             # Zi loop
             Zis = []
@@ -316,13 +335,16 @@ class FugacityCore(EOSManager):
             # NOTE: looping through Zis
             for i in range(len(Zis)):
                 # ! fugacity coefficient (vapor phase)
-                _phi_res = self.eos_fugacity(self.P, self.T, Zis[i],
+                _phi_res = self.eos_fugacity(self.P,
+                                             self.T,
+                                             Zis[i],
                                              _eos_params,
                                              self.components,
                                              yi=yi,
                                              eos_model=eos_model,
                                              mode=mode,
-                                             params_comp=_eos_params_comp)
+                                             params_comp=_eos_params_comp
+                                             )
                 # save
                 _phi.append(_phi_res)
 
@@ -434,8 +456,14 @@ class FugacityCore(EOSManager):
 
             # NOTE: find roots
             _Zi, _eos_params, _eos_params_comp = self.eos_roots(
-                self.P, self.T, self.components, root_analysis_res,
-                eos_model=eos_model, solver_method=solver_method, mode=mode)
+                self.P,
+                self.T,
+                self.components,
+                root_analysis_res,
+                eos_model=eos_model,
+                solver_method=solver_method,
+                mode=mode
+            )
 
             # Zi loop
             Zis = []
@@ -504,7 +532,14 @@ class FugacityCore(EOSManager):
                 # NOTE: gas-liquid phase
                 # ! fugacity coefficient (vapor phase)
                 _phi_res = self.eos_fugacity(
-                    self.P, self.T, Zis[i], _eos_params[0], self.components, eos_model=eos_model, mode=mode)
+                    self.P,
+                    self.T,
+                    Zis[i],
+                    _eos_params[0],
+                    self.components,
+                    eos_model=eos_model,
+                    mode=mode
+                )
                 # save
                 if _phi_res is None:
                     raise Exception("fugacity coefficient calculation failed!")
@@ -553,6 +588,10 @@ class FugacityCore(EOSManager):
                         'unit': 'Pa',
                         'symbol': 'Fug_PURE'
                     },
+                    'roots': {
+                        'value': _Zi.tolist(),
+                        'unit': 'dimensionless',
+                    },
                     'mode': (self.mode).upper(),
                     'phase': self.phase,
                     'eos_model': eos_model,
@@ -569,7 +608,7 @@ class FugacityCore(EOSManager):
         # res
         return _phi_pack
 
-    def liquid_fugacity(self, **kwargs):
+    def liquid_fugacity(self, **kwargs) -> Dict[str, Any]:
         '''
         Estimate liquid fugacity using the Poynting term
 
@@ -685,63 +724,65 @@ class FugacityCore(EOSManager):
                 # NOTE:
                 raise Exception(
                     "Liquid fugacity calculation method for the mixture mode is not available!")
-                # NOTE: mixture
-                # looping through components
-                for i in range(compNo):
-                    # NOTE: find roots
-                    # ! at vapor pressure (P*) and system temperature (T)
-                    P_ = VaPr_i[i]
-                    # find eos roots
-                    _Zi, _eos_params, _eos_params_comp = self.eos_roots(
-                        P_, self.T, self.components, root_analysis_res,
-                        self.datasource, eos_model=eos_model,
-                        solver_method=solver_method, mode=mode)
 
-                    # NOTE: check root analysis res
-                    # set
-                    Zi[i] = _Zi
-                    Zi_comp[self.components[i]] = _Zi.tolist()
-                    eos_params.append(_eos_params[0])
+                # FIXME
+                # # NOTE: mixture
+                # # looping through components
+                # for i in range(compNo):
+                #     # NOTE: find roots
+                #     # ! at vapor pressure (P*) and system temperature (T)
+                #     P_ = VaPr_i[i]
+                #     # find eos roots
+                #     _Zi, _eos_params, _eos_params_comp = self.eos_roots(
+                #         P_, self.T, self.components, root_analysis_res,
+                #         self.datasource, eos_model=eos_model,
+                #         solver_method=solver_method, mode=mode)
 
-                    # ! fugacity coefficient at vapor pressure (P*) and system temperature (T)
-                    _phi = self.eos_fugacity(
-                        P_, self.T, _Zi, _eos_params[0], self.components,
-                        self.datasource, eos_model=eos_model, mode=mode)
+                #     # NOTE: check root analysis res
+                #     # set
+                #     Zi[i] = _Zi
+                #     Zi_comp[self.components[i]] = _Zi.tolist()
+                #     eos_params.append(_eos_params[0])
 
-                    # check
-                    if _phi is None:
-                        raise Exception(
-                            "fugacity coefficient calculation failed!")
-                    # set
-                    phi.append(_phi[0])
-                    phi_comp[self.components[i]] = [_phi[0]]
+                #     # ! fugacity coefficient at vapor pressure (P*) and system temperature (T)
+                #     _phi = self.eos_fugacity(
+                #         P_, self.T, _Zi, _eos_params[0], self.components,
+                #         self.datasource, eos_model=eos_model, mode=mode)
 
-                    # NOTE: fugacity of saturated vapor at T [K] and P* (vapor-pressure) [Pa]
-                    _Fug_sat = VaPr_i[i]*phi[i]
+                #     # check
+                #     if _phi is None:
+                #         raise Exception(
+                #             "fugacity coefficient calculation failed!")
+                #     # set
+                #     phi.append(_phi[0])
+                #     phi_comp[self.components[i]] = [_phi[0]]
 
-                    # NOTE: molar volume at T[K] and P* (vapor-pressure) [Pa]
-                    Vm = 1
+                #     # NOTE: fugacity of saturated vapor at T [K] and P* (vapor-pressure) [Pa]
+                #     _Fug_sat = VaPr_i[i]*phi[i]
 
-                    # save
-                    # set
-                    _phi_pack[self.phase][self.components[i]] = {
-                        "temperature": self.T,
-                        "temperature_unit": "K",
-                        "pressure": self.P,
-                        "pressure_unit": "Pa",
-                        'compressibility_coefficient': {
-                            'value': Zi[i],
-                            'unit': 'dimensionless',
-                            'symbol': 'Z'
-                        },
-                        'fugacity_coefficient': {
-                            'value': fug_l_sat[i],
-                            'unit': 'dimensionless',
-                            'symbol': 'phi'
-                        },
-                        'mode': (self.mode).upper(),
-                        'phase': self.phase
-                    }
+                #     # NOTE: molar volume at T[K] and P* (vapor-pressure) [Pa]
+                #     Vm = 1
+
+                #     # save
+                #     # set
+                #     _phi_pack[self.phase][self.components[i]] = {
+                #         "temperature": self.T,
+                #         "temperature_unit": "K",
+                #         "pressure": self.P,
+                #         "pressure_unit": "Pa",
+                #         'compressibility_coefficient': {
+                #             'value': Zi[i],
+                #             'unit': 'dimensionless',
+                #             'symbol': 'Z'
+                #         },
+                #         'fugacity_coefficient': {
+                #             'value': fug_l_sat[i],
+                #             'unit': 'dimensionless',
+                #             'symbol': 'phi'
+                #         },
+                #         'mode': (self.mode).upper(),
+                #         'phase': self.phase
+                #     }
             elif mode == 'single':
                 # NOTE: single
                 # set component
@@ -855,8 +896,9 @@ class FugacityCore(EOSManager):
         except Exception as e:
             raise Exception('Liquid fugacity calculation failed!, ', e)
 
-    def solid_fugacity(self):
+    def solid_fugacity(self) -> Dict[str, Any]:
         '''
         Estimate solid fugacity
         '''
-        raise Exception("Not implemented yet!")
+        print("Solid fugacity calculation is not implemented yet!")
+        return {}

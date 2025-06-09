@@ -38,6 +38,10 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
     def input(self):
         return self._input
 
+    @property
+    def references(self):
+        return self._references
+
     def check_thermodb(self):
         '''
         Check thermo databook (thermodb file created by pyThermoDB)
