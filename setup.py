@@ -8,11 +8,13 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 APP_NAME = 'PyThermoModels'
-VERSION = '1.4.7'
+VERSION = '1.4.8'
 AUTHOR = 'Sina Gilassi'
 EMAIL = "<sina.gilassi@gmail.com>"
 DESCRIPTION = 'A Python package designed for the calculation of thermodynamic properties using various well-established models.'
 LONG_DESCRIPTION = "PyThermoModels is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties."
+HOME_PAGE = 'https://github.com/sinagilassi/PyThermoModels'
+DOCUMENTATION = 'https://pythermomodels.readthedocs.io/en/latest/'
 
 # Setting up
 setup(
@@ -21,6 +23,12 @@ setup(
     author=AUTHOR,
     author_email=EMAIL,
     description=DESCRIPTION,
+    url=HOME_PAGE,
+    project_urls={
+        'Documentation': DOCUMENTATION,
+        'Source': HOME_PAGE,
+        'Tracker': f'{HOME_PAGE}/issues',
+    },
     long_description_content_type="text/markdown",
     long_description=long_description,
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),

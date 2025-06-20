@@ -6,7 +6,7 @@ packageName = 'Python Thermodynamic Models'
 # package short name
 packageShortName = 'PyThermoModels'
 # package version
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 # package description
 __description__ = 'A Python package designed for the calculation of thermodynamic properties using various well-established models.'
 # author
