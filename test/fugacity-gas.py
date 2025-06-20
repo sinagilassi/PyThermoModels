@@ -132,6 +132,10 @@ print(res_)
 
 # NOTE: init eos
 eos = ptm.eos()
+print(ptm.eos.metadata)
+
+# NOTE: check details
+print(eos.cal_fugacity.metadata)
 
 # model input
 # eos model

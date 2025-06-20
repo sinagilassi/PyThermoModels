@@ -66,6 +66,7 @@ model_source = {
 # activity model
 activity = ptm.activity(components=components, model_name=activity_model)
 print(activity)
+print(ptm.activity.metadata)
 
 # select nrtl
 activity_nrtl = activity.nrtl
@@ -137,6 +138,7 @@ model_input = {
 # NOTE: calculate activity
 res_, others_ = activity_nrtl.cal(model_input=model_input_parsed)
 # print(res_)
+print(activity_nrtl.cal.metadata)
 
 # print the results
 print(f"res_: {res_}")

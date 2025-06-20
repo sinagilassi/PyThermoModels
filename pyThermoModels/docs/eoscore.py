@@ -5,9 +5,9 @@ import pycuc
 # internals
 from .fugacitycore import FugacityCore
 from .thermolinkdb import ThermoLinkDB
-from ..plugin import ReferenceManager
+from ..plugin import ReferenceManager, EQUATION_OF_STATE_MODELS
 from .eosutils import EOSUtils
-from ..utils import eos_model_name
+from ..utils import eos_model_name, add_attributes
 
 
 class eosCore(ThermoLinkDB, ReferenceManager):
@@ -62,20 +62,22 @@ class eosCore(ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Parsing model inputs failed!, ", e)
 
-    def cal_fugacity(self,
-                     model_name: Literal[
-                         'SRK', 'PR', 'RK', 'vdW'
-                     ],
-                     model_input: Dict,
-                     model_source: Dict,
-                     solver_method: Literal[
-                         'ls', 'newton', 'fsolve', 'root'
-                     ] = 'ls',
-                     liquid_fugacity_mode: Literal[
-                         'EOS', 'Poynting'
-                     ] = 'EOS',
-                     **kwargs
-                     ) -> Dict[str, Any]:
+    @add_attributes(metadata=EQUATION_OF_STATE_MODELS)
+    def cal_fugacity(
+        self,
+        model_name: Literal[
+            'SRK', 'PR', 'RK', 'vdW'
+        ],
+        model_input: Dict,
+        model_source: Dict,
+        solver_method: Literal[
+            'ls', 'newton', 'fsolve', 'root'
+        ] = 'ls',
+        liquid_fugacity_mode: Literal[
+            'EOS', 'Poynting'
+        ] = 'EOS',
+        **kwargs
+    ) -> Dict[str, Any]:
         '''
         Starts calculating fugacity for the single component
 
@@ -195,7 +197,9 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             if phase is not None:
                 phase = phase.upper()
                 # check phase
-                if phase not in ['VAPOR', 'LIQUID', 'VAPOR-LIQUID', 'SUPERCRITICAL']:
+                if phase not in [
+                    'VAPOR', 'LIQUID', 'VAPOR-LIQUID', 'SUPERCRITICAL'
+                ]:
                     raise Exception('Invalid phase provided!')
 
             # SECTION: calculation mode
@@ -293,14 +297,15 @@ class eosCore(ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def check_eos_roots_single_component(self,
-                                         model_name: Literal[
-                                             'SRK', 'PR', 'vdW', 'RK'
-                                         ],
-                                         model_input: Dict,
-                                         model_source: Dict,
-                                         **kwargs
-                                         ) -> Dict[str, Any]:
+    def check_eos_roots_single_component(
+        self,
+        model_name: Literal[
+            'SRK', 'PR', 'vdW', 'RK'
+        ],
+        model_input: Dict,
+        model_source: Dict,
+        **kwargs
+    ) -> Dict[str, Any]:
         '''
         Check eos roots for the single component at different temperature and pressure.
 
@@ -439,20 +444,21 @@ class eosCore(ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def cal_fugacity_mixture(self,
-                             model_name: Literal[
-                                 'SRK', 'PR', 'RK', 'vdW'
-                             ],
-                             model_input: Dict,
-                             model_source: Dict,
-                             solver_method: Literal[
-                                 'ls', 'newton', 'fsolve', 'root'
-                             ] = 'ls',
-                             liquid_fugacity_mode: Literal[
-                                 'EOS', 'Poynting'
-                             ] = 'EOS',
-                             **kwargs
-                             ) -> Dict[str, Any]:
+    def cal_fugacity_mixture(
+        self,
+        model_name: Literal[
+            'SRK', 'PR', 'RK', 'vdW'
+        ],
+        model_input: Dict,
+        model_source: Dict,
+        solver_method: Literal[
+            'ls', 'newton', 'fsolve', 'root'
+        ] = 'ls',
+        liquid_fugacity_mode: Literal[
+            'EOS', 'Poynting'
+        ] = 'EOS',
+        **kwargs
+    ) -> Dict[str, Any]:
         '''
         Starts calculating fugacity for the single and multi-component systems
 
@@ -569,7 +575,9 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             if phase is not None:
                 phase = phase.upper()
                 # check phase
-                if phase not in ['VAPOR', 'LIQUID', 'VAPOR-LIQUID', 'SUPERCRITICAL']:
+                if phase not in [
+                    'VAPOR', 'LIQUID', 'VAPOR-LIQUID', 'SUPERCRITICAL'
+                ]:
                     raise Exception('Invalid phase provided!')
 
             # NOTE: calculation mode
@@ -685,20 +693,21 @@ class eosCore(ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def check_eos_roots_multi_component(self,
-                                        model_name: Literal[
-                                            'SRK', 'PR', 'RK', 'vdW'
-                                        ],
-                                        model_input: Dict,
-                                        model_source: Dict,
-                                        bubble_point_pressure_mode: Literal[
-                                            "Raoult"
-                                        ] = "Raoult",
-                                        dew_point_pressure_mode: Literal[
-                                            "Raoult"
-                                        ] = "Raoult",
-                                        **kwargs
-                                        ) -> Dict[str, Any]:
+    def check_eos_roots_multi_component(
+        self,
+        model_name: Literal[
+            'SRK', 'PR', 'RK', 'vdW'
+        ],
+        model_input: Dict,
+        model_source: Dict,
+        bubble_point_pressure_mode: Literal[
+            "Raoult"
+        ] = "Raoult",
+        dew_point_pressure_mode: Literal[
+            "Raoult"
+        ] = "Raoult",
+        **kwargs
+    ) -> Dict[str, Any]:
         '''
         Check eos roots for the multi-components at different temperature and pressure. To do so, the bubble point and dew point pressure are calculated using Raoult's law. Assuming that the mixture is ideal, the bubble point pressure is equal to the vapor pressure of the component at the bubble point temperature. The dew point pressure is equal to the vapor pressure of the component at the dew point temperature.
 

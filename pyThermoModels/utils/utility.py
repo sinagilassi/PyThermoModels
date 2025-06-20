@@ -3,10 +3,15 @@
 
 # import packages/modules
 import numpy as np
-from typing import Literal, Optional
+from typing import Literal
 # internal
 from ..configs import ROUND_FUN_ACCURACY
-from ..configs import PENG_ROBINSON, SOAVE_REDLICH_KWONG, VAN_DER_WAALS, REDLICH_KWONG
+from ..configs import (
+    PENG_ROBINSON,
+    SOAVE_REDLICH_KWONG,
+    VAN_DER_WAALS,
+    REDLICH_KWONG
+)
 
 
 def roundNum(value, ACCURACY=ROUND_FUN_ACCURACY):

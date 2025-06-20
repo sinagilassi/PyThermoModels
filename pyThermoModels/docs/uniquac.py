@@ -3,11 +3,14 @@ import numpy as np
 import json
 import yaml
 from math import pow, exp, log
-from typing import List, Dict, Tuple, Any, Literal, Optional, Union
+from typing import List, Dict, Tuple, Any, Literal, Optional
 import pycuc
 from pyThermoDB import (
-    TableMatrixData, TableData, TableEquation, TableMatrixEquation
+    TableMatrixData,
 )
+# local
+from ..plugin import ACTIVITY_MODELS
+from ..utils import add_attributes
 
 
 class UNIQUAC:
@@ -47,10 +50,12 @@ class UNIQUAC:
     __mole_fraction = None
     __xi = None
 
-    def __init__(self,
-                 components: List[str],
-                 datasource: Dict = {},
-                 equationsource: Dict = {}):
+    def __init__(
+        self,
+        components: List[str],
+        datasource: Dict = {},
+        equationsource: Dict = {}
+    ):
         '''
         Initialize the activity model, UNIQUAC (`Universal Quasi-Chemical`) used to calculate activity coefficients in liquid mixtures.
 
@@ -167,12 +172,13 @@ class UNIQUAC:
         except Exception as e:
             raise Exception("Parsing model inputs failed!, ", e)
 
-    def to_ij(self, data: TableMatrixData,
-              prop_symbol: str,
-              symbol_delimiter: Literal[
-                  "|", "_"
-              ] = "|"
-              ) -> Tuple[np.ndarray, Dict[str, float]]:
+    def to_ij(
+        self, data: TableMatrixData,
+        prop_symbol: str,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Convert TableMatrixData to numpy array (mat_ij) and dictionary (dict_ij).
 
@@ -289,12 +295,13 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_dict_ij(self,
-                   data: np.ndarray,
-                   symbol_delimiter: Literal[
-                       "|", "_"
-                   ] = "|"
-                   ) -> Dict[str, float]:
+    def to_dict_ij(
+        self,
+        data: np.ndarray,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|"
+    ) -> Dict[str, float]:
         """
         Convert to dictionary (dict_ij) according to the component id.
 
@@ -344,9 +351,10 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_dict_i(self,
-                  data: List[float] | np.ndarray
-                  ) -> Dict[str, float]:
+    def to_dict_i(
+        self,
+        data: List[float] | np.ndarray
+    ) -> Dict[str, float]:
         """
         Convert to dictionary (dict_i) according to the component id.
 
@@ -387,12 +395,13 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_matrix_ij(self,
-                     data: Dict[str, float] | List[float],
-                     symbol_delimiter: Literal[
-                         "|", "_"
-                     ] = "|"
-                     ) -> np.ndarray:
+    def to_matrix_ij(
+        self,
+        data: Dict[str, float] | List[float],
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|"
+    ) -> np.ndarray:
         """
         Convert to matrix (mat_ij) according to `the component id`.
 
@@ -459,14 +468,15 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def cal_dU_ij_M1(self, temperature: float,
-                     a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                     b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                     c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                     symbol_delimiter: Literal[
-                         "|", "_"
-                     ] = "|"
-                     ) -> Tuple[np.ndarray, Dict[str, float]]:
+    def cal_dU_ij_M1(
+        self, temperature: float,
+        a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction energy parameter `dU_ij` matrix dependent of temperature.
 
@@ -564,9 +574,11 @@ class UNIQUAC:
                             dU_ij_comp[key_] = 0
 
             # SECTION: if dU_ij is dict
-            elif (isinstance(a_ij, dict) and
-                  isinstance(b_ij, dict) and
-                  isinstance(c_ij, dict)):
+            elif (
+                isinstance(a_ij, dict) and
+                isinstance(b_ij, dict) and
+                isinstance(c_ij, dict)
+            ):
 
                 # loop over the components
                 for i in range(comp_num):
@@ -593,9 +605,11 @@ class UNIQUAC:
                             # set by name
                             dU_ij_comp[key_] = 0
             # SECTION: if dU_ij is TableMatrixData
-            elif (isinstance(a_ij, TableMatrixData) and
-                  isinstance(b_ij, TableMatrixData) and
-                  isinstance(c_ij, TableMatrixData)):
+            elif (
+                isinstance(a_ij, TableMatrixData) and
+                isinstance(b_ij, TableMatrixData) and
+                isinstance(c_ij, TableMatrixData)
+            ):
 
                 # loop over the components
                 for i in range(comp_num):
@@ -657,18 +671,19 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in cal_dU_ij_M1: {str(e)}")
 
-    def cal_tau_ij_M1(self,
-                      temperature: float,
-                      dU_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      dU_ij_symbol:
-                          Literal[
-                              'dU', 'dU_ij'
-                      ] = 'dU',
-                          R_CONST: float = 8.314,
-                      symbol_delimiter: Literal[
-                          "|", "_"
-                      ] = "|"
-                      ) -> Tuple[np.ndarray, Dict[str, float]]:
+    def cal_tau_ij_M1(
+        self,
+        temperature: float,
+        dU_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        dU_ij_symbol:
+        Literal[
+            'dU', 'dU_ij'
+        ] = 'dU',
+        R_CONST: float = 8.314,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction parameters `tau_ij` matrix for UNIQUAC model.
 
@@ -789,7 +804,14 @@ class UNIQUAC:
                         key_comp = f"{components[i]}{symbol_delimiter_set}{components[j]}"
 
                         # val
-                        val_ = dU_ij.ij(key_)
+                        dU_ij_ = dU_ij.ij(key_)
+
+                        # check
+                        if dU_ij_ is None or dU_ij_["value"] is None:
+                            raise ValueError(
+                                f"Invalid value for {dU_ij_symbol}: {dU_ij_} for key: {key_}")
+
+                        val_ = float(dU_ij_["value"])
 
                         # component id
                         comp_id_i = self.comp_idx[components[i]]
@@ -815,15 +837,16 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in cal_tauij: {str(e)}")
 
-    def cal_tau_ij_M2(self, temperature: float,
-                      a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      d_ij: np.ndarray | Dict[str, float] | TableMatrixData,
-                      symbol_delimiter: Literal[
-                          "|", "_"
-                      ] = "|"
-                      ) -> Tuple[np.ndarray, Dict[str, float]]:
+    def cal_tau_ij_M2(
+        self, temperature: float,
+        a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        d_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
         Calculate interaction parameters `tau_ij` matrix for UNIQUAC model.
 
@@ -1041,12 +1064,13 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in cal_tauij: {str(e)}")
 
-    def __X_ij(self,
-               ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]],
-               prop_symbol: str,
-               symbol_delimiter: Literal[
-                   "|", "_"
-               ] = "|"):
+    def __X_ij(
+            self,
+            ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]],
+            prop_symbol: str,
+            symbol_delimiter: Literal[
+                "|", "_"
+            ] = "|"):
         """
         Convert interaction parameter data to numpy array and dict.
 
@@ -1107,11 +1131,12 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def __X_i(self,
-              i_data: List[float] | Dict[str, float] | np.ndarray,
-              symbol_delimiter: Literal[
-                  "|", "_"
-              ] = "|"):
+    def __X_i(
+            self,
+            i_data: List[float] | Dict[str, float] | np.ndarray,
+            symbol_delimiter: Literal[
+                "|", "_"
+            ] = "|"):
         '''
         Convert interaction parameter data to numpy array and dict.
 
@@ -1156,16 +1181,18 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def cal(self,
-            model_input: Dict,
-            Z: Optional[float | int] = None,
-            calculation_mode: Literal['V1'] = 'V1',
-            symbol_delimiter: Literal[
-                "|", "_"
-            ] = "|",
-            message: Optional[str] = None,
-            **kwargs
-            ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    @add_attributes(metadata=ACTIVITY_MODELS['UNIQUAC'])
+    def cal(
+        self,
+        model_input: Dict,
+        Z: Optional[float | int] = None,
+        calculation_mode: Literal['V1'] = 'V1',
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+        message: Optional[str] = None,
+        **kwargs
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Calculate activity coefficients for a multi-component mixture using the UNIQUAC model.
 
@@ -1587,13 +1614,14 @@ class UNIQUAC:
             raise Exception(
                 f"Error in calculate_activity_coefficients: {str(e)}")
 
-    def CalAcCo_V1(self,
-                   xi: List[float],
-                   tau_ij: np.ndarray,
-                   r_i: np.ndarray,
-                   q_i: np.ndarray,
-                   Z: int | float
-                   ) -> np.ndarray:
+    def CalAcCo_V1(
+        self,
+        xi: List[float],
+        tau_ij: np.ndarray,
+        r_i: np.ndarray,
+        q_i: np.ndarray,
+        Z: int | float
+    ) -> np.ndarray:
         '''
         Calculate activity coefficient (AcCo) using UNIQUAC model.
 
@@ -1674,21 +1702,22 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in CalAcCo_V1: {str(e)}")
 
-    def excess_gibbs_free_energy(self,
-                                 mole_fraction: Optional[Dict[str,
-                                                              float]] = None,
-                                 tau_ij: Optional[np.ndarray] = None,
-                                 r_i:  Optional[np.ndarray] = None,
-                                 q_i:  Optional[np.ndarray] = None,
-                                 Z: Optional[int | float] = None,
-                                 symbol_delimiter: Literal[
-                                     "|", "_"
-                                 ] = "|",
-                                 message: Optional[str] = None,
-                                 res_format: Literal[
-                                     'str', 'json', 'dict'
-                                 ] = 'dict'
-                                 ) -> Dict[str, float | Dict] | str:
+    def excess_gibbs_free_energy(
+        self,
+        mole_fraction: Optional[Dict[str,
+                                     float]] = None,
+        tau_ij: Optional[np.ndarray] = None,
+        r_i:  Optional[np.ndarray] = None,
+        q_i:  Optional[np.ndarray] = None,
+        Z: Optional[int | float] = None,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+        message: Optional[str] = None,
+        res_format: Literal[
+            'str', 'json', 'dict'
+        ] = 'dict'
+    ) -> Dict[str, float | Dict] | str:
         """
         Calculate excess Gibbs energy (G^E/RT) for a multi-component mixture using the UNIQUAC model.
 
@@ -1840,11 +1869,12 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
 
-    def inputs_generator(self,
-                         temperature: Optional[
-                             List[float | str]
-                         ] = None,
-                         **kwargs):
+    def inputs_generator(
+            self,
+            temperature: Optional[
+                List[float | str]
+            ] = None,
+            **kwargs):
         '''
         Prepares inputs for the UNIQUAC activity model for calculating activity coefficients.
 

@@ -1,6 +1,5 @@
 # import packages/modules
 import os
-import numpy as np
 from rich import print
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
@@ -66,6 +65,7 @@ model_source = {
 # activity model
 activity = ptm.activity(components=components, model_name=activity_model)
 print(activity)
+print(ptm.activity.metadata)
 
 # select uniquac model
 activity_uniquac = activity.uniquac

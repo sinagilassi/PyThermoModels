@@ -2,6 +2,8 @@
 from typing import Dict, Optional, Literal, List, Any
 # local
 from .docs import ThermoModelCore, ThermoLib, NRTL, UNIQUAC, ActivityCore
+from .utils import add_attributes
+from .plugin import EQUATION_OF_STATE_MODELS, ACTIVITY_MODELS
 
 
 def init():
@@ -20,6 +22,7 @@ def init():
         raise Exception("Calculating the Fugacity failed!, ", e)
 
 
+@add_attributes(metadata=EQUATION_OF_STATE_MODELS)
 def eos(**kwargs):
     '''
     Initialize equation of state library for fugacity calculation for single and multi-component systems
@@ -44,6 +47,7 @@ def eos(**kwargs):
         raise Exception("Initialization failed!, ", e)
 
 
+@add_attributes(metadata=ACTIVITY_MODELS)
 def activity(
         components: List[str],
         model_name: Literal['NRTL', 'UNIQUAC'],
@@ -89,6 +93,7 @@ def activity(
         raise Exception("Initialization failed!, ", e)
 
 
+@add_attributes(metadata=ACTIVITY_MODELS)
 def activities(
         components: List[str],
         model_name: Literal['NRTL', 'UNIQUAC'],
