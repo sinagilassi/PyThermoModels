@@ -40,17 +40,18 @@ class EOSManager(EOSModels):
     def __call__(self):
         pass
 
-    def eos_roots(self,
-                  P: float,
-                  T: float,
-                  components: List[str],
-                  root_analysis: dict,
-                  xi=[],
-                  eos_model: str = "SRK",
-                  solver_method: str = "ls",
-                  mode: str = "single",
-                  **kwargs
-                  ):
+    def eos_roots(
+        self,
+        P: float,
+        T: float,
+        components: List[str],
+        root_analysis: dict,
+        xi=[],
+        eos_model: str = "SRK",
+        solver_method: str = "ls",
+        mode: str = "single",
+        **kwargs
+    ):
         '''
         Estimates fugacity coefficient at fixed temperature and pressure through finding Z (lowest: for liquid, largest: for vapor)
 
@@ -474,17 +475,18 @@ class EOSManager(EOSModels):
         except Exception as e:
             raise Exception(f"Error in eos_root_analysis: {e}") from e
 
-    def eos_fugacity(self,
-                     P: float,
-                     T: float,
-                     Z,
-                     params,
-                     components: List,
-                     yi=[],
-                     eos_model: str = "SRK",
-                     mode: str = "single",
-                     **kwargs
-                     ):
+    def eos_fugacity(
+        self,
+        P: float,
+        T: float,
+        Z,
+        params,
+        components: List,
+        yi=[],
+        eos_model: str = "SRK",
+        mode: str = "single",
+        **kwargs
+    ):
         '''
         Determines fugacity coefficient
 

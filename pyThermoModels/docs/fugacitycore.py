@@ -791,10 +791,19 @@ class FugacityCore(EOSManager):
                 # ! at vapor pressure (P*) and system temperature (T)
                 P_sat = VaPr_i[0]
                 # find eos roots
-                _Zi, _eos_params, _eos_params_comp = self.eos_roots(
-                    P_sat, self.T, self.components, root_analysis_res,
-                    self.datasource, eos_model=eos_model,
-                    solver_method=solver_method, mode=mode)
+                (
+                    _Zi,
+                    _eos_params,
+                    _eos_params_comp
+                ) = self.eos_roots(
+                    P_sat,
+                    self.T,
+                    self.components,
+                    root_analysis_res,
+                    self.datasource,
+                    eos_model=eos_model,
+                    solver_method=solver_method,
+                    mode=mode)
 
                 # NOTE: check root analysis res
                 if len(_Zi) != 2:
@@ -806,8 +815,15 @@ class FugacityCore(EOSManager):
 
                 # ! fugacity coefficient at vapor pressure (P*) and system temperature (T)
                 _phi = self.eos_fugacity(
-                    P_sat, self.T, Zi_min, _eos_params[0], self.components,
-                    self.datasource, eos_model=eos_model, mode=mode)
+                    P_sat,
+                    self.T,
+                    Zi_min,
+                    _eos_params[0],
+                    self.components,
+                    self.datasource,
+                    eos_model=eos_model,
+                    mode=mode
+                )
 
                 # check
                 if _phi is None:
