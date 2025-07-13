@@ -24,6 +24,9 @@ CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-1.pkl')
 # load
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
 
+# check
+print(CO2_thermodb.check())
+
 # ! acetylene
 # thermodb file name
 acetylene_thermodb_file = os.path.join(thermodb_dir, 'acetylene-1.pkl')
