@@ -2,7 +2,7 @@
 
 ![PyThermoModels](https://drive.google.com/uc?export=view&id=1y1eM0h_I1Ikca1fe1LNihCxgrPIRXmXf)
 
-[![PyPI Downloads](https://static.pepy.tech/badge/mozichem-hub/month)](https://pepy.tech/projects/pyThermoModels)
+[![PyPI Downloads](https://static.pepy.tech/badge/pythermomodels/month)](https://pepy.tech/projects/pythermomodels)
 ![PyPI](https://img.shields.io/pypi/v/pyThermoModels)
 ![Python Version](https://img.shields.io/pypi/pyversions/pyThermoModels.svg)
 ![License](https://img.shields.io/pypi/l/pyThermoModels)
