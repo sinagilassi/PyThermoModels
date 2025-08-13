@@ -2,7 +2,11 @@
 
 ![PyThermoModels](https://drive.google.com/uc?export=view&id=1y1eM0h_I1Ikca1fe1LNihCxgrPIRXmXf)
 
-![Downloads](https://img.shields.io/pypi/dm/pyThermoModels) ![PyPI](https://img.shields.io/pypi/v/pyThermoModels) ![Python Version](https://img.shields.io/pypi/pyversions/pyThermoModels.svg) ![License](https://img.shields.io/pypi/l/pyThermoModels) ![Read the Docs](https://img.shields.io/readthedocs/pyThermoModels)
+[![PyPI Downloads](https://static.pepy.tech/badge/mozichem-hub/month)](https://pepy.tech/projects/pyThermoModels)
+![PyPI](https://img.shields.io/pypi/v/pyThermoModels)
+![Python Version](https://img.shields.io/pypi/pyversions/pyThermoModels.svg)
+![License](https://img.shields.io/pypi/l/pyThermoModels)
+![Read the Docs](https://img.shields.io/readthedocs/pyThermoModels)
 
 
 `PyThermoModels` is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties.
