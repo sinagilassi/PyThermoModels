@@ -45,9 +45,9 @@ setup(
         'scipy',
         'PyThermoDB',
         'PyThermoLinkDB'
-        ],
+    ],
     keywords=[
-        'python', 'chemical-engineering', 'equation-of-state',
+        'chemical-engineering', 'equation-of-state',
         'thermodynamic-properties', 'activity-coefficient',
         'thermodynamic-models', 'NRTL', 'UNIQUAC', 'SRK', 'PR', 'RK', 'vdW'
     ],
