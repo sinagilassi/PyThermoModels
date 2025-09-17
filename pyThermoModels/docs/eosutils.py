@@ -95,13 +95,14 @@ class EOSUtils:
         # res
         return res
 
-    def eos_root_analysis(self,
-                          P: float,
-                          T: float,
-                          components: List[str],
-                          tolerance: float = 1e-3,
-                          **kwargs
-                          ) -> Dict[str, Any]:
+    def eos_root_analysis(
+        self,
+        P: float,
+        T: float,
+        components: List[str],
+        tolerance: float = 1e-3,
+        **kwargs
+    ) -> Dict[str, Any]:
         '''
         Determine root numbers for each component
 

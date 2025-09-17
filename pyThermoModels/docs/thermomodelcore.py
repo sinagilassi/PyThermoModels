@@ -61,12 +61,13 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception('Checking thermodb failed! ', e)
 
-    def check_fugacity_reference(self,
-                                 eos_model: Literal['SRK', 'PR', 'RK', 'vdW'],
-                                 res_format: Literal[
-                                     'dict', 'json', 'string'
-                                 ] = 'dict'
-                                 ) -> Union[Dict, str]:
+    def check_fugacity_reference(
+        self,
+        eos_model: Literal['SRK', 'PR', 'RK', 'vdW'],
+        res_format: Literal[
+            'dict', 'json', 'string'
+        ] = 'dict'
+    ) -> Union[Dict, str]:
         '''
         Check fugacity reference
 
@@ -106,18 +107,19 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Calculating the Fugacity failed!, ", e)
 
-    def cal_fugacity(self,
-                     model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
-                     model_input: Dict,
-                     model_source: Dict,
-                     solver_method: Literal[
-                         'ls', 'newton', 'fsolve', 'root'
-                     ] = 'ls',
-                     liquid_fugacity_mode: Literal[
-                         'EOS', 'Poynting'
-                     ] = 'EOS',
-                     **kwargs
-                     ) -> Dict:
+    def cal_fugacity(
+        self,
+        model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
+        model_input: Dict,
+        model_source: Dict,
+        solver_method: Literal[
+            'ls', 'newton', 'fsolve', 'root'
+        ] = 'ls',
+        liquid_fugacity_mode: Literal[
+            'EOS', 'Poynting'
+        ] = 'EOS',
+        **kwargs
+    ) -> Dict:
         '''
         Starts calculating fugacity for the single component
 
@@ -332,12 +334,13 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def check_eos_roots_single_component(self,
-                                         model_name: Literal['SRK', 'PR', 'vdW', 'RK'],
-                                         model_input: Dict,
-                                         model_source: Dict,
-                                         **kwargs
-                                         ) -> Dict:
+    def check_eos_roots_single_component(
+        self,
+        model_name: Literal['SRK', 'PR', 'vdW', 'RK'],
+        model_input: Dict,
+        model_source: Dict,
+        **kwargs
+    ) -> Dict:
         '''
         Check eos roots for the single component at different temperature and pressure.
 
@@ -460,18 +463,19 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def cal_fugacity_mixture(self,
-                             model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
-                             model_input: Dict,
-                             model_source: Dict,
-                             solver_method: Literal[
-                                 'ls', 'newton', 'fsolve', 'root'
-                             ] = 'ls',
-                             liquid_fugacity_mode: Literal[
-                                 'EOS', 'Poynting'
-                             ] = 'EOS',
-                             **kwargs
-                             ) -> Dict:
+    def cal_fugacity_mixture(
+        self,
+        model_name: Literal['SRK', 'PR', 'RK', 'vdW'],
+        model_input: Dict,
+        model_source: Dict,
+        solver_method: Literal[
+            'ls', 'newton', 'fsolve', 'root'
+        ] = 'ls',
+        liquid_fugacity_mode: Literal[
+            'EOS', 'Poynting'
+        ] = 'EOS',
+        **kwargs
+    ) -> Dict:
         '''
         Starts calculating fugacity for the single and multi-component systems
 
@@ -701,20 +705,21 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
 
-    def check_eos_roots_multi_component(self,
-                                        model_name: Literal[
-                                            'SRK', 'PR', 'RK', 'vdW'
-                                        ],
-                                        model_input: Dict,
-                                        model_source: Dict,
-                                        bubble_point_pressure_mode: Literal[
-                                            "Raoult"
-                                        ] = "Raoult",
-                                        dew_point_pressure_mode: Literal[
-                                            "Raoult"
-                                        ] = "Raoult",
-                                        **kwargs
-                                        ) -> Dict[str, Any]:
+    def check_eos_roots_multi_component(
+        self,
+        model_name: Literal[
+            'SRK', 'PR', 'RK', 'vdW'
+        ],
+        model_input: Dict,
+        model_source: Dict,
+        bubble_point_pressure_mode: Literal[
+            "Raoult"
+        ] = "Raoult",
+        dew_point_pressure_mode: Literal[
+            "Raoult"
+        ] = "Raoult",
+        **kwargs
+    ) -> Dict[str, Any]:
         '''
         Check eos roots for the multi-components at different temperature and pressure. To do so, the bubble point and dew point pressure are calculated using Raoult's law. Assuming that the mixture is ideal, the bubble point pressure is equal to the vapor pressure of the component at the bubble point temperature. The dew point pressure is equal to the vapor pressure of the component at the dew point temperature.
 
@@ -854,13 +859,15 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             EOSUtilsC = EOSUtils(component_datasource, equation_equationsource)
 
             # SECTION: eos root analysis
-            res = EOSUtilsC.eos_root_analysis(P,
-                                              T,
-                                              components,
-                                              tolerance=tolerance,
-                                              bubble_point_pressure_mode=bubble_point_pressure_mode,
-                                              dew_point_pressure_mode=dew_point_pressure_mode,
-                                              mole_fraction=mole_fraction)
+            res = EOSUtilsC.eos_root_analysis(
+                P=P,
+                T=T,
+                components=components,
+                tolerance=tolerance,
+                bubble_point_pressure_mode=bubble_point_pressure_mode,
+                dew_point_pressure_mode=dew_point_pressure_mode,
+                mole_fraction=mole_fraction
+            )
             # res
             return res
         except Exception as e:
@@ -889,13 +896,14 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("EOS calculation failed!, ", e)
 
-    def init_activity(self,
-                      components: List[str],
-                      model_name: Literal['NRTL', 'UNIQUAC'],
-                      model_source: Optional[
-                          Dict[str, Any]
-                      ] = None,
-                      **kwargs):
+    def init_activity(
+        self,
+        components: List[str],
+        model_name: Literal['NRTL', 'UNIQUAC'],
+        model_source: Optional[
+            Dict[str, Any]
+        ] = None,
+            **kwargs):
         '''
         Initializes activity coefficient calculation
 
@@ -970,13 +978,15 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         except Exception as e:
             raise Exception("Activity calculation failed!, ", e)
 
-    def init_activities(self,
-                        components: List[str],
-                        model_name: Literal['NRTL', 'UNIQUAC'],
-                        model_source: Optional[
-                            Dict[str, Any]
-                        ] = None,
-                        **kwargs) -> NRTL | UNIQUAC:
+    def init_activities(
+        self,
+        components: List[str],
+        model_name: Literal['NRTL', 'UNIQUAC'],
+        model_source: Optional[
+            Dict[str, Any]
+        ] = None,
+        **kwargs
+    ) -> NRTL | UNIQUAC:
         '''
         Initializes activity coefficient calculation
 
@@ -1040,14 +1050,17 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: init fugacity core
             ActivityCore_ = ActivityCore(
                 component_datasource,
                 equation_equationsource,
                 components,
-                **kwargs)
+                **kwargs
+            )
 
             # NOTE: check if activity model is NRTL or UNIQUAC
             if activity_model == 'NRTL':

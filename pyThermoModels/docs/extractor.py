@@ -1,7 +1,6 @@
 # ThermoModels
 # import libs
 import numpy as np
-import pyThermoModels as ptm
 from typing import List, Dict, Optional
 from pyThermoDB import TableMatrixData
 from typing import Dict, List
@@ -14,10 +13,12 @@ class Extractor:
     Extractor class for managing thermodynamic models.
     """
 
-    def __init__(self,
-                 components: List[str],
-                 datasource: Dict,
-                 equationsource: Dict):
+    def __init__(
+        self,
+        components: List[str],
+        datasource: Dict,
+        equationsource: Dict
+    ):
         """
         Initialize the Extractor class.
 
@@ -49,9 +50,11 @@ class Extractor:
         self.equationsource = equationsource
         self.components = components
 
-    def NRTL_inputs(self,
-                    temperature: Optional[List[float | str]] = None,
-                    **kwargs):
+    def NRTL_inputs(
+        self,
+        temperature: Optional[List[float | str]] = None,
+        **kwargs
+    ):
         '''
         Prepares inputs for the NRTL activity model for calculating activity coefficients.
 
@@ -88,8 +91,16 @@ class Extractor:
                     raise ValueError(
                         "temperature must be a list of floats or strings.")
 
+                # set
+                T_value = float(temperature[0])
+                T_unit = str(temperature[1])
+
                 # convert temperature to Kelvin
-                T = pycuc.convert_from_to(temperature[0], temperature[1], 'K')
+                T = pycuc.convert_from_to(
+                    value=T_value,
+                    from_unit=T_unit,
+                    to_unit='K'
+                )
 
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
@@ -241,9 +252,11 @@ class Extractor:
         except Exception as e:
             raise Exception(f"Failed to calculate NRTL activity: {e}") from e
 
-    def UNIQUAC_inputs(self,
-                       temperature: Optional[List[float | str]] = None,
-                       **kwargs):
+    def UNIQUAC_inputs(
+        self,
+        temperature: Optional[List[float | str]] = None,
+        **kwargs
+    ):
         '''
         Prepares inputs for the UNIQUAC activity model for calculating activity coefficients.
 
@@ -279,8 +292,16 @@ class Extractor:
                     raise ValueError(
                         "temperature must be a list of floats or strings.")
 
+                # set
+                T_value = float(temperature[0])
+                T_unit = str(temperature[1])
+
                 # convert temperature to Kelvin
-                T = pycuc.convert_from_to(temperature[0], temperature[1], 'K')
+                T = pycuc.convert_from_to(
+                    value=T_value,
+                    from_unit=T_unit,
+                    to_unit='K'
+                )
 
             # NOTE: method 1
             # Δg_ij, interaction energy parameter

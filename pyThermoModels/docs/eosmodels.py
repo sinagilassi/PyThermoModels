@@ -1,18 +1,26 @@
 # EOS MODELS
 # ----------
-
-# import packages/modules
+# import libs
+import logging
 import numpy as np
 from math import pow, exp, log, sqrt
-from typing import Optional, List, Dict, Union
+from typing import Optional, Any
 import pycuc
 # local
 from ..configs import R_CONST, PREDEFINED_PARAMETERS
 
+# NOTE: logger
+logger = logging.getLogger(__name__)
+
 
 class EOSModels():
     # init
-    def __init__(self, datasource, equationsource, **kwargs):
+    def __init__(
+        self,
+        datasource,
+        equationsource,
+        **kwargs
+    ):
         '''
         Initialize the EOSModels class
 
@@ -38,10 +46,6 @@ class EOSModels():
 
         Parameters
         ----------
-        P : float
-            pressure [Pa]
-        T : float
-            temperature [K]
         method : str
             equation of state model, default SRK
 
@@ -121,7 +125,13 @@ class EOSModels():
         except Exception as e:
             raise Exception(f"Error in eos_parameter_estimation: {e}")
 
-    def eos_parameters(self, P, T, component_name, method="SRK"):
+    def eos_parameters(
+        self,
+        P: float,
+        T: float,
+        component_name: str,
+        method="SRK"
+    ):
         '''
         Determine the parameters of equation of states
 
@@ -199,7 +209,9 @@ class EOSModels():
 
         # set values
         Pc = params['Pc']['value']
+        Pc = float(Pc)
         Tc = params['Tc']['value']
+        Tc = float(Tc)
 
         # NOTE: universal gas constant [J/mol.K]
         R = R_CONST
@@ -208,25 +220,28 @@ class EOSModels():
         eos_parameter_selection_ = self.eos_parameter_selection(method)
 
         # NOTE: model parameters
-        sigma = eos_parameter_selection_['sigma']
-        epsilon = eos_parameter_selection_['epsilon']
-        omega = eos_parameter_selection_['omega']
-        psi = eos_parameter_selection_['psi']
-        alpha = eos_parameter_selection_['alpha']
+        sigma: float = eos_parameter_selection_['sigma']
+        epsilon: float = eos_parameter_selection_['epsilon']
+        omega: float = eos_parameter_selection_['omega']
+        psi: float = eos_parameter_selection_['psi']
+        alpha_: Any = eos_parameter_selection_['alpha']
 
         # Tr
         Tr = T/Tc
         # Pr
         Pr = P/Pc
 
-        # alpha
         # NOTE: alpha function
+        # >> alpha
+        alpha = 1.0
+
+        # check type
         if method == "SRK" or method == 'PR':
-            alpha = alpha(Tr, omega)
+            alpha: float = alpha_(Tr, omega)
         elif method == 'RK':
-            alpha = alpha(Tr)
+            alpha: float = alpha_(Tr)
         elif method == 'vdW':
-            alpha = alpha
+            alpha: float = alpha_
         else:
             raise Exception("Unknown equation of state method!")
 
@@ -282,8 +297,18 @@ class EOSModels():
         # res
         return res
 
-    def eos_parameters_mixture(self, P, T, amix, bmix, aij, A_mix, B_mix,
-                               mixture_name: str, eos_model: str):
+    def eos_parameters_mixture(
+        self,
+        P,
+        T,
+        amix,
+        bmix,
+        aij,
+        A_mix,
+        B_mix,
+        mixture_name: str,
+        eos_model: str
+    ):
         '''
         Updates the single params with mixing value of a and b
 
@@ -337,7 +362,11 @@ class EOSModels():
 
             # NOTE: check method
             # A
-            if eos_model == 'vdW' or eos_model == 'RK' or eos_model == 'PR':
+            if (
+                eos_model == 'vdW' or
+                eos_model == 'RK' or
+                eos_model == 'PR'
+            ):
                 # A
                 A = amix*(P)/pow(R*T, 2)
             elif eos_model == 'SRK':
@@ -369,8 +398,12 @@ class EOSModels():
         except Exception as e:
             raise Exception(f"Error in eos_parameters_mixture: {e}")
 
-    def eos_mixing_rule(self, xi, params_list,
-                        k_ij: Optional[np.ndarray | list] = None):
+    def eos_mixing_rule(
+        self,
+        xi,
+        params_list,
+        k_ij: Optional[np.ndarray | list] = None
+    ):
         '''
         Mixing rule to determine mixture a and b parameters
 
@@ -446,7 +479,11 @@ class EOSModels():
         # res
         return a_mix, b_mix, a_ij, A_mix, B_mix
 
-    def __aij(self, ai: np.ndarray, k_ij: np.ndarray):
+    def __aij(
+        self,
+        ai: np.ndarray,
+        k_ij: np.ndarray
+    ):
         '''
         calculate aij for mixture using Van der Waals mixing rules
 
@@ -479,45 +516,71 @@ class EOSModels():
 
     def eos_alpha(self, B, eosNameSet):
         """ calculate alpha in f(Z) """
-        # select eos
-        selectEOS = {
-            "VDW": lambda B: -1 - B,
-            "SRK": lambda B: -1,
-            "RK": lambda B: -1,
-            "PR": lambda B: -1 + B,
-        }
-        # res
-        res = selectEOS.get(eosNameSet)(B)
-        # return
-        return res
+        try:
+            # select eos
+            selectEOS = {
+                "VDW": lambda B: -1 - B,
+                "SRK": lambda B: -1,
+                "RK": lambda B: -1,
+                "PR": lambda B: -1 + B,
+            }
+
+            # >> check eosNameSet
+            if eosNameSet not in selectEOS.keys():
+                logger.error(f"eos_alpha: Unknown eosNameSet {eosNameSet}")
+                raise
+
+            # res
+            res = selectEOS[eosNameSet](B)
+            # return
+            return res
+        except Exception as e:
+            raise Exception(f"Error in eos_alpha: {e}")
 
     def eos_beta(self, A, B, eosNameSet):
         """ calculate parameter beta """
-        # select eos
-        selectEOS = {
-            "VDW": lambda A, B: A,
-            "SRK": lambda A, B: A - B - np.power(B, 2),
-            "RK": lambda A, B: A - B - np.power(B, 2),
-            "PR": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
-        }
-        # res
-        res = selectEOS.get(eosNameSet)(A, B)
-        # return
-        return res
+        try:
+            # select eos
+            selectEOS = {
+                "VDW": lambda A, B: A,
+                "SRK": lambda A, B: A - B - np.power(B, 2),
+                "RK": lambda A, B: A - B - np.power(B, 2),
+                "PR": lambda A, B: A - 3 * np.power(B, 2) - 2 * B,
+            }
+
+            # >> check eosNameSet
+            if eosNameSet not in selectEOS.keys():
+                logger.error(f"eos_beta: Unknown eosNameSet {eosNameSet}")
+                raise
+
+            # res
+            res = selectEOS[eosNameSet](A, B)
+            # return
+            return res
+        except Exception as e:
+            raise Exception(f"Error in eos_beta: {e}")
 
     def eos_gamma(self, A, B, eosNameSet):
         """ calculate parameter gamma """
-        # select eos
-        selectEOS = {
-            "VDW": lambda A, B: -A * B,
-            "SRK": lambda A, B: -A * B,
-            "RK": lambda A, B: -A * B,
-            "PR": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
-        }
-        # res
-        res = selectEOS.get(eosNameSet)(A, B)
-        # return
-        return res
+        try:
+            # select eos
+            selectEOS = {
+                "VDW": lambda A, B: -A * B,
+                "SRK": lambda A, B: -A * B,
+                "RK": lambda A, B: -A * B,
+                "PR": lambda A, B: -A * B + np.power(B, 2) + np.power(B, 3),
+            }
+            # >> check eosNameSet
+            if eosNameSet not in selectEOS.keys():
+                logger.error(f"eos_gamma: Unknown eosNameSet {eosNameSet}")
+                raise
+
+            # res
+            res = selectEOS[eosNameSet](A, B)
+            # return
+            return res
+        except Exception as e:
+            raise Exception(f"Error in eos_gamma: {e}")
 
     def eos_equation(self, x, params):
         '''
@@ -586,7 +649,7 @@ class EOSModels():
         Returns
         -------
         list
-              coefficients of the cubic equation
+            coefficients of the cubic equation
 
         Notes
         -----

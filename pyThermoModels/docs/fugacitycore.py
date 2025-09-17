@@ -21,14 +21,15 @@ class FugacityCore(EOSManager):
     fugacity coefficients for different phases (vapor, liquid, solid) using various EOS models.
     '''
 
-    def __init__(self,
-                 datasource,
-                 equationsource,
-                 components,
-                 operating_conditions,
-                 eos_parms,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        datasource,
+        equationsource,
+        components,
+        operating_conditions,
+        eos_parms,
+        **kwargs
+    ):
         '''
         Initialize the FugacityCore class.
 
@@ -150,10 +151,11 @@ class FugacityCore(EOSManager):
         except Exception as e:
             raise Exception('Setting fugacity calculation mode failed!, ', e)
 
-    def fugacity_cal(self,
-                     yi: list,
-                     solver_method: str
-                     ) -> Dict[str, Any]:
+    def fugacity_cal(
+        self,
+        yi: list,
+        solver_method: str
+    ) -> Dict[str, Any]:
         '''
         Calculate fugacity
 
@@ -175,6 +177,10 @@ class FugacityCore(EOSManager):
             fugacity package containing fugacity coefficients and compressibility factors for each component
         '''
         try:
+            # NOTE: init
+            res = {}
+
+            # SECTION: fugacity calculation
             # check
             if self.phase == 'VAPOR' or self.phase == 'SUPERCRITICAL':
                 # SECTION: vapor
@@ -335,16 +341,17 @@ class FugacityCore(EOSManager):
             # NOTE: looping through Zis
             for i in range(len(Zis)):
                 # ! fugacity coefficient (vapor phase)
-                _phi_res = self.eos_fugacity(self.P,
-                                             self.T,
-                                             Zis[i],
-                                             _eos_params,
-                                             self.components,
-                                             yi=yi,
-                                             eos_model=eos_model,
-                                             mode=mode,
-                                             params_comp=_eos_params_comp
-                                             )
+                _phi_res = self.eos_fugacity(
+                    self.P,
+                    self.T,
+                    Zis[i],
+                    _eos_params,
+                    self.components,
+                    yi=yi,
+                    eos_model=eos_model,
+                    mode=mode,
+                    params_comp=_eos_params_comp
+                )
                 # save
                 _phi.append(_phi_res)
 
