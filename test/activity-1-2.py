@@ -65,7 +65,9 @@ model_source = {
 
 # activity model
 activity_nrtl = ptm.activities(
-    components=components, model_name=activity_model)
+    components=components,
+    model_name=activity_model
+)
 
 # check
 if not isinstance(activity_nrtl, NRTL):
