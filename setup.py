@@ -38,12 +38,14 @@ setup(
                        'data/*.yml', 'plugin/*.yml', 'plugin/*.csv']},
     license='MIT',
     license_files=[],
-    install_requires=['pandas', 'numpy',
-                      'PyYAML', 'PyCUC', 'scipy',
-                      'PyThermoDB', 'PyThermoLinkDB'],
-    extras_require={
-        "plotting": ["matplotlib"],
-    },
+    install_requires=[
+        'numpy',
+        'PyYAML',
+        'PyCUC',
+        'scipy',
+        'PyThermoDB',
+        'PyThermoLinkDB'
+        ],
     keywords=[
         'python', 'chemical-engineering', 'equation-of-state',
         'thermodynamic-properties', 'activity-coefficient',
