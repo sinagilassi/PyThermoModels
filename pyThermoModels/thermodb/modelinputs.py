@@ -17,16 +17,20 @@ class InputController:
         """
         pass
 
-    def inputs_NRTL(self,
-                    components: List[str],
-                    activity_inputs: Dict[
-                        str,
-                        Union[List[float],
-                              List[List[float]],
-                              np.ndarray,
-                              TableMatrixData]
-                    ],
-                    **kwargs):
+    def inputs_NRTL(
+        self,
+        components: List[str],
+        activity_inputs: Dict[
+            str,
+            Union[
+                List[float],
+                List[List[float]],
+                np.ndarray,
+                TableMatrixData
+            ]
+        ],
+        **kwargs
+    ):
         '''
         NRTL activity model for calculating activity coefficients.
 
@@ -88,6 +92,16 @@ class InputController:
                     raise ValueError(
                         "activity_inputs cannot be empty.")
 
+            # SECTION: init variables
+            dg_ij = None
+            a_ij = None
+            b_ij = None
+            c_ij = None
+            d_ij = None
+            alpha_ij = None
+            tau_ij_cal_method = 0
+
+            # SECTION: analyze inputs
             # NOTE: method 1
             # Δg_ij, interaction energy parameter
             dg_ij_src = activity_inputs.get(
@@ -112,8 +126,6 @@ class InputController:
                     "No valid source provided for non-randomness parameter (α_ij).")
 
             # NOTE: check method
-            tau_ij_cal_method = 0
-
             # check
             if dg_ij_src is None:
                 # check if a_ij, b_ij, c_ij are provided
@@ -199,6 +211,9 @@ class InputController:
             # set inputs
             inputs = {}
 
+            # NOTE: tau_ij calculation method
+            inputs['tau_ij_cal_method'] = tau_ij_cal_method
+
             # SECTION: set all binary interaction parameter matrix
             if tau_ij_cal_method == 1:
                 # set
@@ -222,16 +237,20 @@ class InputController:
         except Exception as e:
             raise Exception(f"Failed to generate NRTL inputs: {e}") from e
 
-    def inputs_UNIQUAC(self,
-                       components: List[str],
-                       activity_inputs: Dict[
-                           str,
-                           Union[List[float],
-                                 List[List[float]],
-                                 np.ndarray,
-                                 TableMatrixData]
-                       ],
-                       **kwargs):
+    def inputs_UNIQUAC(
+        self,
+        components: List[str],
+        activity_inputs: Dict[
+            str,
+            Union[
+                List[float],
+                List[List[float]],
+                np.ndarray,
+                TableMatrixData
+            ]
+        ],
+        **kwargs
+    ):
         '''
         UNIQUAC activity model for calculating activity coefficients.
 
@@ -297,6 +316,17 @@ class InputController:
                     raise ValueError(
                         "activity_inputs cannot be empty.")
 
+            # SECTION: init variables
+            dU_ij = None
+            a_ij = None
+            b_ij = None
+            c_ij = None
+            d_ij = None
+            r_i = None
+            q_i = None
+            tau_ij_cal_method = 0
+
+            # SECTION: analyze inputs
             # NOTE: method 1
             # Δg_ij, interaction energy parameter
             dU_ij_src = activity_inputs.get(
@@ -347,10 +377,12 @@ class InputController:
             tau_ij_cal_method = 0
             if dU_ij_src is None:
                 # check if a_ij, b_ij, c_ij are provided
-                if (a_ij_src is None or
+                if (
+                    a_ij_src is None or
                     b_ij_src is None or
                     c_ij_src is None or
-                        d_ij_src is None):
+                    d_ij_src is None
+                ):
                     raise ValueError(
                         "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, and d.")
                 # set method
@@ -420,6 +452,9 @@ class InputController:
             # SECTION: init inputs
             # set inputs
             inputs = {}
+
+            # tau_ij calculation method
+            inputs['tau_ij_cal_method'] = tau_ij_cal_method
 
             # NOTE: set the binary interaction parameter matrix
             if tau_ij_cal_method == 1:
