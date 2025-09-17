@@ -1,9 +1,17 @@
 # import libs
+import logging
 import numpy as np
 import json
 import yaml
 from math import pow, exp, log
-from typing import List, Dict, Tuple, Any, Literal, Optional
+from typing import (
+    List,
+    Dict,
+    Tuple,
+    Any,
+    Literal,
+    Optional
+)
 import pycuc
 from pyThermoDB import (
     TableMatrixData,
@@ -11,6 +19,9 @@ from pyThermoDB import (
 # local
 from ..plugin import ACTIVITY_MODELS
 from ..utils import add_attributes
+
+# NOTE: logger
+logger = logging.getLogger(__name__)
 
 
 class UNIQUAC:
@@ -959,10 +970,12 @@ class UNIQUAC:
                             # set by name
                             tau_ij_comp[key_] = 0
             # SECTION: if dU_ij is dict
-            elif (isinstance(a_ij, dict) and
-                  isinstance(b_ij, dict) and
-                  isinstance(c_ij, dict) and
-                  isinstance(d_ij, dict)):
+            elif (
+                isinstance(a_ij, dict) and
+                isinstance(b_ij, dict) and
+                isinstance(c_ij, dict) and
+                isinstance(d_ij, dict)
+            ):
 
                 # loop over the components
                 for i in range(comp_num):
@@ -990,10 +1003,12 @@ class UNIQUAC:
                             # set by name
                             tau_ij_comp[key_] = 0
             # SECTION: if dU_ij is TableMatrixData
-            elif (isinstance(a_ij, TableMatrixData) and
-                  isinstance(b_ij, TableMatrixData) and
-                  isinstance(c_ij, TableMatrixData) and
-                  isinstance(d_ij, TableMatrixData)):
+            elif (
+                isinstance(a_ij, TableMatrixData) and
+                isinstance(b_ij, TableMatrixData) and
+                isinstance(c_ij, TableMatrixData) and
+                isinstance(d_ij, TableMatrixData)
+            ):
 
                 # looping over the components
                 for i in range(comp_num):
@@ -1685,8 +1700,10 @@ class UNIQUAC:
                 Si[i] = np.dot(teta_i, tau_ij[:, i])
 
             # combinatorial part of the activity coefficient
-            gamma_comb_ij = (np.log(phi_i/xi) + 1 - (phi_i/xi) -
-                             (Z/2)*q_i*(np.log(phi_i/teta_i)+1-(phi_i/teta_i)))
+            gamma_comb_ij = (
+                np.log(phi_i/xi) + 1 - (phi_i/xi) - (Z/2)*q_i *
+                (np.log(phi_i/teta_i)+1-(phi_i/teta_i))
+            )
 
             # residual part of the activity coefficient
             gamma_res_ij = np.zeros(comp_num)
@@ -1704,8 +1721,9 @@ class UNIQUAC:
 
     def excess_gibbs_free_energy(
         self,
-        mole_fraction: Optional[Dict[str,
-                                     float]] = None,
+        mole_fraction: Optional[
+            Dict[str, float]
+        ] = None,
         tau_ij: Optional[np.ndarray] = None,
         r_i:  Optional[np.ndarray] = None,
         q_i:  Optional[np.ndarray] = None,
@@ -1909,7 +1927,15 @@ class UNIQUAC:
         try:
             # SECTION: check src
             # extract activity model inputs
-            datasource = self.datasource.get('UNIQUAC', {})
+            if 'UNIQUAC' in self.datasource:
+                # get datasource
+                datasource = self.datasource.get('UNIQUAC', {})
+            elif 'uniquac' in self.datasource:
+                # get datasource
+                datasource = self.datasource.get('uniquac', {})
+            else:
+                # set empty
+                datasource = {}
 
             # NOTE: check model inputs
             if kwargs.get('model_input') is not None:
@@ -1937,6 +1963,10 @@ class UNIQUAC:
                         "datasource cannot be empty.")
 
             # NOTE: check temperature
+            # init T
+            T = -1
+
+            # check if temperature is provided
             if temperature is not None:
                 # check if temperature is a list
                 if not isinstance(temperature, list):

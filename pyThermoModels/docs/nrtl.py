@@ -1,4 +1,5 @@
 # import libs
+import logging
 import numpy as np
 import yaml
 import json
@@ -6,11 +7,17 @@ from math import pow, exp, log
 from typing import List, Dict, Tuple, Literal, Optional, Any
 import pycuc
 from pyThermoDB import (
-    TableMatrixData, TableData, TableEquation, TableMatrixEquation
+    TableMatrixData,
+    TableData,
+    TableEquation,
+    TableMatrixEquation
 )
 # local
 from ..utils import add_attributes
 from ..plugin import ACTIVITY_MODELS
+
+# NOTE: logger
+logger = logging.getLogger(__name__)
 
 
 class NRTL:
@@ -1711,8 +1718,17 @@ class NRTL:
         '''
         try:
             # SECTION: check src
-            # extract activity model inputs
-            datasource = self.datasource.get('NRTL', {})
+            # check NRTL & nrtl keys in datasource
+            if "NRTL" in self.datasource.keys():
+                datasource = self.datasource["NRTL"]
+            elif "nrtl" in self.datasource.keys():
+                datasource = self.datasource["nrtl"]
+            else:
+                # log
+                logger.warning(
+                    "No NRTL or nrtl key found in datasource, using model_input if provided."
+                )
+                datasource = {}
 
             # NOTE: check model inputs
             if kwargs.get('model_input') is not None:
@@ -1733,19 +1749,26 @@ class NRTL:
                 # check if datasource is a dictionary
                 if not isinstance(datasource, dict):
                     raise ValueError(
-                        "datasource must be a dictionary.")
+                        "datasource must be a dictionary."
+                    )
 
                 # check if datasource is empty
                 if len(datasource) == 0:
                     raise ValueError(
-                        "datasource cannot be empty.")
+                        "datasource cannot be empty."
+                    )
 
             # NOTE: check temperature
+            # init temperature [K]
+            T = -1  # invalid temperature
+
+            # >> check
             if temperature is not None:
                 # check if temperature is a list
                 if not isinstance(temperature, list):
                     raise ValueError(
-                        "temperature must be a list of floats or strings.")
+                        "temperature must be a list of floats or strings."
+                    )
 
                 # temperature
                 T_value = float(temperature[0])
@@ -1753,13 +1776,22 @@ class NRTL:
 
                 # convert temperature to Kelvin
                 T = pycuc.convert_from_to(
-                    T_value, T_unit, 'K')
+                    T_value,
+                    T_unit,
+                    'K'
+                )
 
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
-            dg_ij_src = datasource.get('dg_ij', None)
+            dg_ij_src = datasource.get(
+                'dg_ij',
+                None
+            )
             if dg_ij_src is None:
-                dg_ij_src = datasource.get('dg', None)
+                dg_ij_src = datasource.get(
+                    'dg',
+                    None
+                )
 
             # NOTE: method 2
             # ! constants a, b, c, and d
@@ -1792,13 +1824,15 @@ class NRTL:
             # NOTE: check method
             tau_ij_cal_method = 0
 
-            # check if dg_ij is provided
+            # NOTE: check if dg_ij is provided
             if dg_ij_src is None:
                 # check if a_ij, b_ij, c_ij are provided
-                if (a_ij_src is None or
+                if (
+                    a_ij_src is None or
                     b_ij_src is None or
                     c_ij_src is None or
-                        d_ij_src is None):
+                    d_ij_src is None
+                ):  # SECTION: check if a_ij, b_ij, c_ij, d_ij are provided
                     raise ValueError(
                         "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, and d.")
                 # set method
@@ -1847,7 +1881,7 @@ class NRTL:
                 else:
                     raise ValueError(
                         "Invalid source for interaction energy parameter (d_ij). Must be TableMatrixData, list of lists, or numpy array.")
-            elif dg_ij_src is not None:
+            elif dg_ij_src is not None:  # SECTION: check if dg_ij is provided
                 # ! use dg_ij
                 if isinstance(dg_ij_src, TableMatrixData):
                     dg_ij = dg_ij_src.mat('dg', self.components)
@@ -1862,7 +1896,8 @@ class NRTL:
                 tau_ij_cal_method = 1
             else:
                 raise ValueError(
-                    "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, d.")
+                    "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, d."
+                )
 
             # SECTION: extract data
             # NOTE: α_ij, non-randomness parameter
@@ -1883,7 +1918,10 @@ class NRTL:
 
             # NOTE: calculate the binary interaction parameter matrix (tau_ij)
             # check
-            if tau_ij_src is None or tau_ij_src == 'None':
+            if (
+                tau_ij_src is None or
+                tau_ij_src == 'None'
+            ):
                 # ! tau_ij is None
                 # ? check method
                 if tau_ij_cal_method == 1:
@@ -1899,16 +1937,19 @@ class NRTL:
                         raise ValueError(
                             "dg_ij must be a numpy array")
 
-                    # calculate
+                    # >> calculate
                     tau_ij, tau_ij_comp = self.cal_tau_ij_M1(
                         temperature=T,
-                        dg_ij=dg_ij)
+                        dg_ij=dg_ij
+                    )
                 elif tau_ij_cal_method == 2:
                     # check if a_ij, b_ij, c_ij, d_ij are None
-                    if (a_ij is None or
+                    if (
+                        a_ij is None or
                         b_ij is None or
                         c_ij is None or
-                            d_ij is None):
+                        d_ij is None
+                    ):
                         raise ValueError(
                             "a_ij, b_ij, c_ij, d_ij cannot be None for calculating tau_ij")
 
@@ -1937,7 +1978,7 @@ class NRTL:
                         raise ValueError(
                             "d_ij must be a numpy array")
 
-                    # calculate
+                    # >> calculate
                     tau_ij, tau_ij_comp = self.cal_tau_ij_M2(
                         temperature=T,
                         a_ij=a_ij,
@@ -1947,7 +1988,8 @@ class NRTL:
                     )
                 else:
                     raise ValueError(
-                        "tau_ij_cal_method not supported!")
+                        "tau_ij_cal_method not supported!"
+                    )
             else:
                 # ! check if tau_ij is provided
                 # check types
