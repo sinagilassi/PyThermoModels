@@ -46,7 +46,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/sinagilassi/PyThermoModels"
-Documentation = "https://pythermodb.readthedocs.io/en/latest/"
+Documentation = "https://pythermomodels.readthedocs.io/en/latest/"
 Source = "https://github.com/sinagilassi/PyThermoModels"
 Tracker = "https://github.com/sinagilassi/PyThermoModels/issues"
 
