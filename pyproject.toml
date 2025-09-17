@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyThermoModels"
+version = "1.4.8"
+description = "PyThermoModels is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Sina Gilassi", email = "sina.gilassi@gmail.com"}
+]
+keywords = [
+    'chemical-engineering',
+    'equation-of-state',
+    'thermodynamic-properties',
+    'activity-coefficient',
+    'thermodynamic-models',
+    'NRTL',
+    'UNIQUAC',
+    'SRK',
+    'PR',
+    'RK',
+    'vdW'
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Education",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: Unix",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "numpy>=2.3.3",
+    "scipy>=1.16.2",
+    "pycuc>=2.1.0",
+    "pyyaml>=6.0.2",
+    "pythermodb>=1.11.38",
+    "pythermodb-settings>=0.1.1",
+    "pythermolinkdb>=1.3.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/sinagilassi/PyThermoModels"
+Documentation = "https://pythermodb.readthedocs.io/en/latest/"
+Source = "https://github.com/sinagilassi/PyThermoModels"
+Tracker = "https://github.com/sinagilassi/PyThermoModels/issues"
+
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = [
+    "tests",
+    "tests.*",
+    "examples",
+    "examples.*",
+    "notebooks",
+    "notebooks.*",
+    "statics",
+    "statics.*",
+    "private",
+    "private.*",
+    "app",
+    "app.*"
+]
+
+[tool.setuptools.package-data]
+pyThermoModels = [
+    'config/*.yml',
+    'config/*.csv',
+    'data/*.csv',
+    'data/*.yml',
+    'plugin/*.yml',
+    'plugin/*.csv'
+]
