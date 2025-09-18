@@ -7,20 +7,23 @@ import pyThermoLinkDB as ptdblink
 
 # check version
 print(ptm.__version__)
-# check version
 print(ptdb.__version__)
-# check version
 print(ptdblink.__version__)
 
 # =======================================
 # ! LOAD THERMODB
 # =======================================
+# NOTE: parent directory
+parent_dir = os.path.dirname(os.path.abspath(__file__))
+print(parent_dir)
+
 # NOTE: thermodb directory
-thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
+thermodb_dir = os.path.join(parent_dir, 'thermodb')
+print(thermodb_dir)
 
 # ! CO2
 # thermodb file name
-CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-1.pkl')
+CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-g.pkl')
 # load
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
 
@@ -29,43 +32,43 @@ print(CO2_thermodb.check())
 
 # ! acetylene
 # thermodb file name
-acetylene_thermodb_file = os.path.join(thermodb_dir, 'acetylene-1.pkl')
+acetylene_thermodb_file = os.path.join(thermodb_dir, 'acetylene-g.pkl')
 # load
 acetylene_thermodb = ptdb.load_thermodb(acetylene_thermodb_file)
 
 # ! n-butane
 # thermodb file name
-n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-1.pkl')
+n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-g.pkl')
 # load
 n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
 
 # ! ethanol
 # thermodb file name
-ethanol_thermodb_file = os.path.join(thermodb_dir, 'ethanol-1.pkl')
+ethanol_thermodb_file = os.path.join(thermodb_dir, 'ethanol-l.pkl')
 # load
 ethanol_thermodb = ptdb.load_thermodb(ethanol_thermodb_file)
 
 # ! methanol
 # thermodb file name
-methanol_thermodb_file = os.path.join(thermodb_dir, 'methanol-1.pkl')
+methanol_thermodb_file = os.path.join(thermodb_dir, 'methanol-g.pkl')
 # load
 methanol_thermodb = ptdb.load_thermodb(methanol_thermodb_file)
 
 # ! 1-butene
 # thermodb file name
-butene_thermodb_file = os.path.join(thermodb_dir, '1-butene-1.pkl')
+butene_thermodb_file = os.path.join(thermodb_dir, '1-butene-g.pkl')
 # load
 butene_thermodb = ptdb.load_thermodb(butene_thermodb_file)
 
 # ! propane
 # thermodb file name
-propane_thermodb_file = os.path.join(thermodb_dir, 'propane-1.pkl')
+propane_thermodb_file = os.path.join(thermodb_dir, 'propane-g.pkl')
 # load
 propane_thermodb = ptdb.load_thermodb(propane_thermodb_file)
 
 # ! methane
 # thermodb file name
-methane_thermodb_file = os.path.join(thermodb_dir, 'methane-1.pkl')
+methane_thermodb_file = os.path.join(thermodb_dir, 'methane-g.pkl')
 # load
 methane_thermodb = ptdb.load_thermodb(methane_thermodb_file)
 
@@ -88,7 +91,10 @@ thub1.add_thermodb('propane', propane_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
-    os.getcwd(), 'test', 'thermodb_config_link.yml')
+    parent_dir,
+    'thermodb_config_link.yml'
+)
+print(thermodb_config_file)
 # one component
 # thub1.config_thermodb_rule(thermodb_config_file, name='EtOH')
 # all components
