@@ -18,7 +18,7 @@ parent_dir = os.path.dirname(os.path.abspath(__file__))
 print(parent_dir)
 
 # NOTE: thermodb directory
-thermodb_dir = os.path.join(parent_dir, 'thermodb')
+thermodb_dir = os.path.join(parent_dir, '..', 'thermodb')
 print(thermodb_dir)
 
 # ! CO2

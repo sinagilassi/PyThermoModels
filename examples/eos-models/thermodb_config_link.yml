@@ -1,0 +1,121 @@
+# this rule used for setting a component data/equation names
+# component name:
+# DATA:
+#   data symbol defined in TableData: new symbol
+# EQUATIONS:
+#   equation symbol defined in TableEquations: new symbol
+
+CO2:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+acetylene:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+EtOH:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+MeOH:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+n-butane:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+1-butene:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+N2:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+CH4:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+C2H6:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+propane:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+nrtl:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+    alpha: alpha
+    dg: dg
+    tau: tau
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+NRTL:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+    alpha: alpha
+    dg: dg
+    tau: tau
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+uniquac:
+  DATA:
+    Pc: Pc
+    Tc: Tc
+    AcFa: AcFa
+    r: r
+    q: q
+    dg: dU
+    tau: tau
+  EQUATIONS:
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
