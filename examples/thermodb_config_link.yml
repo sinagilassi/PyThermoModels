@@ -11,8 +11,8 @@ CO2:
     Tc: Tc
     AcFa: AcFa
   EQUATIONS:
-    vapor-pressure: VaPr
-    heat-capacity: Cp_IG
+    CUSTOM-REF-1::vapor-pressure: VaPr
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 acetylene:
   DATA:
     Pc: Pc
@@ -20,7 +20,7 @@ acetylene:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 EtOH:
   DATA:
     Pc: Pc
@@ -28,7 +28,7 @@ EtOH:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 MeOH:
   DATA:
     Pc: Pc
@@ -36,7 +36,7 @@ MeOH:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 n-butane:
   DATA:
     Pc: Pc
@@ -44,7 +44,7 @@ n-butane:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 1-butene:
   DATA:
     Pc: Pc
@@ -52,7 +52,7 @@ n-butane:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 N2:
   DATA:
     Pc: Pc
@@ -60,7 +60,7 @@ N2:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 CH4:
   DATA:
     Pc: Pc
@@ -68,7 +68,7 @@ CH4:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 C2H6:
   DATA:
     Pc: Pc
@@ -76,7 +76,7 @@ C2H6:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 propane:
   DATA:
     Pc: Pc
@@ -84,7 +84,7 @@ propane:
     AcFa: AcFa
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 nrtl:
   DATA:
     Pc: Pc
@@ -95,7 +95,7 @@ nrtl:
     tau: tau
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 NRTL:
   DATA:
     Pc: Pc
@@ -106,7 +106,7 @@ NRTL:
     tau: tau
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
 uniquac:
   DATA:
     Pc: Pc
@@ -118,4 +118,4 @@ uniquac:
     tau: tau
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::heat-capacity: Cp_IG
+    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
