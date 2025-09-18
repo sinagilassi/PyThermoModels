@@ -6,11 +6,9 @@ from pyThermoModels import NRTL, UNIQUAC
 import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
 
-# check version
+# version
 print(ptm.__version__)
-# check version
 print(ptdb.__version__)
-# check version
 print(ptdblink.__version__)
 
 # =======================================
