@@ -222,6 +222,5 @@ res = eos.cal_fugacity_mixture(
     model_name=eos_model,
     model_input=model_inputs_parsed,
     model_source=model_source,
-    k_ij=k_ij
 )
 print(res)

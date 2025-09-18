@@ -6,13 +6,15 @@ import json
 from .thermodb import ThermoDB
 from .thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager
-from ..eos.fugacitycore import FugacityCore
-from ..activity.activitycore import ActivityCore
-from ..eos.eoscore import eosCore
-from ..eos.eosutils import EOSUtils
 from ..utils import eos_model_name
-from ..activity.nrtl import NRTL
-from ..activity.uniquac import UNIQUAC
+# ! eos
+from ..eos import FugacityCore
+from ..eos import eosCore
+from ..eos import EOSUtils
+# ! activity
+from ..activity import ActivityCore
+from ..activity import NRTL
+from ..activity import UNIQUAC
 
 
 class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):

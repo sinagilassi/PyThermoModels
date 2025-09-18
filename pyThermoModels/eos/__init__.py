@@ -5,5 +5,5 @@ from .eosutils import EOSUtils
 __all__ = [
     'eosCore',
     'FugacityCore',
-    'EOSUtils'
+    'EOSUtils',
 ]

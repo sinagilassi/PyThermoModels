@@ -3,7 +3,7 @@
 # import packages/modules
 from math import pow
 # internals
-from ..configs import Tref, R_CONST
+from ..configs import R_CONST
 
 
 class ThermoLib():

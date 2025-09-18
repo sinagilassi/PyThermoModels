@@ -159,6 +159,9 @@ class EOSUtils:
             # set
             k = 0
 
+            # init message
+            message = None
+
             # looping through components
             for component in components:
                 # NOTE: equation source
@@ -222,26 +225,31 @@ class EOSUtils:
                     _root_no.append("3 real roots")
                     # set phase
                     phase = "VAPOR-LIQUID"
+                    message = f"Component {component} at T={T} K and P={P} Pa is at vapor-liquid equilibrium."
                 elif P >= _VaPr and T < _Tc:
                     _root_analysis.append(2)
                     _root_no.append("1 real root (liquid)")
                     # set phase
                     phase = "LIQUID"
+                    message = f"Component {component} at T={T} K and P={P} Pa is in liquid phase."
                 elif P <= _VaPr and T < _Tc:
                     _root_analysis.append(3)
                     _root_no.append("1 real root (vapor)")
                     # set phase
                     phase = "VAPOR"
+                    message = f"Component {component} at T={T} K and P={P} Pa is in vapor phase."
                 elif T > _Tc:
                     _root_analysis.append(4)
                     _root_no.append("1 real root (supercritical fluid)")
                     # set phase
                     phase = "SUPERCRITICAL"
+                    message = f"Component {component} at T={T} K and P={P} Pa is in supercritical phase."
                 elif temperature_equality_check:  # ! T == _Tc
                     _root_analysis.append(5)
                     _root_no.append("1 real root (critical point)")
                     # set phase
                     phase = "CRITICAL"
+                    message = f"Component {component} at T={T} K and P={P} Pa is at critical point."
                 else:
                     raise Exception('Unknown root analysis!')
 
@@ -266,6 +274,7 @@ class EOSUtils:
                     "temperature_equality_value": temperature_equality_value,
                     "pressure_equality_check": pressure_equality_check,
                     "temperature_equality_check": temperature_equality_check,
+                    "message": message
                 }
 
                 # save
@@ -293,18 +302,23 @@ class EOSUtils:
                 if P > BuPoPr:
                     # set phase
                     phase = "LIQUID"
+                    message = f"Mixture {mixture} at T={T} K and P={P} Pa is in liquid phase as P > Bubble Point Pressure ({BuPoPr} Pa)."
                 elif P < DePoPr:
                     # set phase
                     phase = "VAPOR"
+                    message = f"Mixture {mixture} at T={T} K and P={P} Pa is in vapor phase as P < Dew Point Pressure ({DePoPr} Pa)."
                 elif P > DePoPr and P < BuPoPr:
                     # set phase
                     phase = "VAPOR-LIQUID"
+                    message = f"Mixture {mixture} at T={T} K and P={P} Pa is at vapor-liquid equilibrium as Dew Point Pressure ({DePoPr} Pa) < P < Bubble Point Pressure ({BuPoPr} Pa)."
                 elif abs(P - BuPoPr) < tolerance:
                     # set phase
                     phase = "Bubble Point (start of boiling)"
+                    message = f"Mixture {mixture} at T={T} K and P={P} Pa is at bubble point as P = Bubble Point Pressure ({BuPoPr} Pa). The tolerance used is {tolerance} Pa."
                 elif abs(P - DePoPr) < tolerance:
                     # set phase
                     phase = "Dew Point (start of condensation)"
+                    message = f"Mixture {mixture} at T={T} K and P={P} Pa is at dew point as P = Dew Point Pressure ({DePoPr} Pa). The tolerance used is {tolerance} Pa."
                 else:
                     raise Exception('Unknown root analysis!')
 
@@ -324,6 +338,8 @@ class EOSUtils:
                     "dew_point_temperature": T,
                     "dew_point_temperature_unit": "K",
                     "phase": phase,
+                    "tolerance": tolerance,
+                    "message": message
                 }
 
                 # save
