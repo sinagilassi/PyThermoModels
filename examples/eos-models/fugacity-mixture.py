@@ -5,48 +5,84 @@ import pyThermoModels as ptm
 import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
 
-# check version
+# version
 print(ptm.__version__)
-# check version
 print(ptdb.__version__)
-# check version
 print(ptdblink.__version__)
 
 # =======================================
 # ! LOAD THERMODB
 # =======================================
+# NOTE: parent directory
+parent_dir = os.path.dirname(os.path.abspath(__file__))
+print(parent_dir)
+
 # NOTE: thermodb directory
-thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
-
-# ! N2
-# thermodb file name
-N2_thermodb_file = os.path.join(thermodb_dir, 'nitrogen-1.pkl')
-# load
-N2_thermodb = ptdb.load_thermodb(N2_thermodb_file)
-
-# ! methane
-# thermodb file name
-CH4_thermodb_file = os.path.join(thermodb_dir, 'methane-1.pkl')
-# load
-CH4_thermodb = ptdb.load_thermodb(CH4_thermodb_file)
-
-# ! ethane
-# thermodb file name
-C2H6_thermodb_file = os.path.join(thermodb_dir, 'ethane-1.pkl')
-# load
-C2H6_thermodb = ptdb.load_thermodb(C2H6_thermodb_file)
-
-# ! n-butane
-# thermodb file name
-n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-1.pkl')
-# load
-n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
+thermodb_dir = os.path.join(parent_dir, '..', 'thermodb')
+print(thermodb_dir)
 
 # ! CO2
 # thermodb file name
-CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-1.pkl')
+CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-g.pkl')
 # load
 CO2_thermodb = ptdb.load_thermodb(CO2_thermodb_file)
+
+# check
+print(CO2_thermodb.check())
+
+# ! acetylene
+# thermodb file name
+acetylene_thermodb_file = os.path.join(thermodb_dir, 'acetylene-g.pkl')
+# load
+acetylene_thermodb = ptdb.load_thermodb(acetylene_thermodb_file)
+
+# ! n-butane
+# thermodb file name
+n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-g.pkl')
+# load
+n_butane_thermodb = ptdb.load_thermodb(n_butane_thermodb_file)
+
+# ! ethanol
+# thermodb file name
+ethanol_thermodb_file = os.path.join(thermodb_dir, 'ethanol-l.pkl')
+# load
+ethanol_thermodb = ptdb.load_thermodb(ethanol_thermodb_file)
+
+# ! methanol
+# thermodb file name
+methanol_thermodb_file = os.path.join(thermodb_dir, 'methanol-g.pkl')
+# load
+methanol_thermodb = ptdb.load_thermodb(methanol_thermodb_file)
+
+# ! 1-butene
+# thermodb file name
+butene_thermodb_file = os.path.join(thermodb_dir, '1-butene-g.pkl')
+# load
+butene_thermodb = ptdb.load_thermodb(butene_thermodb_file)
+
+# ! propane
+# thermodb file name
+propane_thermodb_file = os.path.join(thermodb_dir, 'propane-g.pkl')
+# load
+propane_thermodb = ptdb.load_thermodb(propane_thermodb_file)
+
+# ! methane
+# thermodb file name
+methane_thermodb_file = os.path.join(thermodb_dir, 'methane-g.pkl')
+# load
+CH4_thermodb = ptdb.load_thermodb(methane_thermodb_file)
+
+# ! N2
+# thermodb file name
+N2_thermodb_file = os.path.join(thermodb_dir, 'nitrogen-g.pkl')
+# load
+N2_thermodb = ptdb.load_thermodb(N2_thermodb_file)
+
+# ! C2H6
+# thermodb file name
+C2H6_thermodb_file = os.path.join(thermodb_dir, 'ethane-g.pkl')
+# load
+C2H6_thermodb = ptdb.load_thermodb(C2H6_thermodb_file)
 
 # ========================================
 # NOTE: INITIALIZE PYTHERMOMODELS
@@ -77,7 +113,9 @@ thub1.add_thermodb('CO2', CO2_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
-    os.getcwd(), 'test', 'thermodb_config_link.yml')
+    parent_dir,
+    'thermodb_config_link.yml'
+)
 
 # all components
 thub1.config_thermodb_rule(thermodb_config_file)

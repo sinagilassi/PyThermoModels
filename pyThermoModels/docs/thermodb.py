@@ -1,7 +1,4 @@
-# THERMODB
-
-
-# import packages/modules
+# import libs
 import os
 import yaml
 # local

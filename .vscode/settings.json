@@ -5,6 +5,7 @@
         "bmix",
         "eoscore",
         "eosmanager",
+        "eosmodels",
         "equationsource",
         "ftol",
         "Margules",
@@ -20,6 +21,7 @@
         "referencemanager",
         "thermodb",
         "thermodbhub",
+        "thermomodelcore",
         "UNIQUAC",
         "Vsat",
         "xtol"

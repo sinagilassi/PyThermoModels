@@ -1,11 +1,33 @@
-from .setting import __description__, __version__, packageName, \
+from .setting import (
+    __description__,
+    __version__,
+    packageName,
+    __author__,
     packageShortName
-from .constants import (Tref, R_CONST, PENG_ROBINSON,
-                        SOAVE_REDLICH_KWONG, VAN_DER_WAALS, REDLICH_KWONG,
-                        PREDEFINED_PARAMETERS)
+)
+from .constants import (
+    Tref,
+    R_CONST,
+    PENG_ROBINSON,
+    SOAVE_REDLICH_KWONG,
+    VAN_DER_WAALS,
+    REDLICH_KWONG,
+    PREDEFINED_PARAMETERS
+)
 from .config import EOS_ROOT_ACCURACY, ROUND_FUN_ACCURACY
 
-__all__ = ['__description__', '__version__',
-           'packageName', 'packageShortName', 'Tref', 'R_CONST',
-           'EOS_ROOT_ACCURACY', 'ROUND_FUN_ACCURACY', 'PENG_ROBINSON',
-           'SOAVE_REDLICH_KWONG', 'VAN_DER_WAALS', 'REDLICH_KWONG', 'PREDEFINED_PARAMETERS']
+__all__ = [
+    '__description__',
+    '__version__',
+    'packageName',
+    'packageShortName',
+    'Tref',
+    'R_CONST',
+    'EOS_ROOT_ACCURACY',
+    'ROUND_FUN_ACCURACY',
+    'PENG_ROBINSON',
+    'SOAVE_REDLICH_KWONG',
+    'VAN_DER_WAALS',
+    'REDLICH_KWONG',
+    'PREDEFINED_PARAMETERS'
+]

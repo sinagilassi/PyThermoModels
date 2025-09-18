@@ -6,13 +6,13 @@ import json
 from .thermodb import ThermoDB
 from .thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager
-from .fugacitycore import FugacityCore
-from .activitycore import ActivityCore
-from .eoscore import eosCore
-from .eosutils import EOSUtils
+from ..eos.fugacitycore import FugacityCore
+from ..activity.activitycore import ActivityCore
+from ..eos.eoscore import eosCore
+from ..eos.eosutils import EOSUtils
 from ..utils import eos_model_name
-from .nrtl import NRTL
-from .uniquac import UNIQUAC
+from ..activity.nrtl import NRTL
+from ..activity.uniquac import UNIQUAC
 
 
 class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
@@ -314,7 +314,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: init fugacity core
             FugacityCoreC = FugacityCore(
@@ -440,7 +442,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: operating conditions
             # pressure [Pa]
@@ -685,7 +689,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: init fugacity core
             FugacityCoreC = FugacityCore(
@@ -843,7 +849,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: operating conditions
             # pressure [Pa]
@@ -967,7 +975,9 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: init fugacity core
             return ActivityCore(

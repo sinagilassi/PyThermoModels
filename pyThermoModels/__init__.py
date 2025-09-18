@@ -1,25 +1,30 @@
+from .docs import ThermoModelCore
+from .activity import ActivityCore, NRTL, UNIQUAC
 from .app import (
     init,
-    thermo_lib,
     eos,
     activity,
     activities,
-    ThermoModelCore,
-    ActivityCore
 )
-from .docs import NRTL, UNIQUAC
-from .configs import __description__, __version__
+from .configs import (
+    __description__,
+    __version__,
+    __author__
+)
 
 __all__ = [
+    # Metadata
     '__version__',
     '__description__',
+    '__author__',
+    'ThermoModelCore',
+    # App
     'init',
-    'thermo_lib',
+    'eos',
     'activity',
+    'activities',
+    # activity models
     'NRTL',
     'UNIQUAC',
-    'eos',
-    'activities',
-    'ThermoModelCore',
     'ActivityCore'
 ]

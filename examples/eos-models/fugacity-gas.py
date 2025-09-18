@@ -217,7 +217,8 @@ model_source = {
 res = eos.check_eos_roots_single_component(
     model_name=eos_model,
     model_input=model_input,
-    model_source=model_source)
+    model_source=model_source
+)
 print(res)
 
 # ------------------------------------------------
@@ -227,5 +228,6 @@ print(res)
 res = eos.cal_fugacity(
     model_name=eos_model,
     model_input=model_inputs_parsed,
-    model_source=model_source)
+    model_source=model_source
+)
 print(res)

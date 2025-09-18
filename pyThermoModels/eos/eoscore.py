@@ -1,10 +1,10 @@
 # import package/modules
-from typing import Dict, List, Union, Literal, Optional, Tuple, Any
+from typing import Dict, Literal, Any
 import yaml
 import pycuc
 # internals
 from .fugacitycore import FugacityCore
-from .thermolinkdb import ThermoLinkDB
+from ..docs.thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager, EQUATION_OF_STATE_MODELS
 from .eosutils import EOSUtils
 from ..utils import eos_model_name, add_attributes

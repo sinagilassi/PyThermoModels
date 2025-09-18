@@ -72,33 +72,43 @@ def eos_model_name(
             raise Exception('Empty equation of state name!')
         else:
             # PR
-            if (model_name == 'PENG_ROBINSON' or
-                    model_name == 'PENG-ROBINSON'):
+            if (
+                model_name == 'PENG_ROBINSON' or
+                    model_name == 'PENG-ROBINSON'
+            ):
                 model_name_set = PENG_ROBINSON
 
             elif model_name == 'PR':
                 model_name_set = PENG_ROBINSON
 
             # SRK
-            elif (model_name == 'SOAVE_REDLICH_KWONG' or
-                  model_name == 'SOAVE-REDLICH-KWONG'):
+            elif (
+                model_name == 'SOAVE_REDLICH_KWONG' or
+                model_name == 'SOAVE-REDLICH-KWONG'
+            ):
                 model_name_set = SOAVE_REDLICH_KWONG
 
             elif model_name == 'SRK':
                 model_name_set = SOAVE_REDLICH_KWONG
 
             # VDW
-            elif (model_name == 'VAN_DER_WAALS' or
-                  model_name == 'VAN-DEER-WAALS'):
+            elif (
+                model_name == 'VAN_DER_WAALS' or
+                model_name == 'VAN-DEER-WAALS'
+            ):
                 model_name_set = VAN_DER_WAALS
 
-            elif (model_name == 'vdW' or
-                  model_name == 'VDW'):
+            elif (
+                model_name == 'vdW' or
+                model_name == 'VDW'
+            ):
                 model_name_set = VAN_DER_WAALS
 
             # RK
-            elif (model_name == 'REDLICH_KWONG' or
-                  model_name == 'REDLICH-KWONG'):
+            elif (
+                model_name == 'REDLICH_KWONG' or
+                model_name == 'REDLICH-KWONG'
+            ):
                 model_name_set = REDLICH_KWONG
 
             elif model_name == 'RK':

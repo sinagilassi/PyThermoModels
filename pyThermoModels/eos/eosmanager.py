@@ -4,8 +4,8 @@
 # import packages/modules
 import numpy as np
 from scipy import optimize
-from math import pow, exp, log, sqrt
-from typing import List, Dict, Literal, Union, Callable
+from math import exp, log
+from typing import List, Dict, Literal, Callable
 # local
 from .eosmodels import EOSModels
 from ..configs import R_CONST
@@ -266,15 +266,16 @@ class EOSManager(EOSModels):
         # res
         return np.array(Z), _eos_params, _eos_params_comp
 
-    def root_ls(self,
-                root_id: Literal[1, 2, 3, 4],
-                fZ: Callable,
-                eos_params: Dict,
-                guess_no: int = 50,
-                ftol=1e-8,
-                xtol=1e-8,
-                **kwargs
-                ):
+    def root_ls(
+        self,
+        root_id: Literal[1, 2, 3, 4],
+        fZ: Callable,
+        eos_params: Dict,
+        guess_no: int = 50,
+        ftol=1e-8,
+        xtol=1e-8,
+        **kwargs
+    ):
         '''
         Finds the roots of a function using the least-squares method.
 
@@ -423,10 +424,11 @@ class EOSManager(EOSModels):
         except Exception as e:
             raise Exception(f"Error in find_rooting_ls: {e}") from e
 
-    def eos_root_analysis(self,
-                          root_id: int,
-                          Zi: List[float]
-                          ) -> List[float]:
+    def eos_root_analysis(
+        self,
+        root_id: int,
+        Zi: List[float]
+    ) -> List[float]:
         '''
         Determines the number of roots based on the root ID and Z values.
         The root ID indicates the type of root analysis performed, and the Z values are the results of the analysis.
@@ -574,14 +576,15 @@ class EOSManager(EOSModels):
         # res
         return phi
 
-    def SRK(self,
-            P: float,
-            T: float,
-            Z: float,
-            params,
-            components: List,
-            yi
-            ):
+    def SRK(
+        self,
+        P: float,
+        T: float,
+        Z: float,
+        params,
+        components: List,
+        yi
+    ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the SRK EOS.
 
@@ -658,14 +661,15 @@ class EOSManager(EOSModels):
         except Exception as e:
             raise Exception(f"Error in srk_fugacity_coefficients: {e}") from e
 
-    def PR(self,
-            P: float,
-            T: float,
-            Z: float,
-            params,
-            components: List,
-            yi
-           ):
+    def PR(
+        self,
+        P: float,
+        T: float,
+        Z: float,
+        params,
+        components: List,
+        yi
+    ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the PR EOS.
 
@@ -742,14 +746,15 @@ class EOSManager(EOSModels):
         except Exception as e:
             raise Exception(f"Error in pr_fugacity_coefficients: {e}") from e
 
-    def RK(self,
-            P: float,
-            T: float,
-            Z: float,
-            params,
-            components: List,
-            yi
-           ):
+    def RK(
+        self,
+        P: float,
+        T: float,
+        Z: float,
+        params,
+        components: List,
+        yi
+    ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the RK EOS.
 
@@ -826,14 +831,15 @@ class EOSManager(EOSModels):
         except Exception as e:
             raise Exception(f"Error in pr_fugacity_coefficients: {e}") from e
 
-    def vdW(self,
-            P: float,
-            T: float,
-            Z: float,
-            params,
-            components: List,
-            yi
-            ):
+    def vdW(
+        self,
+        P: float,
+        T: float,
+        Z: float,
+        params,
+        components: List,
+        yi
+    ):
         """
         Calculate fugacity coefficients for each component in a vapor mixture using the vdW EOS.
 

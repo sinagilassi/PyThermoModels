@@ -10,7 +10,7 @@ from typing import Dict, Any
 from ..configs import R_CONST
 from .eosmanager import EOSManager
 from .eosutils import EOSUtils
-from .thermo import calMolarVolume
+from ..docs.thermo import calMolarVolume
 
 
 class FugacityCore(EOSManager):

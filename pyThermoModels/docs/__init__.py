@@ -1,9 +1,5 @@
-from .eoscore import eosCore
-from .fugacity import FugacityClass
 from .thermomodelcore import ThermoModelCore
-from .fugacitycore import FugacityCore
-from .eosutils import EOSUtils
-from .thermolib import ThermoLib
-from .activitycore import ActivityCore
-from .nrtl import NRTL
-from .uniquac import UNIQUAC
+
+__all__ = [
+    'ThermoModelCore',
+]

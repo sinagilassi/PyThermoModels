@@ -1,7 +1,8 @@
 # import packages/modules
 from typing import Dict, Optional, Literal, List, Any
 # local
-from .docs import ThermoModelCore, ThermoLib, NRTL, UNIQUAC, ActivityCore
+from .activity import ActivityCore, NRTL, UNIQUAC
+from .docs import ThermoModelCore
 from .utils import add_attributes
 from .plugin import EQUATION_OF_STATE_MODELS, ACTIVITY_MODELS
 
@@ -135,27 +136,5 @@ def activities(
             model_name=model_name,
             model_source=model_source,
             **kwargs)
-    except Exception as e:
-        raise Exception("Initialization failed!, ", e)
-
-
-def thermo_lib():
-    '''
-    Initialize thermodynamic calculation library
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    fugacity: list
-        fugacity for gas/liquid/solid phase
-    '''
-    try:
-        # manager
-        ThermoLibC = ThermoLib()
-        # return
-        return ThermoLibC
     except Exception as e:
         raise Exception("Initialization failed!, ", e)
