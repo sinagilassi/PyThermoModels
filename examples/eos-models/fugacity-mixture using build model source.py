@@ -7,6 +7,7 @@ import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
 from pyThermoLinkDB.models import ModelSource
 from pythermodb_settings.models import Component, ComponentRule, ComponentThermoDBSource, Temperature, Pressure
+from pyThermoModels.core import calc_mixture_fugacity, check_multi_component_eos_roots
 
 # version
 print(ptm.__version__)
@@ -297,8 +298,12 @@ N0s = {
 }
 # temperature [K]
 T = 444
+temperature = Temperature(value=T, unit='K')
+
 # pressure [bar]
 P = 10
+pressure = Pressure(value=P, unit='bar')
+
 # binary interaction parameter
 k_ij = [[0, 0.18],
         [0.18, 0]]
@@ -340,11 +345,25 @@ components = [
 # EOS ROOT ANALYSIS
 # =======================================
 # eos root analysis
+# ! old method
 res_ = eos.check_eos_roots_multi_component(
     model_name=eos_model,
     model_input=model_input,
     model_source=model_source
 )
+print(f"old method:")
+print(res_)
+
+
+# ! new method using build model source
+res_ = check_multi_component_eos_roots(
+    components=components,
+    pressure=pressure,
+    temperature=temperature,
+    model_source=model_source_,
+    component_key='Name-State'  # ! component key (optional)
+)
+print(f"new method using build model source:")
 print(res_)
 
 # =======================================
@@ -363,6 +382,18 @@ print(res)
 res = eos.calc_fugacity_mixture(
     components=components,
     model_input=model_input,
-    model_source=model_source_
+    model_source=model_source_,
+    component_key='Formula-State'  # ! component key (optional)
+)
+print(res)
+
+
+# ! new method using build model source and component key
+res = calc_mixture_fugacity(
+    components=components,
+    pressure=pressure,
+    temperature=temperature,
+    model_source=model_source_,
+    component_key='Formula-State'
 )
 print(res)

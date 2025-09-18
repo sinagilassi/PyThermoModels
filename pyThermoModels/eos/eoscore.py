@@ -1113,6 +1113,8 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 components=components,
                 component_key=component_key
             )
+            # update model_input with feed_specification
+            model_input['feed-specification'] = feed_spec
 
             # component list
             components_ = []
@@ -1162,7 +1164,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 # check eos roots for single component
                 eos_roots_analysis = self.check_eos_roots_multi_component(
                     model_name=eos_model,
-                    model_input=model_input,
+                    model_input=model_input,  # ! updated model_input
                     model_source=model_source_
                 )
 
@@ -1365,7 +1367,9 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: operating conditions
             # pressure [Pa]
