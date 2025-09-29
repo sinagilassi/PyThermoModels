@@ -4,6 +4,7 @@ from rich import print
 import pyThermoModels as ptm
 from pyThermoModels import NRTL, UNIQUAC
 import pyThermoDB as ptdb
+from pyThermoDB.core import TableMatrixData
 import pyThermoLinkDB as ptdblink
 
 # check version
@@ -16,12 +17,19 @@ print(ptdblink.__version__)
 # =======================================
 # ! LOAD THERMODB
 # =======================================
+# NOTE: parent directory
+parent_dir = os.path.dirname(os.path.abspath(__file__))
+print(parent_dir)
+
 # NOTE: thermodb directory
-thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
+thermodb_dir = os.path.join(parent_dir, '..', 'thermodb')
+print(thermodb_dir)
 
 # ! nrtl ethanol-butyl-methyl-ether
 nrtl_path = os.path.join(
-    thermodb_dir, 'thermodb_nrtl_ethanol_butyl-methyl-ether_1.pkl')
+    thermodb_dir,
+    'thermodb_nrtl_ethanol_butyl-methyl-ether.pkl'
+)
 # load
 thermodb_nrtl_1 = ptdb.load_thermodb(nrtl_path)
 # check
@@ -95,6 +103,10 @@ mole_fraction = {
 
 # NOTE: non-randomness parameters
 non_randomness_parameters = thermodb_nrtl_1.select('non-randomness-parameters')
+# >> check
+if not isinstance(non_randomness_parameters, TableMatrixData):
+    raise ValueError("non_randomness_parameters is not TableMatrixData")
+
 print(type(non_randomness_parameters))
 
 # dg_ij

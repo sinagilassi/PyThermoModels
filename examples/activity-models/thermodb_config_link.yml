@@ -94,8 +94,7 @@ nrtl:
     dg: dg
     tau: tau
   EQUATIONS:
-    CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+    None
 NRTL:
   DATA:
     Pc: Pc

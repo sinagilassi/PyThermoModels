@@ -1038,15 +1038,15 @@ class NRTL:
     @add_attributes(metadata=ACTIVITY_MODELS['NRTL'])
     def cal(
         self,
-            model_input: Dict,
-            calculation_mode: Literal[
-                'V1', 'V2'
-            ] = 'V1',
-            symbol_delimiter: Literal[
-                "|", "_"
-            ] = "|",
-            message: Optional[str] = None,
-            **kwargs
+        model_input: Dict,
+        calculation_mode: Literal[
+            'V1', 'V2'
+        ] = 'V1',
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+        message: Optional[str] = None,
+        **kwargs
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         '''
         Calculate activity coefficients for a multi-component mixture using the NRTL model.
