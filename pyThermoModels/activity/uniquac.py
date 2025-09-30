@@ -1330,7 +1330,8 @@ class UNIQUAC:
             # ? checking alpha_ij and tau_ij
             # ! user should provide the required keys
             missed_keys = [
-                key for key in required_keys if key not in model_input]
+                key for key in required_keys if key not in model_input
+            ]
 
             # check required keys
             if len(missed_keys) > 0:
@@ -1391,7 +1392,8 @@ class UNIQUAC:
                 Z=Z,
                 calculation_mode=calculation_mode,
                 symbol_delimiter=symbol_delimiter,
-                message=message)
+                message=message
+            )
         except Exception as e:
             raise Exception(f"Error in uniquac model cal: {str(e)}")
 
@@ -1496,7 +1498,9 @@ class UNIQUAC:
                 tau_ij = tau_ij_data
                 # to dict
                 tau_ij_comp = self.to_dict_ij(
-                    tau_ij_data, symbol_delimiter=symbol_delimiter)
+                    tau_ij_data,
+                    symbol_delimiter=symbol_delimiter
+                )
             elif isinstance(tau_ij_data, TableMatrixData):  # ! TableMatrixData
                 # convert to numpy array and dict
                 res_ = self.to_ij(
@@ -1979,7 +1983,8 @@ class UNIQUAC:
 
                 # convert temperature to Kelvin
                 T = pycuc.convert_from_to(
-                    T_value, T_unit, 'K')
+                    T_value, T_unit, 'K'
+                )
 
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
@@ -2048,12 +2053,14 @@ class UNIQUAC:
             # ! check if dU_ij is None
             if dU_ij_src is None:
                 # check if a_ij, b_ij, c_ij are provided
-                if (a_ij_src is None or
+                if (
+                    a_ij_src is None or
                     b_ij_src is None or
                     c_ij_src is None or
-                        d_ij_src is None):
+                        d_ij_src is None
+                ):
                     raise ValueError(
-                        "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, and d.")
+                        "No valid source provided for interaction energy parameter (ΔU_ij) or constants a, b, c, and d.")
                 # set method
                 tau_ij_cal_method = 2
 
@@ -2115,7 +2122,7 @@ class UNIQUAC:
                 tau_ij_cal_method = 1
             else:
                 raise ValueError(
-                    "No valid source provided for interaction energy parameter (Δg_ij) or constants A, B, C.")
+                    "No valid source provided for interaction energy parameter (ΔU_ij) or constants A, B, C, and D.")
 
             # SECTION: calculate tau_ij
             # NOTE: calculate the binary interaction parameter matrix (tau_ij)
@@ -2142,10 +2149,12 @@ class UNIQUAC:
                     )
                 elif tau_ij_cal_method == 2:
                     # check if a_ij, b_ij, c_ij, d_ij are None
-                    if (a_ij is None or
+                    if (
+                        a_ij is None or
                         b_ij is None or
                         c_ij is None or
-                            d_ij is None):
+                            d_ij is None
+                    ):
                         raise ValueError(
                             "a_ij, b_ij, c_ij, d_ij cannot be None for calculating tau_ij")
 
@@ -2179,7 +2188,8 @@ class UNIQUAC:
                         a_ij=a_ij,
                         b_ij=b_ij,
                         c_ij=c_ij,
-                        d_ij=d_ij)
+                        d_ij=d_ij
+                    )
                 else:
                     raise ValueError(
                         "Invalid tau_ij_cal_method. Must be 1 or 2.")
