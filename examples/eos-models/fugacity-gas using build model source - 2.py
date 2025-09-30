@@ -323,6 +323,7 @@ res = check_component_eos_roots(
     temperature=temperature,
     pressure=pressure,
     model_source=model_source_,
+    component_key='Name-State',
 )
 print(res)
 
@@ -344,8 +345,9 @@ print(res)
 # ! new method
 res = calc_gas_fugacity(
     component=C3H8_Comp,
-    temperature=temperature,
     pressure=pressure,
+    temperature=temperature,
     model_source=model_source_,
+    component_key='Name-State'
 )
 print(res)

@@ -13,6 +13,8 @@ CO2:
   EQUATIONS:
     CUSTOM-REF-1::vapor-pressure: VaPr
     CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+    vapor-pressure: VaPr
+    heat-capacity: Cp_IG
 acetylene:
   DATA:
     Pc: Pc

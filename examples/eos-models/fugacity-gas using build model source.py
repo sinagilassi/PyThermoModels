@@ -292,7 +292,6 @@ pressure: [9.99, 'bar']
 # parse model input content
 model_inputs_parsed = eos.parse_model_inputs(model_input_content)
 
-
 # SECTION: model input
 model_input = {
     # "phase": phase,
@@ -307,14 +306,14 @@ model_source = {
     "equationsource": equationsource
 }
 
-
 # ------------------------------------------------
 # NOTE: eos root analysis
 # ------------------------------------------------
 res = eos.check_eos_roots_single_component(
     model_name=eos_model,
     model_input=model_input,
-    model_source=model_source)
+    model_source=model_source
+)
 print(res)
 
 # ------------------------------------------------
@@ -324,5 +323,6 @@ print(res)
 res = eos.cal_fugacity(
     model_name=eos_model,
     model_input=model_inputs_parsed,
-    model_source=model_source)
+    model_source=model_source
+)
 print(res)

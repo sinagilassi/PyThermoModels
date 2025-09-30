@@ -116,5 +116,4 @@ uniquac:
     dg: dU
     tau: tau
   EQUATIONS:
-    CUSTOM-REF-1::vapor-pressure: VaPr
-    CUSTOM-REF-1::ideal-gas-heat-capacity: Cp_IG
+    None

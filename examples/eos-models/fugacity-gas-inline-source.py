@@ -7,9 +7,7 @@ import pyThermoLinkDB as ptdblink
 
 # check version
 print(ptm.__version__)
-# check version
 print(ptdb.__version__)
-# check version
 print(ptdblink.__version__)
 
 # =======================================
@@ -189,16 +187,23 @@ property_source = {
 # =======================================
 # ! LOAD THERMODB
 # =======================================
+# NOTE: parent directory
+parent_dir = os.path.dirname(os.path.abspath(__file__))
+print(parent_dir)
+
 # NOTE: thermodb directory
-thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
+thermodb_dir = os.path.join(parent_dir, 'thermodb')
+print(thermodb_dir)
 
 # ! CO2
 # load
 CO2_thermodb = ptdb.build_component_thermodb(
     component_name='carbon dioxide',
-    property_source=property_source,
-    custom_reference=ref)
-
+    reference_config=property_source,
+    custom_reference=ref
+)
+# >> log
+print(CO2_thermodb.check())
 _src = 'general | MW'
 print(CO2_thermodb.retrieve(_src, message="molecular weight"))
 
@@ -206,8 +211,9 @@ print(CO2_thermodb.retrieve(_src, message="molecular weight"))
 # load
 acetylene_thermodb = ptdb.build_component_thermodb(
     component_name='acetylene',
-    property_source=property_source,
-    custom_reference=ref)
+    reference_config=property_source,
+    custom_reference=ref
+)
 
 _src = 'general | MW'
 print(acetylene_thermodb.retrieve(_src, message="molecular weight"))
@@ -216,8 +222,9 @@ print(acetylene_thermodb.retrieve(_src, message="molecular weight"))
 # load
 n_butane_thermodb = ptdb.build_component_thermodb(
     component_name='n-butane',
-    property_source=property_source,
-    custom_reference=ref)
+    reference_config=property_source,
+    custom_reference=ref
+)
 
 _src = 'general | MW'
 print(n_butane_thermodb.retrieve(_src, message="molecular weight"))
@@ -226,8 +233,9 @@ print(n_butane_thermodb.retrieve(_src, message="molecular weight"))
 # load
 ethanol_thermodb = ptdb.build_component_thermodb(
     component_name='ethanol',
-    property_source=property_source,
-    custom_reference=ref)
+    reference_config=property_source,
+    custom_reference=ref
+)
 
 _src = 'general | MW'
 print(ethanol_thermodb.retrieve(_src, message="molecular weight"))
@@ -236,8 +244,9 @@ print(ethanol_thermodb.retrieve(_src, message="molecular weight"))
 # load
 methanol_thermodb = ptdb.build_component_thermodb(
     component_name='methanol',
-    property_source=property_source,
-    custom_reference=ref)
+    reference_config=property_source,
+    custom_reference=ref
+)
 
 _src = 'general | MW'
 print(methanol_thermodb.retrieve(_src, message="molecular weight"))
@@ -246,8 +255,9 @@ print(methanol_thermodb.retrieve(_src, message="molecular weight"))
 # load
 butene_thermodb = ptdb.build_component_thermodb(
     component_name='1-butene',
-    property_source=property_source,
-    custom_reference=ref)
+    reference_config=property_source,
+    custom_reference=ref
+)
 
 _src = 'general | MW'
 print(butene_thermodb.retrieve(_src, message="molecular weight"))
@@ -256,8 +266,9 @@ print(butene_thermodb.retrieve(_src, message="molecular weight"))
 # load
 propane_thermodb = ptdb.build_component_thermodb(
     component_name='propane',
-    property_source=property_source,
-    custom_reference=ref)
+    reference_config=property_source,
+    custom_reference=ref
+)
 
 _src = 'general | MW'
 print(propane_thermodb.retrieve(_src, message="molecular weight"))
@@ -266,8 +277,9 @@ print(propane_thermodb.retrieve(_src, message="molecular weight"))
 # load
 methane_thermodb = ptdb.build_component_thermodb(
     component_name='methane',
-    property_source=property_source,
-    custom_reference=ref)
+    reference_config=property_source,
+    custom_reference=ref
+)
 
 _src = 'general | MW'
 print(methane_thermodb.retrieve(_src, message="molecular weight"))
@@ -291,7 +303,9 @@ thub1.add_thermodb('propane', propane_thermodb)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
-    os.getcwd(), 'test', 'thermodb_config_link.yml')
+    parent_dir,
+    'thermodb_config_link.yml'
+)
 # one component
 # thub1.config_thermodb_rule(thermodb_config_file, name='EtOH')
 # all components
@@ -410,7 +424,8 @@ model_source = {
 res = eos.check_eos_roots_single_component(
     model_name=eos_model,
     model_input=model_input,
-    model_source=model_source)
+    model_source=model_source
+)
 print(res)
 
 # ------------------------------------------------
@@ -420,5 +435,6 @@ print(res)
 res = eos.cal_fugacity(
     model_name=eos_model,
     model_input=model_inputs_parsed,
-    model_source=model_source)
+    model_source=model_source
+)
 print(res)
