@@ -3,24 +3,31 @@ import os
 from rich import print
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
+from pyThermoDB.core import TableMatrixData
 import pyThermoLinkDB as ptdblink
+import numpy as np
 
-# check version
+# version
 print(ptm.__version__)
-# check version
 print(ptdb.__version__)
-# check version
 print(ptdblink.__version__)
 
 # =======================================
 # ! LOAD THERMODB
 # =======================================
+# NOTE: parent directory
+parent_dir = os.path.dirname(os.path.abspath(__file__))
+print(parent_dir)
+
 # NOTE: thermodb directory
-thermodb_dir = os.path.join(os.getcwd(), 'test', 'thermodb')
+thermodb_dir = os.path.join(parent_dir, '..', 'thermodb')
+print(thermodb_dir)
 
 # ! nrtl ethanol-butyl-methyl-ether
 nrtl_path = os.path.join(
-    thermodb_dir, 'thermodb_nrtl_methanol_ethanol_1.pkl')
+    thermodb_dir,
+    'mixture methanol-ethanol.pkl'
+)
 # load
 thermodb_nrtl_1 = ptdb.load_thermodb(nrtl_path)
 # check
@@ -34,11 +41,13 @@ thub1 = ptdblink.init()
 print(type(thub1))
 
 # add component thermodb
-thub1.add_thermodb('nrtl', thermodb_nrtl_1)
+thub1.add_thermodb('uniquac', thermodb_nrtl_1)
 
 # * add thermodb rule
 thermodb_config_file = os.path.join(
-    os.getcwd(), 'test', 'thermodb_config_link.yml')
+    parent_dir,
+    'thermodb_config_link.yml'
+)
 
 # all components
 thub1.config_thermodb_rule(thermodb_config_file)
@@ -63,7 +72,10 @@ model_source = {
 }
 
 # activity model
-activity = ptm.activity(components=components, model_name=activity_model)
+activity = ptm.activity(
+    components=components,
+    model_name=activity_model
+)
 print(activity)
 print(ptm.activity.metadata)
 
@@ -94,12 +106,18 @@ mole_fraction = {
 r_i = [1.4311, 2.1055]
 q_i = [1.4320, 1.8920]
 
+# >> to numpy array
+r_i = np.array(r_i)
+q_i = np.array(q_i)
+
 # NOTE: non-randomness parameters
 # binary energy of interaction parameters
 tau_ij = [
     [1, 1.031995],
     [1.309036, 1]
 ]
+# >> to numpy array
+tau_ij = np.array(tau_ij)
 
 # NOTE: operating conditions
 # temperature [K]
@@ -128,7 +146,11 @@ print("-" * 50)
 
 # NOTE: excess gibbs free energy
 gibbs_energy = activity_uniquac.excess_gibbs_free_energy(
-    mole_fraction=mole_fraction, tau_ij=tau_ij, r_i=r_i, q_i=q_i)
+    mole_fraction=mole_fraction,
+    tau_ij=tau_ij,
+    r_i=r_i,
+    q_i=q_i
+)
 print(f"excess gibbs free energy 1: {gibbs_energy}")
 print("-" * 50)
 gibbs_energy = activity_uniquac.excess_gibbs_free_energy()
