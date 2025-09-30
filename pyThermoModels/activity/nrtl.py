@@ -605,9 +605,11 @@ class NRTL:
         """
         try:
             # check
-            if (not isinstance(dg_ij, np.ndarray) and
+            if (
+                not isinstance(dg_ij, np.ndarray) and
                 not isinstance(dg_ij, dict) and
-                    not isinstance(dg_ij, TableMatrixData)):
+                not isinstance(dg_ij, TableMatrixData)
+            ):
                 raise TypeError(
                     "dg_ij must be numpy array, dict or TableMatrixData")
 

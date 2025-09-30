@@ -143,7 +143,10 @@ T = 323.15
 P = 30
 
 # NOTE: calculate the interaction parameter matrix (tau_ij)
-tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(temperature=T, dg_ij=dg_ij)
+tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(
+    temperature=T,
+    dg_ij=dg_ij
+)
 print(f"tau_ij: {tau_ij}")
 print(f"tau_ij_comp: {tau_ij_comp}")
 
