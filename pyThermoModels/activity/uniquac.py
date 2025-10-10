@@ -61,11 +61,15 @@ class UNIQUAC:
     __mole_fraction = None
     __xi = None
 
+    # mixture id
+    _mixture_id: Optional[str] = None
+
     def __init__(
         self,
         components: List[str],
         datasource: Dict = {},
-        equationsource: Dict = {}
+        equationsource: Dict = {},
+        **kwargs
     ):
         '''
         Initialize the activity model, UNIQUAC (`Universal Quasi-Chemical`) used to calculate activity coefficients in liquid mixtures.
@@ -78,6 +82,10 @@ class UNIQUAC:
             Equation source for the model
         components: List[str]
             List of component names in the mixture
+        **kwargs: dict
+            Additional keyword arguments
+            - mixture_id: str, optional
+                Mixture ID for the components. If not provided, it will be generated automatically.
 
         Raises
         ------
@@ -133,6 +141,9 @@ class UNIQUAC:
         self.comp_num = len(components)
         # idx
         self.comp_idx = {components[i]: i for i in range(self.comp_num)}
+
+        # SECTION: kwargs
+        self._mixture_id = kwargs.get('mixture_id', None)
 
     def __str__(self):
         model_ = """

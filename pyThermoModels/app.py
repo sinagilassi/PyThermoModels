@@ -128,13 +128,15 @@ def activities(
         Instance of the selected activity model class.
     '''
     try:
-        # manager
+        # init manager
         ThermoModelCore_ = ThermoModelCore()
+
         # return
         return ThermoModelCore_.init_activities(
             components=components,
             model_name=model_name,
             model_source=model_source,
-            **kwargs)
+            **kwargs
+        )
     except Exception as e:
         raise Exception("Initialization failed!, ", e)

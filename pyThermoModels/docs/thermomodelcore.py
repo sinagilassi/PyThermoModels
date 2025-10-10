@@ -986,7 +986,8 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
                 component_datasource,
                 equation_equationsource,
                 components,
-                **kwargs)
+                **kwargs
+            )
         except Exception as e:
             raise Exception("Activity calculation failed!, ", e)
 
@@ -1059,7 +1060,10 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             reference = self._references.get(activity_model, None)
 
             # build datasource
-            component_datasource = self.set_datasource(components, reference)
+            component_datasource = self.set_datasource(
+                components,
+                reference
+            )
             # build equation source
             equation_equationsource = self.set_equationsource(
                 components,

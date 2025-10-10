@@ -72,7 +72,10 @@ model_source = {
 }
 
 # activity model
-activity = ptm.activity(components=components, model_name=activity_model)
+activity = ptm.activity(
+    components=components,
+    model_name=activity_model
+)
 print(activity)
 
 # select nrtl

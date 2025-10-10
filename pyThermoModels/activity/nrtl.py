@@ -12,6 +12,7 @@ from pyThermoDB import (
     TableEquation,
     TableMatrixEquation
 )
+from pythermodb_settings.utils import create_mixture_id
 # local
 from ..utils import add_attributes
 from ..plugin import ACTIVITY_MODELS
@@ -48,11 +49,15 @@ class NRTL:
     __mole_fraction = None
     __xi = None
 
+    # mixture id
+    _mixture_id: Optional[str] = None
+
     def __init__(
         self,
         components: List[str],
         datasource: Dict = {},
-        equationsource: Dict = {}
+        equationsource: Dict = {},
+        **kwargs
     ):
         '''
         Initialize the NRTL (`Non-Random Two-Liquid`) model used to calculate activity coefficients in liquid mixtures.
@@ -65,6 +70,10 @@ class NRTL:
             Equation source for the model
         components: List[str]
             List of component names in the mixture
+        **kwargs: dict
+            Additional keyword arguments
+            - mixture_id: str, optional
+                Mixture ID for the components. If not provided, it will be generated automatically.
 
         Raises
         ------
@@ -106,6 +115,9 @@ class NRTL:
         self.comp_num = len(components)
         # idx
         self.comp_idx = {components[i]: i for i in range(self.comp_num)}
+
+        # SECTION: kwargs
+        self._mixture_id = kwargs.get('mixture_id', None)
 
     def __repr__(self) -> str:
         model_ = """
@@ -1168,7 +1180,8 @@ class NRTL:
             # ? checking alpha_ij and tau_ij
             # ! user should provide the required keys
             missed_keys = [
-                key for key in required_keys if key not in model_input]
+                key for key in required_keys if key not in model_input
+            ]
 
             # check required keys
             if len(missed_keys) > 0:
@@ -1725,6 +1738,11 @@ class NRTL:
                 datasource = self.datasource["NRTL"]
             elif "nrtl" in self.datasource.keys():
                 datasource = self.datasource["nrtl"]
+            elif (
+                self._mixture_id is not None and
+                self._mixture_id in self.datasource.keys()
+            ):
+                datasource = self.datasource[self._mixture_id]
             else:
                 # log
                 logger.warning(

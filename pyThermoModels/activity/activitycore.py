@@ -1,6 +1,7 @@
 # import packages/modules
 from typing import Union, Optional, Dict, List
 from math import log
+from pythermodb_settings.utils import create_mixture_id
 # local
 from .nrtl import NRTL
 from .uniquac import UNIQUAC
@@ -10,12 +11,20 @@ class ActivityCore:
     '''
     ActivityCore class for calculating activity coefficients using different models.
     '''
-
     # NOTE: activity model
     __nrtl: Optional[NRTL] = None
     __uniquac: Optional[UNIQUAC] = None
 
-    def __init__(self, datasource, equationsource, components, **kwargs):
+    # NOTE: mixture ids
+    _mixture_id: Optional[str] = None
+
+    def __init__(
+        self,
+        datasource,
+        equationsource,
+        components,
+        **kwargs
+    ):
         '''
         Initialize the activity core class.
 
@@ -30,19 +39,54 @@ class ActivityCore:
         **kwargs : dict
             Additional keyword arguments.
         '''
-        # data/equations
+        # NOTE: data/equations
         self.datasource = datasource
         self.equationsource = equationsource
         # components
         self.components = components
 
+        # NOTE: kwargs
+        self.delimiter = kwargs.get('delimiter', '|')
+        self.mixture_key = kwargs.get('mixture_key', 'Name')
+
+        # SECTION: mixture id
+        self._mixture_id = create_mixture_id(
+            components=components,
+            mixture_key=self.mixture_key,
+            delimiter=self.delimiter,
+        )
+
         # SECTION: init activity models
         # nrtl
         self.__nrtl = NRTL(
-            self.components, self.datasource, self.equationsource)
+            self.components,
+            self.datasource,
+            self.equationsource,
+            mixture_id=self._mixture_id,
+        )
         # uniquac
         self.__uniquac = UNIQUAC(
-            self.components, self.datasource, self.equationsource)
+            self.components,
+            self.datasource,
+            self.equationsource
+        )
+
+    @property
+    def mixture_id(self) -> str:
+        '''
+        Get the unique mixture ID.
+
+        Returns
+        -------
+        str
+            Unique mixture ID.
+        '''
+        try:
+            if self._mixture_id is None:
+                return "unknown"
+            return self._mixture_id
+        except Exception as e:
+            raise Exception(f"Error in mixture_id: {e}") from e
 
     @property
     def nrtl(self):
@@ -110,17 +154,18 @@ class ActivityCore:
         except Exception as e:
             raise Exception(f"Error in activity_cal: {e}") from e
 
-    def general_excess_molar_gibbs_free_energy(self,
-                                               mole_fraction: Union[
-                                                   Dict[str, float],
-                                                   List[float]
-                                               ],
-                                               activity_coefficients: Union[
-                                                   Dict[str, float],
-                                                   List[float]
-                                               ],
-                                               message: Optional[str] = None,
-                                               ):
+    def general_excess_molar_gibbs_free_energy(
+        self,
+        mole_fraction: Union[
+            Dict[str, float],
+            List[float]
+        ],
+        activity_coefficients: Union[
+            Dict[str, float],
+            List[float]
+        ],
+        message: Optional[str] = None,
+    ):
         """
         Calculate the general excess molar Gibbs free energy which is not based on any specific activity model.
 
@@ -162,32 +207,45 @@ class ActivityCore:
 
             # SECTION: check input types
             # check if mole_fraction and activity_coefficients are of the same type
-            if (isinstance(mole_fraction, dict) and
-                    isinstance(activity_coefficients, dict)):
+            if (
+                isinstance(mole_fraction, dict) and
+                    isinstance(activity_coefficients, dict)
+            ):
                 # NOTE: convert to list based on component order
                 components = list(mole_fraction.keys())
-                x_i = [mole_fraction[component]
-                       for component in components]
+                x_i = [
+                    mole_fraction[component] for component in components
+                ]
                 AcCo_i = [
-                    activity_coefficients[component] for component in components]
-            elif (isinstance(mole_fraction, list) and
-                  isinstance(activity_coefficients, dict)):
+                    activity_coefficients[component] for component in components
+                ]
+            elif (
+                isinstance(mole_fraction, list) and
+                isinstance(activity_coefficients, dict)
+            ):
                 # NOTE: convert to list based on component order
                 components = list(activity_coefficients.keys())
-                x_i = [mole_fraction[i]
-                       for i in range(len(components))]
+                x_i = [
+                    mole_fraction[i] for i in range(len(components))
+                ]
                 AcCo_i = [
                     activity_coefficients[component] for component in components]
-            elif (isinstance(mole_fraction, dict) and
-                  isinstance(activity_coefficients, list)):
+            elif (
+                isinstance(mole_fraction, dict) and
+                isinstance(activity_coefficients, list)
+            ):
                 # NOTE: convert to list based on component order
                 components = list(mole_fraction.keys())
-                AcCo_i = [activity_coefficients[i]
-                          for i in range(len(components))]
-                x_i = [mole_fraction[component]
-                       for component in components]
-            elif (isinstance(mole_fraction, list) and
-                  isinstance(activity_coefficients, list)):
+                AcCo_i = [
+                    activity_coefficients[i] for i in range(len(components))
+                ]
+                x_i = [
+                    mole_fraction[component] for component in components
+                ]
+            elif (
+                isinstance(mole_fraction, list) and
+                isinstance(activity_coefficients, list)
+            ):
                 # NOTE: convert to list based on component order
                 x_i = mole_fraction
                 AcCo_i = activity_coefficients

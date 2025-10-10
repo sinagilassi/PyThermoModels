@@ -73,12 +73,15 @@ model_source = {
 
 # activity model
 activity_nrtl = ptm.activities(
-    components=components, model_name=activity_model)
+    components=components,
+    model_name=activity_model
+)
 
 # check
 if not isinstance(activity_nrtl, NRTL):
     raise TypeError(
-        f"activity_nrtl is not an instance of NRTL: {type(activity_nrtl)}")
+        f"activity_nrtl is not an instance of NRTL: {type(activity_nrtl)}"
+    )
 
 print(activity_nrtl)
 
@@ -140,13 +143,20 @@ P = 30
 
 # NOTE: calculate the interaction parameter matrix (dg_ij)
 dg_ij, dg_ij_comp = activity_nrtl.cal_dg_ij_M1(
-    temperature=T, a_ij=a_ij, b_ij=b_ij, c_ij=c_ij)
+    temperature=T,
+    a_ij=a_ij,
+    b_ij=b_ij,
+    c_ij=c_ij
+)
 print(f"dg_ij: {dg_ij}")
 print(f"dg_ij_comp: {dg_ij_comp}")
 print("-" * 50)
 
 # NOTE: calculate the interaction parameter matrix (tau_ij)
-tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(temperature=T, dg_ij=dg_ij)
+tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(
+    temperature=T,
+    dg_ij=dg_ij
+)
 print(f"tau_ij: {tau_ij}")
 print(f"tau_ij_comp: {tau_ij_comp}")
 print("-" * 50)
@@ -171,6 +181,9 @@ print("-" * 50)
 
 # NOTE: excess gibbs free energy
 gibbs_energy = activity_nrtl.excess_gibbs_free_energy(
-    mole_fraction=mole_fraction, G_ij=G_ij, tau_ij=tau_ij)
+    mole_fraction=mole_fraction,
+    G_ij=G_ij,
+    tau_ij=tau_ij
+)
 print(f"excess gibbs free energy method 1: {gibbs_energy}")
 print("-" * 50)
