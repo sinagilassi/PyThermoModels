@@ -454,7 +454,8 @@ class NRTL:
             raise Exception(f"Error in extraction data: {str(e)}")
 
     def cal_dg_ij_M1(
-        self, temperature: float,
+        self,
+        temperature: float,
         a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
         b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
         c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
@@ -489,7 +490,7 @@ class NRTL:
         -----
         1. The interaction energy parameter matrix is calculated using the formula:
 
-            `dg_ij = a_ij + b_ij * T + c_ij * T^2`
+            dg_ij = a_ij + b_ij * T + c_ij * T^2
 
             where T is the temperature [K].
 
