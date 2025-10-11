@@ -24,7 +24,7 @@ print(parent_dir)
 thermodb_dir = os.path.join(parent_dir, '..', 'thermodb')
 print(thermodb_dir)
 
-# ! nrtl ethanol-butyl-methyl-ether
+# ! nrtl methanol-ethanol
 nrtl_path = os.path.join(
     thermodb_dir,
     'mixture methanol-ethanol.pkl'

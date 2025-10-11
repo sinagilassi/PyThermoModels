@@ -1,12 +1,17 @@
 # import packages/modules
 import os
-from typing import Dict
+from typing import Dict, List
 from rich import print
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
 from pyThermoLinkDB.models import ModelSource
-from pythermodb_settings.models import Component, ComponentRule, ComponentThermoDBSource
+from pythermodb_settings.models import (
+    Component,
+    ComponentRule,
+    ComponentThermoDBSource,
+    MixtureReferenceThermoDB
+)
 
 # check version
 print(ptm.__version__)
@@ -140,7 +145,7 @@ methane_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
 )
 
 # NOTE: component thermodb source
-_component_thermodb = [
+_component_thermodb: list = [
     CO2_component_thermodb,
     acetylene_component_thermodb,
     n_butane_component_thermodb,

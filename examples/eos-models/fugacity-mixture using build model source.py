@@ -174,7 +174,7 @@ methane_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
 )
 
 # NOTE: component thermodb source
-_component_thermodb = [
+_component_thermodb: list = [
     CO2_component_thermodb,
     acetylene_component_thermodb,
     n_butane_component_thermodb,

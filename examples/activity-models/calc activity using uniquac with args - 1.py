@@ -7,6 +7,8 @@ import pyThermoDB as ptdb
 from pyThermoModels.activity import UNIQUAC
 import pyThermoLinkDB as ptdblink
 import numpy as np
+from pyThermoModels.core import calc_activity_coefficient_using_uniquac_model
+from pythermodb_settings.models import Component, Pressure, Temperature
 
 # version
 print(ptm.__version__)
@@ -94,6 +96,23 @@ print(activity_uniquac)
 # ========================================
 # NOTE: Example: Methanol-Ethanol
 
+# NOTE: components
+ethanol = Component(
+    name='ethanol',
+    formula='C2H5OH',
+    state='l',
+    mole_fraction=0.6
+)
+
+# methanol
+methanol = Component(
+    name='methanol',
+    formula='CH3OH',
+    state='l',
+    mole_fraction=0.4
+)
+
+
 # mole fraction
 mole_fraction = {
     'methanol': 0.4,
@@ -105,6 +124,17 @@ mole_fraction = {
 r_i = [1.4311, 2.1055]
 q_i = [1.4320, 1.8920]
 
+# as dict
+r_i_comp = {
+    'methanol': 1.4311,
+    'ethanol': 2.1055
+}
+
+q_i_comp = {
+    'methanol': 1.4320,
+    'ethanol': 1.8920
+}
+
 # NOTE: non-randomness parameters
 # binary energy of interaction parameters
 tau_ij = [
@@ -112,7 +142,15 @@ tau_ij = [
     [1.309036, 1]
 ]
 
-# ! >> to numpy array
+# tau_ij as dict
+tau_ij_comp = {
+    'methanol | methanol': 1,
+    'methanol | ethanol': 1.031995,
+    'ethanol | methanol': 1.309036,
+    'ethanol | ethanol': 1
+}
+
+# ! > to numpy array>
 r_i = np.array(r_i)
 q_i = np.array(q_i)
 tau_ij = np.array(tau_ij)
@@ -123,6 +161,13 @@ T = 350.1546257
 # pressure [bar]
 P = 30
 
+# NOTE: operating conditions
+# temperature
+temperature = Temperature(value=323.15, unit='K')
+# pressure
+pressure = Pressure(value=30, unit='bar')
+
+
 # SECTION: model input
 model_input = {
     "mole_fraction": mole_fraction,
@@ -132,31 +177,37 @@ model_input = {
 }
 
 # ! in case tau_ij, and r_i, q_i are not provided but existing in the datasource
-model_input = {
-    "mole_fraction": mole_fraction,
-    "temperature": [T, 'K']
-}
+# model_input = {
+#     "mole_fraction": mole_fraction,
+#     "temperature": [T, 'K'],
+# }
 
 # NOTE: calculate activity
 res_, others_ = activity_uniquac.cal(model_input=model_input)
 # print(res_)
 
 # print the results
-print(f"res_: {res_}")
+print("res_:")
+print(res_)
 print("-" * 50)
-print(f"others_: {others_}")
+print("others_:")
+print(others_)
 print("-" * 50)
 
-
-# NOTE: excess gibbs free energy
-gibbs_energy = activity_uniquac.excess_gibbs_free_energy(
-    mole_fraction=mole_fraction,
-    tau_ij=tau_ij,
-    r_i=r_i,
-    q_i=q_i
+# ! new method
+res_2, others_2, Gx_2 = calc_activity_coefficient_using_uniquac_model(
+    components=[ethanol, methanol],
+    pressure=pressure,
+    temperature=temperature,
+    tau_ij=tau_ij_comp,
+    r_i=r_i_comp,
+    q_i=q_i_comp
 )
-print(f"excess gibbs free energy 1: {gibbs_energy}")
+print("res_2:")
+print(res_2)
 print("-" * 50)
-gibbs_energy = activity_uniquac.excess_gibbs_free_energy()
-print(f"excess gibbs free energy 2: {gibbs_energy}")
+print("others_2:")
+print(others_2)
 print("-" * 50)
+print("Gx_2:")
+print(Gx_2)

@@ -62,6 +62,18 @@ datasource, equationsource = thub1.build()
 # components
 components = ['ethanol', 'butyl-methyl-ether']
 
+# feed spec
+mole_fraction = {
+    'ethanol': 0.4,
+    'butyl-methyl-ether': 0.6
+}
+
+# NOTE: operating conditions
+# temperature [K]
+T = 323.15
+# pressure [bar]
+P = 30
+
 # model input
 activity_model = 'NRTL'
 
@@ -85,7 +97,6 @@ if not isinstance(activity_nrtl, NRTL):
 
 print(activity_nrtl)
 
-
 # =======================================
 # NOTE CHECK REFERENCES
 # =======================================
@@ -96,14 +107,6 @@ print(activity_nrtl)
 # ========================================
 # NOTE ACTIVITY CALCULATION
 # ========================================
-# NOTE: Example: Ethanol-Butyl-Methyl-Ether
-
-# feed spec
-mole_fraction = {
-    'ethanol': 0.4,
-    'butyl-methyl-ether': 0.6
-}
-
 # NOTE: non-randomness parameters
 non_randomness_parameters = thermodb_nrtl_1.select('non-randomness-parameters')
 # >> check
@@ -113,6 +116,8 @@ if not isinstance(non_randomness_parameters, TableMatrixData):
 print(type(non_randomness_parameters))
 # symbols
 print(non_randomness_parameters.matrix_symbol)
+# structure
+print(non_randomness_parameters.table_structure)
 
 # dg_ij
 dg_ij = non_randomness_parameters.ijs(
@@ -135,13 +140,6 @@ print(alpha_ij)
 alpha_ij = non_randomness_parameters.mat('alpha', components)
 print(alpha_ij)
 
-
-# NOTE: operating conditions
-# temperature [K]
-T = 323.15
-# pressure [bar]
-P = 30
-
 # NOTE: calculate the interaction parameter matrix (tau_ij)
 tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(
     temperature=T,
@@ -150,7 +148,9 @@ tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(
 print(f"tau_ij: {tau_ij}")
 print(f"tau_ij_comp: {tau_ij_comp}")
 
-# SECTION: model input
+# =======================================
+# SECTION: CALCULATION
+# =======================================
 model_input = {
     "mole_fraction": mole_fraction,
     "temperature": [T, 'K'],

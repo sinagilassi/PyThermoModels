@@ -6,6 +6,8 @@ from pyThermoModels import NRTL, UNIQUAC
 import pyThermoDB as ptdb
 from pyThermoDB.core import TableMatrixData
 import pyThermoLinkDB as ptdblink
+from pyThermoModels.core import calc_activity_coefficient_using_nrtl_model
+from pythermodb_settings.models import Component, Pressure, Temperature
 
 # version
 print(ptm.__version__)
@@ -95,6 +97,27 @@ print(activity_nrtl)
 # ========================================
 # NOTE: Example: Ethanol-Butyl-Methyl-Ether
 
+# NOTE: components
+ethanol = Component(
+    name='ethanol',
+    formula='C2H6O',
+    state='l',
+    mole_fraction=0.4
+)
+
+butyl_methyl_ether = Component(
+    name='butyl-methyl-ether',
+    formula='C5H12O',
+    state='l',
+    mole_fraction=0.6
+)
+
+# NOTE: operating conditions
+# temperature
+temperature = Temperature(value=323.15, unit='K')
+# pressure
+pressure = Pressure(value=30, unit='bar')
+
 # feed spec
 mole_fraction = {
     'ethanol': 0.4,
@@ -121,6 +144,15 @@ alpha_ij = non_randomness_parameters.ijs(
 print(type(alpha_ij))
 print(alpha_ij)
 
+# alpha_ij_comp
+alpha_ij_comp = non_randomness_parameters.ijs(
+    f"alpha | {components[0]} | {components[1]}",
+    res_format='alphabetic')
+print(type(alpha_ij_comp))
+print(alpha_ij_comp)
+if not isinstance(alpha_ij_comp, dict):
+    raise ValueError("alpha_ij_comp is not dict")
+
 # NOTE: operating conditions
 # temperature [K]
 T = 323.15
@@ -135,16 +167,6 @@ tau_ij, tau_ij_comp = activity_nrtl.cal_tau_ij_M1(
 print(f"tau_ij: {tau_ij}")
 print(f"tau_ij_comp: {tau_ij_comp}")
 
-# SECTION: parse model input
-model_input_content = """
-mole_fraction: {ethanol: 0.4, butyl-methyl-ether: 0.6}
-tau_ij: [[0.        , 1.21670526],
-       [0.65831047, 0.        ]]
-alpha_ij: {'ethanol | ethanol': 0.0, 'ethanol | butyl-methyl-ether': 0.680715, 'butyl-methyl-ether | ethanol': 0.680715, 'butyl-methyl-ether | butyl-methyl-ether': 0.0}
-"""
-
-# parse model input
-model_input_parsed = activity_nrtl.parse_model_inputs(model_input_content)
 
 # SECTION: model input
 model_input = {
@@ -155,39 +177,20 @@ model_input = {
 
 # NOTE: calculate activity
 res_, others_ = activity_nrtl.cal(
-    model_input=model_input_parsed
+    model_input=model_input
 )
-# print(res_)
-print(activity_nrtl.cal.metadata)
+print("res_:")
+print(res_)
 
-# print the results
-print(f"res_: {res_}")
-print("-" * 50)
-# activity coefficients
-activity_coefficients = others_['AcCo_i_comp']
-print(f"activity coefficients: {activity_coefficients}")
-print("-" * 50)
-G_ij = others_['G_ij']
-print(f"G_ij: {G_ij}")
-print("-" * 50)
-
-# SECTION: calculate excess gibbs free energy
-# NOTE: excess gibbs free energy
-gibbs_energy = activity_nrtl.excess_gibbs_free_energy(
-    mole_fraction=mole_fraction,
-    G_ij=G_ij,
-    tau_ij=tau_ij
+# ! new method
+res_2, others_2, Gx_2 = calc_activity_coefficient_using_nrtl_model(
+    components=[ethanol, butyl_methyl_ether],
+    pressure=pressure,
+    temperature=temperature,
+    tau_ij=tau_ij_comp,
+    alpha_ij=alpha_ij_comp
 )
-print(f"excess gibbs free energy method 1: {gibbs_energy}")
-print("-" * 50)
-gibbs_energy = activity_nrtl.excess_gibbs_free_energy()
-print(f"excess gibbs free energy method 1: {gibbs_energy}")
-print("-" * 50)
-
-# NOTE: general excess gibbs free energy
-gibbs_energy = activity.general_excess_molar_gibbs_free_energy(
-    mole_fraction=mole_fraction,
-    activity_coefficients=activity_coefficients
-)
-print(f"general excess gibbs free energy: {gibbs_energy}")
-print("-" * 50)
+print("res_2:")
+print(res_2)
+print("Gx_2:")
+print(Gx_2)
