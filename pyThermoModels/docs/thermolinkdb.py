@@ -41,7 +41,8 @@ class ThermoLinkDB:
 
         Returns
         -------
-        None
+        bool
+            True if successful, False otherwise
         '''
         try:
             # set datasource | equationsource
@@ -85,7 +86,8 @@ class ThermoLinkDB:
 
         Returns
         -------
-        None
+        datasource : dict
+            dict data of the datasource
         '''
         try:
             # check reference
@@ -158,7 +160,8 @@ class ThermoLinkDB:
 
         Returns
         -------
-        None
+        equationsource : dict
+            dict data of the equationsource
         '''
         try:
             # check reference
@@ -175,19 +178,19 @@ class ThermoLinkDB:
                     _item_symbol = value['symbol']
                     dependent_data.append(_item_symbol)
 
-            # datasource
-            datasource = {}
+            # equationsource
+            equationsource = {}
             for component in components:
                 if component in self._thermodb_component:
                     # set
-                    datasource[component] = {}
+                    equationsource[component] = {}
                     # parms
                     for item in dependent_data:
                         # get value
                         _val = self.equationsource[component][item]
                         # save
-                        datasource[component][item] = _val
+                        equationsource[component][item] = _val
             # res
-            return datasource
+            return equationsource
         except Exception as e:
-            raise Exception('Building datasource failed!, ', e)
+            raise Exception('Building equationsource failed!, ', e)

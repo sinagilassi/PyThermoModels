@@ -1,7 +1,6 @@
 # import packages/modules
 from typing import Union, Optional, Dict, List
 from math import log
-from pythermodb_settings.utils import create_mixture_id
 # local
 from .nrtl import NRTL
 from .uniquac import UNIQUAC
@@ -15,14 +14,14 @@ class ActivityCore:
     __nrtl: Optional[NRTL] = None
     __uniquac: Optional[UNIQUAC] = None
 
-    # NOTE: mixture ids
+    # NOTE: mixture id
     _mixture_id: Optional[str] = None
 
     def __init__(
         self,
-        datasource,
-        equationsource,
-        components,
+        datasource: dict,
+        equationsource: dict,
+        components: List[str],
         **kwargs
     ):
         '''
@@ -30,14 +29,16 @@ class ActivityCore:
 
         Parameters
         ----------
-        datasource : object
+        datasource : dict
             Data source object containing thermodynamic data.
-        equationsource : object
+        equationsource : dict
             Equation source object containing thermodynamic equations.
         components : list
             List of component names.
         **kwargs : dict
             Additional keyword arguments.
+            - mixture_id : str, optional
+                Unique identifier for the mixture. Default is None.
         '''
         # NOTE: data/equations
         self.datasource = datasource
@@ -46,29 +47,22 @@ class ActivityCore:
         self.components = components
 
         # NOTE: kwargs
-        self.delimiter = kwargs.get('delimiter', '|')
-        self.mixture_key = kwargs.get('mixture_key', 'Name')
-
-        # SECTION: mixture id
-        self._mixture_id = create_mixture_id(
-            components=components,
-            mixture_key=self.mixture_key,
-            delimiter=self.delimiter,
-        )
+        self._mixture_id: Optional[str] = kwargs.get('mixture_id', None)
 
         # SECTION: init activity models
-        # nrtl
+        # ! nrtl
         self.__nrtl = NRTL(
-            self.components,
-            self.datasource,
-            self.equationsource,
+            components=self.components,
+            datasource=self.datasource,
+            equationsource=self.equationsource,
             mixture_id=self._mixture_id,
         )
-        # uniquac
+        # ! uniquac
         self.__uniquac = UNIQUAC(
-            self.components,
-            self.datasource,
-            self.equationsource
+            components=self.components,
+            datasource=self.datasource,
+            equationsource=self.equationsource,
+            mixture_id=self._mixture_id,
         )
 
     @property
