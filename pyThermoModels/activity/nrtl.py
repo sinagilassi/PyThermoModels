@@ -49,8 +49,15 @@ class NRTL:
     __mole_fraction = None
     __xi = None
 
+    # NOTE: mixture ids
+    # ! default ids: Name and Formula
+    _mixture_ids: Dict[str, str] = {}
+
     # mixture id
-    _mixture_id: Optional[str] = None
+    _mixture_id: str = ""
+
+    # NOTE: components ids
+    _components_ids: Dict[str, List[str]] = {}
 
     def __init__(
         self,
@@ -72,8 +79,6 @@ class NRTL:
             List of component names in the mixture
         **kwargs: dict
             Additional keyword arguments
-            - mixture_id: str, optional
-                Mixture ID for the components. If not provided, it will be generated automatically.
 
         Raises
         ------
@@ -116,9 +121,6 @@ class NRTL:
         # idx
         self.comp_idx = {components[i]: i for i in range(self.comp_num)}
 
-        # SECTION: kwargs
-        self._mixture_id = kwargs.get('mixture_id', None)
-
     def __repr__(self) -> str:
         model_ = """
         The NRTL (`Non-Random Two-Liquid`) model - a thermodynamic framework used to describe the behavior of mixtures,
@@ -132,6 +134,94 @@ class NRTL:
         Universal gas constant (R) is defined as 8.314 J/mol/K.
         """
         return model_
+
+    @property
+    def mixture_ids(self) -> Dict[str, str]:
+        '''
+        Get the mixture ids.
+
+        Returns
+        -------
+        mixture_ids: Dict[str, str]
+            Dictionary of mixture ids
+        '''
+        return self._mixture_ids
+
+    @mixture_ids.setter
+    def mixture_ids(self, mixture_ids: Dict[str, str]) -> None:
+        '''
+        Set the mixture ids.
+
+        Parameters
+        ----------
+        mixture_ids: Dict[str, str]
+            Dictionary of mixture ids
+        '''
+        if not isinstance(mixture_ids, dict):
+            raise TypeError("mixture_ids must be a dict")
+
+        # reset
+        self._mixture_ids = {}
+        # set
+        self._mixture_ids = mixture_ids
+
+    @property
+    def mixture_id(self) -> str:
+        '''
+        Get the mixture id.
+
+        Returns
+        -------
+        mixture_id: str
+            Mixture id
+        '''
+        return self._mixture_id
+
+    @mixture_id.setter
+    def mixture_id(self, mixture_id: str) -> None:
+        '''
+        Set the mixture id.
+
+        Parameters
+        ----------
+        mixture_id: str
+            Mixture id
+        '''
+        if not isinstance(mixture_id, str):
+            raise TypeError("mixture_id must be a str")
+
+        # set
+        self._mixture_id = mixture_id
+
+    @property
+    def components_ids(self) -> Dict[str, List[str]]:
+        '''
+        Get the components ids.
+
+        Returns
+        -------
+        components_ids: Dict[str, List[str]]
+            Dictionary of components ids
+        '''
+        return self._components_ids
+
+    @components_ids.setter
+    def components_ids(self, components_ids: Dict[str, List[str]]) -> None:
+        '''
+        Set the components ids.
+
+        Parameters
+        ----------
+        components_ids: Dict[str, List[str]]
+            Dictionary of components ids
+        '''
+        if not isinstance(components_ids, dict):
+            raise TypeError("components_ids must be a dict")
+
+        # reset
+        self._components_ids = {}
+        # set
+        self._components_ids = components_ids
 
     def parse_model_inputs(self, model_inputs: str) -> Dict[str, Any]:
         '''
@@ -1739,10 +1829,25 @@ class NRTL:
             elif "nrtl" in self.datasource.keys():
                 datasource = self.datasource["nrtl"]
             elif (
-                self._mixture_id is not None and
-                self._mixture_id in self.datasource.keys()
+                self._mixture_ids is not None
             ):
-                datasource = self.datasource[self._mixture_id]
+                # init datasource
+                datasource = {}
+                # set datasource by mixture ids
+                if 'Name' in self._mixture_ids.keys():
+                    # check not empty
+                    if self._mixture_ids.get('Name', None):
+                        key_ = self._mixture_ids['Name']
+                        # check key in datasource
+                        if key_ in self.datasource.keys():
+                            datasource = self.datasource[key_]
+                elif 'Formula' in self._mixture_ids.keys():
+                    # check not empty
+                    if self._mixture_ids.get('Formula', None):
+                        key_ = self._mixture_ids['Formula']
+                        # check key in datasource
+                        if key_ in self.datasource.keys():
+                            datasource = self.datasource[key_]
             else:
                 # log
                 logger.warning(
@@ -1751,6 +1856,7 @@ class NRTL:
                 datasource = {}
 
             # NOTE: check model inputs
+            # ! when constants are provided in model_input, they override the datasource
             if kwargs.get('model_input') is not None:
                 # update the datasource
                 datasource.update(kwargs['model_input'])

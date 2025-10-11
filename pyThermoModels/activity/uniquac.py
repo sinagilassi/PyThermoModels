@@ -61,8 +61,15 @@ class UNIQUAC:
     __mole_fraction = None
     __xi = None
 
+    # NOTE: mixture ids
+    # ! default ids: Name and Formula
+    _mixture_ids: Dict[str, str] = {}
+
     # mixture id
-    _mixture_id: Optional[str] = None
+    _mixture_id: str = ""
+
+    # NOTE: components ids
+    _components_ids: Dict[str, List[str]] = {}
 
     def __init__(
         self,
@@ -84,8 +91,6 @@ class UNIQUAC:
             List of component names in the mixture
         **kwargs: dict
             Additional keyword arguments
-            - mixture_id: str, optional
-                Mixture ID for the components. If not provided, it will be generated automatically.
 
         Raises
         ------
@@ -142,9 +147,6 @@ class UNIQUAC:
         # idx
         self.comp_idx = {components[i]: i for i in range(self.comp_num)}
 
-        # SECTION: kwargs
-        self._mixture_id = kwargs.get('mixture_id', None)
-
     def __str__(self):
         model_ = """
         The UNIQUAC (`Universal Quasi-Chemical`) model - a thermodynamic framework used to describe the behavior of mixtures,
@@ -165,6 +167,94 @@ class UNIQUAC:
         Z is a constant used in the model, default value is 10.0.
         """
         return model_
+
+    @property
+    def mixture_ids(self) -> Dict[str, str]:
+        '''
+        Get the mixture ids.
+
+        Returns
+        -------
+        mixture_ids: Dict[str, str]
+            Dictionary of mixture ids
+        '''
+        return self._mixture_ids
+
+    @mixture_ids.setter
+    def mixture_ids(self, mixture_ids: Dict[str, str]) -> None:
+        '''
+        Set the mixture ids.
+
+        Parameters
+        ----------
+        mixture_ids: Dict[str, str]
+            Dictionary of mixture ids
+        '''
+        if not isinstance(mixture_ids, dict):
+            raise TypeError("mixture_ids must be a dict")
+
+        # reset
+        self._mixture_ids = {}
+        # set
+        self._mixture_ids = mixture_ids
+
+    @property
+    def mixture_id(self) -> str:
+        '''
+        Get the mixture id.
+
+        Returns
+        -------
+        mixture_id: str
+            Mixture id
+        '''
+        return self._mixture_id
+
+    @mixture_id.setter
+    def mixture_id(self, mixture_id: str) -> None:
+        '''
+        Set the mixture id.
+
+        Parameters
+        ----------
+        mixture_id: str
+            Mixture id
+        '''
+        if not isinstance(mixture_id, str):
+            raise TypeError("mixture_id must be a str")
+
+        # set
+        self._mixture_id = mixture_id
+
+    @property
+    def components_ids(self) -> Dict[str, List[str]]:
+        '''
+        Get the components ids.
+
+        Returns
+        -------
+        components_ids: Dict[str, List[str]]
+            Dictionary of components ids
+        '''
+        return self._components_ids
+
+    @components_ids.setter
+    def components_ids(self, components_ids: Dict[str, List[str]]) -> None:
+        '''
+        Set the components ids.
+
+        Parameters
+        ----------
+        components_ids: Dict[str, List[str]]
+            Dictionary of components ids
+        '''
+        if not isinstance(components_ids, dict):
+            raise TypeError("components_ids must be a dict")
+
+        # reset
+        self._components_ids = {}
+        # set
+        self._components_ids = components_ids
 
     def parse_model_inputs(self, model_inputs: str) -> Dict[str, Any]:
         '''
@@ -310,7 +400,7 @@ class UNIQUAC:
                 val = data[self.components[i]]
 
                 # to matrix
-                data_i[i] = val
+                data_i[i] = float(val)
 
             # res
             return data_i
@@ -1238,8 +1328,8 @@ class UNIQUAC:
                     relative surface area of component i
         Z : int | float
             Model constant, Default is 10.
-        calculation_mode : Literal['V1', 'V2']
-            Mode of calculation. If 'V1', use the first version of the UNIQUAC model. If 'V2', use the second version.
+        calculation_mode : Literal['V1']
+            Mode of calculation. If 'V1', use the first version of the UNIQUAC model.
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
         message : Optional[str]
@@ -1381,18 +1471,25 @@ class UNIQUAC:
                     if value_ is None:
                         # error
                         raise ValueError(
-                            f"{key} is required in model_input")
+                            f"{key} is required in model_input"
+                        )
 
                     # update the model_input
                     model_input[key] = value_
 
             # SECTION: get values
-            # tau_ij
+            # ! tau_ij
             tau_ij = model_input['tau_ij']
-            # r_i
+            # NOTE: r_i and q_i might be provided initially in the `model_input`
+            # ! r_i
             r_i = model_input['r_i']
-            # q_i
+            # ! q_i
             q_i = model_input['q_i']
+
+            # check r_i and q_i
+            if r_i is None or q_i is None:
+                # log
+                logger.error("r_i and q_i are not provided in model_input")
 
             # SECTION: calculate activity coefficients
             return self.__calculate_activity_coefficients(
@@ -1600,7 +1697,8 @@ class UNIQUAC:
                     tau_ij=tau_ij,
                     r_i=r_i,
                     q_i=q_i,
-                    Z=Z)
+                    Z=Z
+                )
             else:
                 raise ValueError("calculation_mode not supported!")
 
@@ -1903,11 +2001,12 @@ class UNIQUAC:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
 
     def inputs_generator(
-            self,
-            temperature: Optional[
-                List[float | str]
-            ] = None,
-            **kwargs):
+        self,
+        temperature: Optional[
+            List[float | str]
+        ] = None,
+        **kwargs
+    ):
         '''
         Prepares inputs for the UNIQUAC activity model for calculating activity coefficients.
 
@@ -1948,8 +2047,31 @@ class UNIQUAC:
             elif 'uniquac' in self.datasource:
                 # get datasource
                 datasource = self.datasource.get('uniquac', {})
+            elif (
+                self._mixture_ids is not None
+            ):
+                # init datasource
+                datasource = {}
+                # set datasource by mixture ids
+                if 'Name' in self._mixture_ids.keys():
+                    # check not empty
+                    if self._mixture_ids.get('Name', None):
+                        key_ = self._mixture_ids['Name']
+                        # check key in datasource
+                        if key_ in self.datasource.keys():
+                            datasource = self.datasource[key_]
+                elif 'Formula' in self._mixture_ids.keys():
+                    # check not empty
+                    if self._mixture_ids.get('Formula', None):
+                        key_ = self._mixture_ids['Formula']
+                        # check key in datasource
+                        if key_ in self.datasource.keys():
+                            datasource = self.datasource[key_]
             else:
-                # set empty
+                # log
+                logger.warning(
+                    "No NRTL or nrtl key found in datasource, using model_input if provided."
+                )
                 datasource = {}
 
             # NOTE: check model inputs
@@ -1977,6 +2099,79 @@ class UNIQUAC:
                     raise ValueError(
                         "datasource cannot be empty.")
 
+            # SECTION: extract data from components
+            # ! extract r_i and q_i
+            # NOTE: r_i, relative van der Waals volume of component i
+            r_i_src = datasource.get('r_i', None)
+            if r_i_src is None:
+                # set default value
+                r_i_src = datasource.get('r', None)
+            # NOTE: default r_i values for common components
+            # ! Name-State
+            if r_i_src is None:
+                # extract each from components
+                r_i_src = {
+                    comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
+                        'r', None).get('value', None)
+                    for comp in self.components_ids['Name-State']
+                }
+            # ! Formula-State
+            if r_i_src is None:
+                # extract each from components
+                r_i_src = {
+                    comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
+                        'r', None).get('value', None)
+                    for comp in self.components_ids['Formula-State']
+                }
+
+            # check if r_i is a list or numpy array
+            if r_i_src is not None:
+                if isinstance(r_i_src, list):
+                    r_i = np.array(r_i_src)
+                elif isinstance(r_i_src, np.ndarray):
+                    r_i = r_i_src
+                elif isinstance(r_i_src, dict):
+                    r_i = self.to_i(r_i_src)
+                else:
+                    raise ValueError(
+                        "r_i must be a list or numpy array.")
+
+            # NOTE: q_i, relative van der Waals area of component i
+            q_i_src = datasource.get('q_i', None)
+            if q_i_src is None:
+                # set default value
+                q_i_src = datasource.get('q', None)
+            # NOTE: default q_i values for common components
+            # ! Name-State
+            if q_i_src is None:
+                # extract each from components
+                q_i_src = {
+                    comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
+                        'q', None).get('value', None)
+                    for comp in self.components_ids['Name-State']
+                }
+            # ! Formula-State
+            if q_i_src is None:
+                # extract each from components
+                q_i_src = {
+                    comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
+                        'q', None).get('value', None)
+                    for comp in self.components_ids['Formula-State']
+                }
+
+            # check if q_i is a list or numpy array
+            if q_i_src is not None:
+                if isinstance(q_i_src, list):
+                    q_i = np.array(q_i_src)
+                elif isinstance(q_i_src, np.ndarray):
+                    q_i = q_i_src
+                elif isinstance(q_i_src, dict):
+                    q_i = self.to_i(q_i_src)
+                else:
+                    raise ValueError(
+                        "q_i must be a list or numpy array.")
+
+            # SECTION: operating conditions
             # NOTE: check temperature
             # init T
             T = -1
@@ -1997,6 +2192,7 @@ class UNIQUAC:
                     T_value, T_unit, 'K'
                 )
 
+            # SECTION: extract interaction parameters
             # NOTE: method 1
             # ! Δg_ij, interaction energy parameter
             dU_ij_src = datasource.get('dU_ij', None)
@@ -2023,44 +2219,11 @@ class UNIQUAC:
             if tau_ij_src is None:
                 tau_ij_src = datasource.get('tau', None)
 
-            # NOTE: r_i, relative van der Waals volume of component i
-            r_i_src = datasource.get('r_i', None)
-            if r_i_src is None:
-                # set default value
-                r_i_src = datasource.get('r', None)
-
-            # check if r_i is a list or numpy array
-            if r_i_src is not None:
-                if isinstance(r_i_src, list):
-                    r_i = np.array(r_i_src)
-                elif isinstance(r_i_src, np.ndarray):
-                    r_i = r_i_src
-                else:
-                    raise ValueError(
-                        "r_i must be a list or numpy array.")
-
-            # NOTE: q_i, relative van der Waals area of component i
-            q_i_src = datasource.get('q_i', None)
-            if q_i_src is None:
-                # set default value
-                q_i_src = datasource.get('q', None)
-
-            # check if q_i is a list or numpy array
-            if q_i_src is not None:
-                if isinstance(q_i_src, list):
-                    q_i = np.array(q_i_src)
-                elif isinstance(q_i_src, np.ndarray):
-                    q_i = q_i_src
-                else:
-                    raise ValueError(
-                        "q_i must be a list or numpy array.")
-
             # SECTION: extract data
             # NOTE: check method
             tau_ij_cal_method = 0
 
             # check if dU_ij, a_ij, b_ij, c_ij, d_ij are provided
-
             # ! check if dU_ij is None
             if dU_ij_src is None:
                 # check if a_ij, b_ij, c_ij are provided
@@ -2068,7 +2231,7 @@ class UNIQUAC:
                     a_ij_src is None or
                     b_ij_src is None or
                     c_ij_src is None or
-                        d_ij_src is None
+                    d_ij_src is None
                 ):
                     raise ValueError(
                         "No valid source provided for interaction energy parameter (ΔU_ij) or constants a, b, c, and d.")
@@ -2164,7 +2327,7 @@ class UNIQUAC:
                         a_ij is None or
                         b_ij is None or
                         c_ij is None or
-                            d_ij is None
+                        d_ij is None
                     ):
                         raise ValueError(
                             "a_ij, b_ij, c_ij, d_ij cannot be None for calculating tau_ij")
