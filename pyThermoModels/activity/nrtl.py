@@ -500,19 +500,22 @@ class NRTL:
             # SECTION: check
             if (not isinstance(a_ij, np.ndarray) and
                 not isinstance(a_ij, dict) and
-                    not isinstance(a_ij, TableMatrixData)):
+                    not isinstance(a_ij, TableMatrixData)
+                ):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
             if (not isinstance(b_ij, np.ndarray) and
                 not isinstance(b_ij, dict) and
-                    not isinstance(b_ij, TableMatrixData)):
+                    not isinstance(b_ij, TableMatrixData)
+                ):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
             if (not isinstance(c_ij, np.ndarray) and
                 not isinstance(c_ij, dict) and
-                    not isinstance(c_ij, TableMatrixData)):
+                    not isinstance(c_ij, TableMatrixData)
+                ):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
@@ -539,7 +542,6 @@ class NRTL:
                 isinstance(b_ij, np.ndarray) and
                     isinstance(c_ij, np.ndarray)
             ):
-
                 # looping through the components
                 for i in range(comp_num):
                     for j in range(comp_num):
@@ -864,7 +866,7 @@ class NRTL:
         -----
         1. The extended Antoine equation format is used to calculate the interaction parameters using the following formula:
 
-            `tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T`
+            tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T
 
         2. Interaction energy parameter symbol is `X` for TableMatrixData as:
 

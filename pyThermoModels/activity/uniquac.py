@@ -581,7 +581,8 @@ class UNIQUAC:
             raise Exception(f"Error in extraction data: {str(e)}")
 
     def cal_dU_ij_M1(
-        self, temperature: float,
+        self,
+        temperature: float,
         a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
         b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
         c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
@@ -616,9 +617,9 @@ class UNIQUAC:
         -----
         1. The interaction energy parameter matrix is calculated using the formula:
 
-            `dU_ij = a_ij + b_ij * T + c_ij * T^2`
+            dU_ij = a_ij + b_ij * T + c_ij * T^2
 
-            where T is the temperature [K].
+        where T is the temperature [K].
 
         2. All parameters including a_ij, b_ij, c_ij must be in the same format (numpy array, dict or TableMatrixData).
         """
@@ -626,19 +627,22 @@ class UNIQUAC:
             # SECTION: check
             if (not isinstance(a_ij, np.ndarray) and
                 not isinstance(a_ij, dict) and
-                    not isinstance(a_ij, TableMatrixData)):
+                not isinstance(a_ij, TableMatrixData)
+                ):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
             if (not isinstance(b_ij, np.ndarray) and
                 not isinstance(b_ij, dict) and
-                    not isinstance(b_ij, TableMatrixData)):
+                not isinstance(b_ij, TableMatrixData)
+                ):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
             if (not isinstance(c_ij, np.ndarray) and
                 not isinstance(c_ij, dict) and
-                    not isinstance(c_ij, TableMatrixData)):
+                not isinstance(c_ij, TableMatrixData)
+                ):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
@@ -808,7 +812,7 @@ class UNIQUAC:
         dU_ij_symbol : str
             Interaction energy parameter symbol. Default is 'dU'.
         R_CONST : float
-            Univeral gas constant [J/mol/K], default R_CONST = 8.314
+            Universal gas constant [J/mol/K], default R_CONST = 8.314
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
 
@@ -823,9 +827,9 @@ class UNIQUAC:
         -----
         1. The tau_ij matrix is calculated using the formula:
 
-            `tau_ij = exp(-dU_ij / (R * T))`
+            tau_ij = exp(-dU_ij / (R * T))
 
-            where R is the universal gas constant [J/mol/K] and T is the temperature [K].
+        where R is the universal gas constant [J/mol/K] and T is the temperature [K].
 
         2. Interaction energy parameter symbol is `dU` for TableMatrixData as:
 
@@ -947,7 +951,7 @@ class UNIQUAC:
 
             return tau_ij, tau_ij_comp
         except Exception as e:
-            raise Exception(f"Error in cal_tauij: {str(e)}")
+            raise Exception(f"Error in cal_tau_ij: {str(e)}")
 
     def cal_tau_ij_M2(
         self, temperature: float,
@@ -988,7 +992,7 @@ class UNIQUAC:
         -----
         1. The extended Antoine equation format is used to calculate the interaction parameters using the following formula:
 
-            `tau_ij = a_ij + b_ij / T + c_ij * ln(T) + d_ij * T`
+            tau_ij = a_ij + b_ij / T + c_ij * ln(T) + d_ij * T
 
         2. Interaction energy parameter symbol is `X` for TableMatrixData as:
 
