@@ -938,7 +938,9 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             component_datasource = self.set_datasource(components, reference)
             # build equation source
             equation_equationsource = self.set_equationsource(
-                components, reference)
+                components,
+                reference
+            )
 
             # SECTION: init fugacity core
             FugacityCoreC = FugacityCore(

@@ -1,7 +1,5 @@
-# FUGACITY CORE CLASS
-# ------------------
-
-# package/module list
+# import libs
+import logging
 import numpy as np
 import pycuc
 from math import exp
@@ -11,6 +9,9 @@ from ..configs import R_CONST
 from .eosmanager import EOSManager
 from .eosutils import EOSUtils
 from ..docs.thermo import calMolarVolume
+
+# NOTE: logger
+logger = logging.getLogger(__name__)
 
 
 class FugacityCore(EOSManager):
@@ -71,13 +72,16 @@ class FugacityCore(EOSManager):
         self.phase = eos_parms['phase']
         # eos model
         self.eos_model = eos_parms['eos-model']
-        # mode
+        # mode (single/mixture)
         self.mode = eos_parms['mode']
         # liquid fugacity calculation method
         self.liquid_fugacity_calculation_method = eos_parms['liquid-fugacity-mode']
 
         # comp no
         self.componentsNo = len(self.components)
+
+        # NOTE: check single/mixture system
+        self.system_type = 'SINGLE' if self.componentsNo == 1 else 'MIXTURE'
 
         # root_analysis_set
         self.root_analysis_set = self.root_analysis_mode(self.phase)
@@ -182,29 +186,54 @@ class FugacityCore(EOSManager):
 
             # SECTION: fugacity calculation
             # check
-            if self.phase == 'VAPOR' or self.phase == 'SUPERCRITICAL':
-                # SECTION: vapor
+            if (
+                self.phase == 'VAPOR' or
+                self.phase == 'SUPERCRITICAL'
+            ):
+                # NOTE: vapor single and mixture
                 res = self.gas_fugacity(
-                    yi=yi, solver_method=solver_method,
-                    root_analysis_set=self.root_analysis_set)
+                    yi=yi,
+                    solver_method=solver_method,
+                    root_analysis_set=self.root_analysis_set
+                )
+            elif (
+                self.phase == 'LIQUID' and
+                self.system_type == 'MIXTURE'
+            ):
+                # NOTE: liquid mixture
+                res = self.gas_fugacity(
+                    yi=yi,
+                    solver_method=solver_method,
+                    root_analysis_set=self.root_analysis_set
+                )
             elif self.phase == 'VAPOR-LIQUID':
-                # SECTION: vapor-liquid
+                # NOTE: vapor-liquid for both single and mixture
                 res = self.gas_fugacity(
-                    yi=yi, solver_method=solver_method,
-                    root_analysis_set=self.root_analysis_set)
-            elif self.phase == 'LIQUID':
-                # SECTION: liquid
+                    yi=yi,
+                    solver_method=solver_method,
+                    root_analysis_set=self.root_analysis_set
+                )
+            elif (
+                self.phase == 'LIQUID' and
+                self.system_type == 'SINGLE'
+            ):
+                # NOTE: liquid single
                 # NOTE: check liquid fugacity calculation method
                 if self.liquid_fugacity_calculation_method == 'Poynting':
                     res = self.liquid_fugacity(
-                        yi=yi, solver_method=solver_method,
-                        root_analysis_set=self.root_analysis_set)
+                        yi=yi,
+                        solver_method=solver_method,
+                        root_analysis_set=self.root_analysis_set
+                    )
                 elif self.liquid_fugacity_calculation_method == 'EOS':
                     res = self.gas_fugacity(
-                        yi=yi, solver_method=solver_method,
-                        root_analysis_set=self.root_analysis_set)
+                        yi=yi,
+                        solver_method=solver_method,
+                        root_analysis_set=self.root_analysis_set
+                    )
             elif self.phase == 'SOLID':
-                # SECTION: solid
+                # NOTE: solid
+                # ! not implemented yet
                 res = self.solid_fugacity()
             else:
                 raise Exception('Invalid phase!')
@@ -222,14 +251,11 @@ class FugacityCore(EOSManager):
         ----------
         yi : list
             mole fraction of components
-        eos_model : str
-            equation of state model, default SRK
-        solver_method : str
-            solver method, default ls
-        mode : str
-            mode, default single
-        root_analysis_set : int
-            root analysis set
+        kwargs : dict
+            solver_method : str
+                solver method, default ls
+            root_analysis_set : int
+                root analysis set
 
         Returns
         -------
@@ -243,7 +269,8 @@ class FugacityCore(EOSManager):
         # universal gas constant [J/mol.K]
         # R = R_CONST
 
-        # setting
+        # SECTION: setting
+        # NOTE: get from kwargs
         solver_method = kwargs.get('solver_method', 'ls')
         root_analysis_set = kwargs.get('root_analysis_set', 1)
 
