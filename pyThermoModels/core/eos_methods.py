@@ -6,8 +6,13 @@ from pythermodb_settings.utils import set_component_id
 from pyThermoLinkDB.models import ModelSource
 # local
 from ..docs import ThermoModelCore
-from ..utils import set_feed_specification, parse_gas_fugacity_calc_result, parse_liquid_fugacity_calc_result
-from ..models import ComponentGasFugacityResult, ComponentLiquidFugacityResult
+from ..utils import (
+    set_feed_specification,
+    parse_gas_fugacity_calc_result,
+    parse_liquid_fugacity_calc_result,
+    parse_mixture_fugacity_calc_result
+)
+from ..models import ComponentGasFugacityResult, ComponentLiquidFugacityResult, MixtureGasFugacityResult
 
 
 # NOTE: logger
@@ -689,8 +694,11 @@ def calc_mixture_fugacity(
     component_key: Literal[
         "Name-State", "Formula-State"
     ] = "Name-State",
+    phase_names: List[
+        Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
+    ] = ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'],
     **kwargs
-):
+) -> MixtureGasFugacityResult:
     '''
     Starts calculating fugacity for the single and multi-component systems
 
@@ -730,13 +738,15 @@ def calc_mixture_fugacity(
         component key type as:
             - `Name-State`: component name with state, such as `carbon dioxide-g`, `water-l`
             - `Formula-State`: component formula with state, such as `CO2-g`, `H2O-l`
+    phase_names: List[Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']]
+        list of phase names to consider in the calculation, e.g., ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
     **kwargs: Optional[Dict]
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
 
     Returns
     -------
-    res: Dict
+    res: MixtureGasFugacityResult
         results of fugacity calculation for the mixture.
 
     Notes
@@ -815,6 +825,12 @@ def calc_mixture_fugacity(
                 liquid_fugacity_mode=liquid_fugacity_mode,
                 component_key=component_key,
                 **kwargs
+            )
+
+            # ! parse result
+            res = parse_mixture_fugacity_calc_result(
+                res=res,
+                phase_names=phase_names
             )
 
             # res

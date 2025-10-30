@@ -234,3 +234,53 @@ class ComponentLiquidFugacityResult(BaseModel):
         ...,
         description="Dictionary mapping phase names to their respective LiquidFugacityPhaseResult models"
     )
+
+
+# SECTION: mixture fugacity results model for multiple components
+# NOTE: The mixture might be in different phases as vapor and liquid
+# {
+#     'vapor': {
+#         'CO2': {
+#             'mole_fraction': 0.15,
+#             'pressure': {'value': 1000000.0, 'unit': 'Pa', 'symbol': 'P'},
+#             'temperature': {'value': 444.0, 'unit': 'K', 'symbol': 'T'},
+#             'molar_volume': {'value': 0.00343938395902379, 'unit': 'm3/mol', 'symbol': 'MoVo'},
+#             'compressibility_coefficient': {'value': 0.931671941173366, 'unit': 'dimensionless', 'symbol': 'Z'},
+#             'fugacity_coefficient': {'value': 1.0637414054916856, 'unit': 'dimensionless', 'symbol': 'phi'},
+#             'fugacity': {'value': 159561.21082375283, 'unit': 'Pa', 'symbol': 'Fug_MIX'},
+#             'mode': 'MIXTURE',
+#             'phase': 'VAPOR',
+#             'eos_model': 'RK'
+#         },
+#         'n-butane': {
+#             'mole_fraction': 0.85,
+#             'pressure': {'value': 1000000.0, 'unit': 'Pa', 'symbol': 'P'},
+#             'temperature': {'value': 444.0, 'unit': 'K', 'symbol': 'T'},
+#             'molar_volume': {'value': 0.00343938395902379, 'unit': 'm3/mol', 'symbol': 'MoVo'},
+#             'compressibility_coefficient': {'value': 0.931671941173366, 'unit': 'dimensionless', 'symbol': 'Z'},
+#             'fugacity_coefficient': {'value': 1.0122167294730493, 'unit': 'dimensionless', 'symbol': 'phi'},
+#             'fugacity': {'value': 860384.2200520919, 'unit': 'Pa', 'symbol': 'Fug_MIX'},
+#             'mode': 'MIXTURE',
+#             'phase': 'VAPOR',
+#             'eos_model': 'RK'
+#         }
+#     },
+#     'phase': ['vapor'],
+#     'component': ['CO2', 'n-butane']
+# }
+
+class MixtureGasFugacityResult(BaseModel):
+    '''
+    '''
+    phase: list[str] = Field(
+        ...,
+        description="List of phases considered in the calculation, e.g., ['vapor', 'liquid']"
+    )
+    components: list[str] = Field(
+        ...,
+        description="List of component names for which fugacity is calculated"
+    )
+    results: Dict[str, Dict[str, ComponentGasFugacityPhaseResult]] = Field(
+        ...,
+        description="Dictionary mapping phase names to another dictionary that maps component names to their respective GasFugacityPhaseResult models"
+    )

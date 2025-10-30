@@ -1,13 +1,14 @@
 # import libs
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, Literal, cast
+from typing import List, Literal, cast
 # locals
 from ..models import (
     PropertyValue,
     ComponentGasFugacityPhaseResult,
     ComponentGasFugacityResult,
     ComponentLiquidFugacityPhaseResult,
-    ComponentLiquidFugacityResult
+    ComponentLiquidFugacityResult,
+    MixtureGasFugacityResult
 )
 
 # NOTE: logger
@@ -257,4 +258,119 @@ def parse_liquid_fugacity_calc_result(
         return liquid_fugacity_result
     except Exception as e:
         logger.error(f"Failed to parse liquid fugacity result: {e}")
+        raise e
+
+
+def parse_mixture_fugacity_calc_result(
+    res: dict,
+    phase_names: List[
+        Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
+    ] = ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
+) -> MixtureGasFugacityResult:
+    '''
+    Parse mixture fugacity result dictionary into MixtureGasFugacityResult model
+
+    Parameters
+    ----------
+    res : dict
+        Result dictionary from fugacity calculation
+    phase_names : List[Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']], optional
+        List of phase names to consider, by default ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
+
+    Returns
+    -------
+    MixtureGasFugacityResult
+        Parsed mixture fugacity result model
+    '''
+    try:
+        # NOTE: extract phase results
+        # parse phase results
+        phase_results = {}
+
+        # normalize phase names
+        phase_names_normalized = [phase.upper() for phase in phase_names]
+
+        # NOTE: res normalization
+        res_normalized = {k.upper(): v for k, v in res.items()}
+
+        # NOTE: phase
+        res_phase = res_normalized.get('PHASE', None)
+        # >> check
+        if res_phase is None or isinstance(res_phase, list) is False:
+            logger.warning("Phase information missing or invalid in result")
+            res_phase = []
+
+        # NOTE: components
+        res_components = res_normalized.get('COMPONENT', None)
+        # >> check
+        if res_components is None or isinstance(res_components, list) is False:
+            logger.warning(
+                "Components information missing or invalid in result")
+            res_components = []
+
+        # iterate phase names
+        for phase_name in phase_names_normalized:
+            if phase_name in res_normalized.keys():
+                # extract phase data
+                phase_data = res_normalized[phase_name]
+
+                # update
+                phase_result = {}
+                for component, comp_data in phase_data.items():
+                    phase_result[component] = ComponentGasFugacityPhaseResult(
+                        mole_fraction=comp_data['mole_fraction'],
+                        temperature=PropertyValue(
+                            value=comp_data['temperature']['value'],
+                            unit=comp_data['temperature']['unit'],
+                            symbol=comp_data['temperature']['symbol']
+                        ),
+                        pressure=PropertyValue(
+                            value=comp_data['pressure']['value'],
+                            unit=comp_data['pressure']['unit'],
+                            symbol=comp_data['pressure']['symbol']
+                        ),
+                        molar_volume=PropertyValue(
+                            value=comp_data['molar_volume']['value'],
+                            unit=comp_data['molar_volume']['unit'],
+                            symbol=comp_data['molar_volume']['symbol']
+                        ),
+                        compressibility_coefficient=PropertyValue(
+                            value=comp_data['compressibility_coefficient']['value'],
+                            unit=comp_data['compressibility_coefficient']['unit'],
+                            symbol=comp_data['compressibility_coefficient']['symbol']
+                        ),
+                        fugacity_coefficient=PropertyValue(
+                            value=comp_data['fugacity_coefficient']['value'],
+                            unit=comp_data['fugacity_coefficient']['unit'],
+                            symbol=comp_data['fugacity_coefficient']['symbol']
+                        ),
+                        fugacity=PropertyValue(
+                            value=comp_data['fugacity']['value'],
+                            unit=comp_data['fugacity']['unit'],
+                            symbol=comp_data['fugacity']['symbol']
+                        ),
+                        roots=PropertyValue(
+                            value=comp_data['roots']['value'],
+                            unit=comp_data['roots']['unit'],
+                            symbol='Z_roots'  # assuming symbol for roots
+                        ),
+                        mode=comp_data['mode'],
+                        phase=cast(
+                            Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'], phase_name),
+                        eos_model=comp_data['eos_model']
+                    )
+
+                # add to phase results
+                phase_results[phase_name] = phase_result
+
+        # create MixtureGasFugacityResult
+        mixture_fugacity_result = MixtureGasFugacityResult(
+            components=res_components,
+            phase=res_phase,
+            results=phase_results
+        )
+
+        return mixture_fugacity_result
+    except Exception as e:
+        logger.error(f"Failed to parse mixture fugacity result: {e}")
         raise e

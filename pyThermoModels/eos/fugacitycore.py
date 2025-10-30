@@ -425,6 +425,11 @@ class FugacityCore(EOSManager):
                                 'unit': 'Pa',
                                 'symbol': 'Fug_MIX'
                             },
+                            'roots': {
+                                'value': Zis,
+                                'unit': 'dimensionless',
+                                'symbol': 'Z_i'
+                            },
                             'mode': (self.mode).upper(),
                             'phase': self.phase,
                             'eos_model': eos_model,
@@ -478,6 +483,11 @@ class FugacityCore(EOSManager):
                                 'value': yi[j]*float(_phi_res[j]) * self.P,
                                 'unit': 'Pa',
                                 'symbol': 'Fug_MIX'
+                            },
+                            'roots': {
+                                'value': Zis,
+                                'unit': 'dimensionless',
+                                'symbol': 'Z_i'
                             },
                             'mode': (self.mode).upper(),
                             'phase': _phase,
