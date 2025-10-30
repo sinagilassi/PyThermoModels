@@ -2,7 +2,7 @@
 # --------------
 
 # package version
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 # package name
 packageName = 'Python Thermodynamic Models'
 # package short name
