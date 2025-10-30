@@ -126,13 +126,23 @@ class EOSManager(EOSModels):
 
             # mixture a and b
             amix, bmix, aij, A_mix, B_mix = self.eos_mixing_rule(
-                xi, _eos_params, k_ij=self.k_ij)
+                xi,
+                _eos_params,
+                k_ij=self.k_ij
+            )
 
             # new params *** mixture ***
             _params_mixture = self.eos_parameters_mixture(
-                P, T, amix, bmix, aij,
-                A_mix, B_mix,
-                mixture_name, eos_model)
+                P,
+                T,
+                amix,
+                bmix,
+                aij,
+                A_mix,
+                B_mix,
+                mixture_name,
+                eos_model
+            )
             # set
             _eos_params.append(_params_mixture)
             _eos_params_comp['mixture'] = _params_mixture

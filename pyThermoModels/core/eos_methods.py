@@ -6,7 +6,9 @@ from pythermodb_settings.utils import set_component_id
 from pyThermoLinkDB.models import ModelSource
 # local
 from ..docs import ThermoModelCore
-from ..utils import set_feed_specification
+from ..utils import set_feed_specification, parse_gas_fugacity_calc_result, parse_liquid_fugacity_calc_result
+from ..models import ComponentGasFugacityResult, ComponentLiquidFugacityResult
+
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -326,8 +328,11 @@ def calc_gas_fugacity(
     component_key: Literal[
         "Name-State", "Formula-State"
     ] = "Name-State",
+    phase_names: List[
+        Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
+    ] = ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'],
     **kwargs
-) -> Dict[str, Any]:
+) -> ComponentGasFugacityResult:
     """
     Calculate the gas fugacity using the specified equation of state model.
 
@@ -364,6 +369,8 @@ def calc_gas_fugacity(
         component key type, options are:
             - `Name-State`: component name with state (default)
             - `Formula-State`: component formula with state
+    phase_names: List[Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']]
+        list of phase names to consider in the calculation, e.g., ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
     **kwargs: Optional[Dict]
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
@@ -371,7 +378,7 @@ def calc_gas_fugacity(
 
     Returns
     -------
-    Dict[str, Any]
+    ComponentGasFugacityResult
         A dictionary containing the calculated fugacity coefficients and related information.
 
     Notes
@@ -394,6 +401,10 @@ def calc_gas_fugacity(
             - At `T < Tc` and `P < Psat`, EOS may give 1 or 3 roots → use largest (vapor).
         - set [4]: 1 root (SUPERCRITICAL)
             - At `T > Tc`, only 1 real root → fluid is supercritical (vapor-like or liquid-like).
+
+    ### phase determination:
+
+    The phase of the component is determined based on the temperature and pressure provided in the model_input.
     """
     try:
         # SECTION: validate inputs
@@ -464,6 +475,13 @@ def calc_gas_fugacity(
                 solver_method=solver_method,
                 **kwargs
             )
+
+            # ! parse result
+            res = parse_gas_fugacity_calc_result(
+                res=res,
+                phase_names=phase_names
+            )
+
             return res
         except Exception as e:
             logger.error(f"Calculation failed!, {e}")
@@ -490,8 +508,11 @@ def calc_liquid_fugacity(
     component_key: Literal[
         "Name-State", "Formula-State"
     ] = "Name-State",
+    phase_names: List[
+        Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
+    ] = ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'],
     **kwargs
-) -> Dict[str, Any]:
+) -> ComponentLiquidFugacityResult:
     """
     Calculate the gas fugacity using the specified equation of state model.
 
@@ -532,6 +553,8 @@ def calc_liquid_fugacity(
         component key type, options are:
             - `Name-State`: component name with state (default)
             - `Formula-State`: component formula with state
+    phase_names: List[Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']]
+        list of phase names to consider in the calculation, e.g., ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
     **kwargs: Optional[Dict]
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
@@ -539,7 +562,7 @@ def calc_liquid_fugacity(
 
     Returns
     -------
-    Dict[str, Any]
+    ComponentLiquidFugacityResult
         A dictionary containing the calculated fugacity coefficients and related information.
 
     Notes
@@ -633,6 +656,13 @@ def calc_liquid_fugacity(
                 liquid_fugacity_mode=liquid_fugacity_mode,
                 **kwargs
             )
+
+            # ! parse result
+            res = parse_liquid_fugacity_calc_result(
+                res=res,
+                phase_names=phase_names
+            )
+
             return res
         except Exception as e:
             logger.error(f"Calculation failed!, {e}")

@@ -285,6 +285,12 @@ class FugacityCore(EOSManager):
         root_analysis_res['root'] = [root_analysis_set]
 
         # SECTION: set results
+        # NOTE: define for each phase as:
+        # vapor: _phi_pack['vapor']
+        # liquid: _phi_pack['liquid']
+        # solid: _phi_pack['solid']
+        # supercritical: _phi_pack['supercritical']
+        # vapor-liquid: _phi_pack['vapor'], _phi_pack['liquid']
         _phi_pack = {}
 
         # check
@@ -625,6 +631,7 @@ class FugacityCore(EOSManager):
                     'roots': {
                         'value': _Zi.tolist(),
                         'unit': 'dimensionless',
+                        'symbol': 'Z_i'
                     },
                     'mode': (self.mode).upper(),
                     'phase': self.phase,
@@ -931,6 +938,11 @@ class FugacityCore(EOSManager):
                         'value': float(fug_l_sat),
                         'unit': 'Pa',
                         'symbol': 'Fug_PURE'
+                    },
+                    'roots': {
+                        'value': _Zi.tolist(),
+                        'unit': 'dimensionless',
+                        'symbol': 'Z_i'
                     },
                     'mode': (self.mode).upper(),
                     'phase': self.phase,
