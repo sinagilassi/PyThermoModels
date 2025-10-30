@@ -198,7 +198,7 @@ model_inputs_parsed = eos.parse_model_inputs(model_input_content)
 
 # SECTION: model input
 model_input = {
-    # "phase": phase,
+    "phase": phase,
     "component": component,
     "pressure": [P, 'bar'],
     "temperature": [T, 'K'],
@@ -227,7 +227,7 @@ print(res)
 # NOTE: gas fugacity calculation method
 res = eos.cal_fugacity(
     model_name=eos_model,
-    model_input=model_inputs_parsed,
+    model_input=model_input,
     model_source=model_source
 )
 print(res)
