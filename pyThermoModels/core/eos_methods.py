@@ -638,7 +638,8 @@ def calc_liquid_fugacity(
 
         # NOTE: kwargs
         # phase
-        phase = kwargs.get('phase', None)
+        # ! default to LIQUID
+        phase = kwargs.get('phase', 'LIQUID')
 
         # SECTION: initialize eos core
         try:
