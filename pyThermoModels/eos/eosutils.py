@@ -256,19 +256,34 @@ class EOSUtils:
                 # res
                 _res = {
                     "component_name": component,
-                    "pressure": P,
-                    "pressure_unit": "Pa",
-                    "temperature": T,
-                    "temperature_unit": "K",
+                    "pressure": {
+                        "value": P,
+                        "unit": "Pa",
+                        "symbol": "P"
+                    },
+                    "temperature": {
+                        "value": T,
+                        "unit": "K",
+                        "symbol": "T"
+                    },
                     "root": _root_analysis[k],
                     "root_no": _root_no[k],
                     "phase": phase,
-                    "vapor_pressure": _VaPr,
-                    "vapor_pressure_unit": "Pa",
-                    "critical_temperature": _Tc,
-                    "critical_temperature_unit": "K",
-                    "critical_pressure": _Pc,
-                    "critical_pressure_unit": "Pa",
+                    "vapor_pressure": {
+                        "value": _VaPr,
+                        "unit": "Pa",
+                        "symbol": "VaPr"
+                    },
+                    "critical_temperature": {
+                        "value": _Tc,
+                        "unit": "K",
+                        "symbol": "Tc"
+                    },
+                    "critical_pressure": {
+                        "value": _Pc,
+                        "unit": "Pa",
+                        "symbol": "Pc"
+                    },
                     "tolerance": tolerance,
                     "vapor_pressure_check": pressure_equality_value,
                     "temperature_equality_value": temperature_equality_value,
@@ -284,7 +299,10 @@ class EOSUtils:
                 k += 1
 
             # SECTION: calculate bubble and dew point pressure
-            if bubble_point_pressure_mode is not None and dew_point_pressure_mode is not None:
+            if (
+                bubble_point_pressure_mode is not None and
+                dew_point_pressure_mode is not None
+            ):
                 # mixture
                 mixture = " | ".join(components)
                 # input
@@ -324,19 +342,37 @@ class EOSUtils:
 
                 # res
                 res_ = {
-                    "component_name": mixture,
-                    "pressure": P,
-                    "pressure_unit": "Pa",
-                    "temperature": T,
-                    "temperature_unit": "K",
-                    "bubble_pressure": BuPoPr,
-                    "bubble_pressure_unit": "Pa",
-                    "dew_point_pressure": DePoPr,
-                    "dew_point_pressure_unit": "Pa",
-                    "bubble_point_temperature": T,
-                    "bubble_point_temperature_unit": "K",
-                    "dew_point_temperature": T,
-                    "dew_point_temperature_unit": "K",
+                    "mixture_name": mixture,
+                    "pressure": {
+                        "value": P,
+                        "unit": "Pa",
+                        "symbol": "P"
+                    },
+                    "temperature": {
+                        "value": T,
+                        "unit": "K",
+                        "symbol": "T"
+                    },
+                    "bubble_pressure": {
+                        "value": BuPoPr,
+                        "unit": "Pa",
+                        "symbol": "BuPr"
+                    },
+                    "dew_point_pressure": {
+                        "value": DePoPr,
+                        "unit": "Pa",
+                        "symbol": "DePr"
+                    },
+                    "bubble_point_temperature": {
+                        "value": T,
+                        "unit": "K",
+                        "symbol": "BuTe"
+                    },
+                    "dew_point_temperature": {
+                        "value": T,
+                        "unit": "K",
+                        "symbol": "DeTe"
+                    },
                     "phase": phase,
                     "tolerance": tolerance,
                     "message": message

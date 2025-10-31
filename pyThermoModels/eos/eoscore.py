@@ -246,7 +246,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 )
 
                 # NOTE: eos parms
-                # set phase
+                # ! set phase
                 phase = str(eos_roots_analysis['phase'])
 
             # check phase
@@ -507,7 +507,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 )
 
                 # NOTE: eos parms
-                # set phase
+                # ! set phase
                 phase = str(eos_roots_analysis['phase'])
 
             # check phase
@@ -904,7 +904,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 )
 
                 # NOTE: eos parms
-                # set phase
+                # ! set phase
                 phase = str(eos_roots_analysis['mixture']['phase'])
 
             # check phase
@@ -1171,7 +1171,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
                 )
 
                 # NOTE: eos parms
-                # set phase
+                # ! set phase
                 phase = str(eos_roots_analysis['mixture']['phase'])
 
             # check phase

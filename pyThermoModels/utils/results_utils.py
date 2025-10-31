@@ -8,7 +8,9 @@ from ..models import (
     ComponentGasFugacityResult,
     ComponentLiquidFugacityPhaseResult,
     ComponentLiquidFugacityResult,
-    MixtureFugacityResult
+    MixtureFugacityResult,
+    ComponentEosRootResult,
+    MixtureEosRootResult
 )
 
 # NOTE: logger
@@ -373,4 +375,129 @@ def parse_mixture_fugacity_calc_result(
         return mixture_fugacity_result
     except Exception as e:
         logger.error(f"Failed to parse mixture fugacity result: {e}")
+        raise e
+
+
+def parse_component_eos_root_result(
+    res: dict
+) -> ComponentEosRootResult:
+    '''
+    Parse component EOS root result dictionary into ComponentEosRootResult model
+
+    Parameters
+    ----------
+    res : dict
+        Result dictionary from EOS root calculation
+
+    Returns
+    -------
+    ComponentEosRootResult
+        Parsed component EOS root result model
+    '''
+    try:
+        # create ComponentEosRootResult
+        component_eos_root_result = ComponentEosRootResult(
+            component_name=res.get('component_name', 'None'),
+            pressure=PropertyValue(
+                value=res['pressure']['value'],
+                unit=res['pressure']['unit'],
+                symbol=res['pressure']['symbol']
+            ),
+            temperature=PropertyValue(
+                value=res['temperature']['value'],
+                unit=res['temperature']['unit'],
+                symbol=res['temperature']['symbol']
+            ),
+            root=res.get('root', 0),
+            root_no=res.get('root_no', 0),
+            phase=res.get('phase', 'None'),
+            vapor_pressure=PropertyValue(
+                value=res['vapor_pressure']['value'],
+                unit=res['vapor_pressure']['unit'],
+                symbol=res['vapor_pressure']['symbol']
+            ),
+            critical_pressure=PropertyValue(
+                value=res['critical_pressure']['value'],
+                unit=res['critical_pressure']['unit'],
+                symbol=res['critical_pressure']['symbol']
+            ),
+            critical_temperature=PropertyValue(
+                value=res['critical_temperature']['value'],
+                unit=res['critical_temperature']['unit'],
+                symbol=res['critical_temperature']['symbol']
+            ),
+            tolerance=res.get('tolerance', 0),
+            vapor_pressure_check=res.get('vapor_pressure_check', 0),
+            temperature_equality_value=res.get(
+                'temperature_equality_value', 0),
+            pressure_equality_check=res.get('pressure_equality_check', False),
+            temperature_equality_check=res.get(
+                'temperature_equality_check', False),
+            message=res.get('message', 'None')
+        )
+
+        return component_eos_root_result
+    except Exception as e:
+        logger.error(f"Failed to parse component EOS root result: {e}")
+        raise e
+
+
+def parse_mixture_eos_root_result(
+    res: dict
+) -> MixtureEosRootResult:
+    '''
+    Parse mixture EOS root result dictionary into MixtureEosRootResult model
+
+    Parameters
+    ----------
+    res : dict
+        Result dictionary from EOS root calculation
+
+    Returns
+    -------
+    MixtureEosRootResult
+        Parsed mixture EOS root result model
+    '''
+    try:
+        # create MixtureEosRootResult
+        mixture_eos_root_result = MixtureEosRootResult(
+            mixture_name=res.get('mixture_name', 'None'),
+            pressure=PropertyValue(
+                value=res['pressure']['value'],
+                unit=res['pressure']['unit'],
+                symbol=res['pressure']['symbol']
+            ),
+            temperature=PropertyValue(
+                value=res['temperature']['value'],
+                unit=res['temperature']['unit'],
+                symbol=res['temperature']['symbol']
+            ),
+            bubble_pressure=PropertyValue(
+                value=res['bubble_pressure']['value'],
+                unit=res['bubble_pressure']['unit'],
+                symbol=res['bubble_pressure']['symbol']
+            ),
+            dew_point_pressure=PropertyValue(
+                value=res['dew_point_pressure']['value'],
+                unit=res['dew_point_pressure']['unit'],
+                symbol=res['dew_point_pressure']['symbol']
+            ),
+            bubble_point_temperature=PropertyValue(
+                value=res['bubble_point_temperature']['value'],
+                unit=res['bubble_point_temperature']['unit'],
+                symbol=res['bubble_point_temperature']['symbol']
+            ),
+            dew_point_temperature=PropertyValue(
+                value=res['dew_point_temperature']['value'],
+                unit=res['dew_point_temperature']['unit'],
+                symbol=res['dew_point_temperature']['symbol']
+            ),
+            phase=res.get('phase', 'None'),
+            tolerance=res.get('tolerance', 0),
+            message=res.get('message', 'None')
+        )
+
+        return mixture_eos_root_result
+    except Exception as e:
+        logger.error(f"Failed to parse mixture EOS root result: {e}")
         raise e

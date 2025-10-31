@@ -4,7 +4,9 @@ from .component_utils import set_feed_specification
 from .results_utils import (
     parse_gas_fugacity_calc_result,
     parse_liquid_fugacity_calc_result,
-    parse_mixture_fugacity_calc_result
+    parse_mixture_fugacity_calc_result,
+    parse_component_eos_root_result,
+    parse_mixture_eos_root_result
 )
 
 __all__ = [
@@ -15,5 +17,7 @@ __all__ = [
     'set_feed_specification',
     'parse_gas_fugacity_calc_result',
     'parse_liquid_fugacity_calc_result',
-    'parse_mixture_fugacity_calc_result'
+    'parse_mixture_fugacity_calc_result',
+    'parse_component_eos_root_result',
+    'parse_mixture_eos_root_result',
 ]

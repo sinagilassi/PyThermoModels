@@ -10,7 +10,9 @@ from ..utils import (
     set_feed_specification,
     parse_gas_fugacity_calc_result,
     parse_liquid_fugacity_calc_result,
-    parse_mixture_fugacity_calc_result
+    parse_mixture_fugacity_calc_result,
+    parse_component_eos_root_result,
+    parse_mixture_eos_root_result
 )
 from ..models import (
     ComponentGasFugacityResult,
@@ -158,8 +160,8 @@ def check_component_eos_roots(
                 **kwargs
             )
 
-            # >> set model
-            res = ComponentEosRootResult(**res)
+            # ! >> parse result
+            res = parse_component_eos_root_result(res=res)
 
             return res
         except Exception as e:
@@ -187,9 +189,8 @@ def check_multi_component_eos_roots(
     component_key: Literal[
         "Name-State", "Formula-State"
     ] = "Name-State",
-    result_mode: Literal['mixture', 'all'] = 'mixture',
     **kwargs
-):
+) -> MixtureEosRootResult:
     '''
     Check multi-component eos roots using the specified equation of state model.
 
@@ -225,13 +226,14 @@ def check_multi_component_eos_roots(
         component key type, options are:
             - `Name-State`: component name with state (default)
             - `Formula-State`: component formula with state
-    result_mode: str
-        result mode,
-            - `mixture`: mixture result only (default)
-            - `all`: mixture and individual component results
     **kwargs: Optional[Dict]
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
+
+    Returns
+    -------
+    res: MixtureEosRootResult
+        eos root analysis
 
     Notes
     -----
@@ -323,16 +325,17 @@ def check_multi_component_eos_roots(
                 **kwargs
             )
 
-            # ! >> check
-            if result_mode == 'mixture':
-                return MixtureEosRootResult(**res['mixture'])
-            elif result_mode == 'all':
-                # >> set model
-                res['mixture'] = MixtureEosRootResult(**res['mixture'])
-                res['components'] = {
-                    k: ComponentEosRootResult(**v)
-                    for k, v in res['components'].items()
-                }
+            # ! >> parse result
+            res_mixture = res.get('mixture', {})
+
+            # >> check mixture result
+            if not res_mixture:
+                logger.error("No mixture result found in eos root analysis.")
+                raise ValueError(
+                    "No mixture result found in eos root analysis.")
+
+            #  parse mixture result
+            res = parse_mixture_eos_root_result(res=res_mixture)
 
             # return
             return res

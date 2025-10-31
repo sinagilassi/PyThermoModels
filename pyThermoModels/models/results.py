@@ -1,6 +1,6 @@
 # import libs
 from pydantic import BaseModel, Field
-from typing import Dict, List, Union, Literal
+from typing import Dict, List, Union, Literal, Optional
 
 # SECTION: gas fugacity results model for single component
 # NOTE: The component might be in different phases as vapor, liquid, vapor-liquid, supercritical, etc.
@@ -25,7 +25,7 @@ class PropertyValue(BaseModel):
     '''Model for a property with value, unit, and symbol'''
     value: Union[float, int, List[float]]
     unit: str
-    symbol: str
+    symbol: Optional[str] = None
 
 
 class ComponentGasFugacityPhaseResult(BaseModel):
@@ -318,21 +318,13 @@ class ComponentEosRootResult(BaseModel):
         ...,
         description="Name of the component"
     )
-    pressure: float = Field(
+    pressure: PropertyValue = Field(
         ...,
-        description="Pressure value"
+        description="Pressure value with unit"
     )
-    pressure_unit: str = Field(
+    temperature: PropertyValue = Field(
         ...,
-        description="Unit of the pressure"
-    )
-    temperature: float = Field(
-        ...,
-        description="Temperature value"
-    )
-    temperature_unit: str = Field(
-        ...,
-        description="Unit of the temperature"
+        description="Temperature value with unit"
     )
     root: int = Field(
         ...,
@@ -346,29 +338,17 @@ class ComponentEosRootResult(BaseModel):
         ...,
         description="Predicted phase of the component"
     )
-    vapor_pressure: float = Field(
+    vapor_pressure: PropertyValue = Field(
         ...,
-        description="Vapor pressure value"
+        description="Vapor pressure value with unit"
     )
-    vapor_pressure_unit: str = Field(
-        ...,
-        description="Unit of the vapor pressure"
-    )
-    critical_temperature: float = Field(
+    critical_temperature: PropertyValue = Field(
         ...,
         description="Critical temperature value"
     )
-    critical_temperature_unit: str = Field(
-        ...,
-        description="Unit of the critical temperature"
-    )
-    critical_pressure: float = Field(
+    critical_pressure: PropertyValue = Field(
         ...,
         description="Critical pressure value"
-    )
-    critical_pressure_unit: str = Field(
-        ...,
-        description="Unit of the critical pressure"
     )
     tolerance: float = Field(
         ...,
@@ -420,57 +400,33 @@ class MixtureEosRootResult(BaseModel):
     '''
     Mixture EOS root analysis result model
     '''
-    component_name: str = Field(
+    mixture_name: str = Field(
         ...,
         description="Names of the components in the mixture"
     )
-    pressure: float = Field(
+    pressure: PropertyValue = Field(
         ...,
-        description="Pressure value"
+        description="Pressure value with unit"
     )
-    pressure_unit: str = Field(
+    temperature: PropertyValue = Field(
         ...,
-        description="Unit of the pressure"
+        description="Temperature value with unit"
     )
-    temperature: float = Field(
-        ...,
-        description="Temperature value"
-    )
-    temperature_unit: str = Field(
-        ...,
-        description="Unit of the temperature"
-    )
-    bubble_pressure: float = Field(
+    bubble_pressure: PropertyValue = Field(
         ...,
         description="Bubble point pressure value"
     )
-    bubble_pressure_unit: str = Field(
-        ...,
-        description="Unit of the bubble point pressure"
-    )
-    dew_point_pressure: float = Field(
+    dew_point_pressure: PropertyValue = Field(
         ...,
         description="Dew point pressure value"
     )
-    dew_point_pressure_unit: str = Field(
-        ...,
-        description="Unit of the dew point pressure"
-    )
-    bubble_point_temperature: float = Field(
+    bubble_point_temperature: PropertyValue = Field(
         ...,
         description="Bubble point temperature value"
     )
-    bubble_point_temperature_unit: str = Field(
-        ...,
-        description="Unit of the bubble point temperature"
-    )
-    dew_point_temperature: float = Field(
+    dew_point_temperature: PropertyValue = Field(
         ...,
         description="Dew point temperature value"
-    )
-    dew_point_temperature_unit: str = Field(
-        ...,
-        description="Unit of the dew point temperature"
     )
     phase: str = Field(
         ...,
