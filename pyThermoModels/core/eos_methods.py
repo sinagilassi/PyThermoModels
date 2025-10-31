@@ -12,7 +12,13 @@ from ..utils import (
     parse_liquid_fugacity_calc_result,
     parse_mixture_fugacity_calc_result
 )
-from ..models import ComponentGasFugacityResult, ComponentLiquidFugacityResult, MixtureFugacityResult
+from ..models import (
+    ComponentGasFugacityResult,
+    ComponentLiquidFugacityResult,
+    MixtureFugacityResult,
+    ComponentEosRootResult,
+    MixtureEosRootResult
+)
 
 
 # NOTE: logger
@@ -31,7 +37,7 @@ def check_component_eos_roots(
         "Name-State", "Formula-State"
     ] = "Name-State",
     **kwargs
-):
+) -> ComponentEosRootResult:
     '''
     Check component eos roots using the specified equation of state model.
 
@@ -64,7 +70,7 @@ def check_component_eos_roots(
 
     Returns
     -------
-    res: dict
+    res: ComponentEosRootResult
         eos root analysis
 
     Notes
@@ -151,6 +157,10 @@ def check_component_eos_roots(
                 model_source=model_source_dict,
                 **kwargs
             )
+
+            # >> set model
+            res = ComponentEosRootResult(**res)
+
             return res
         except Exception as e:
             logger.error(f"Calculation failed!, {e}")
@@ -177,6 +187,7 @@ def check_multi_component_eos_roots(
     component_key: Literal[
         "Name-State", "Formula-State"
     ] = "Name-State",
+    result_mode: Literal['mixture', 'all'] = 'mixture',
     **kwargs
 ):
     '''
@@ -214,6 +225,10 @@ def check_multi_component_eos_roots(
         component key type, options are:
             - `Name-State`: component name with state (default)
             - `Formula-State`: component formula with state
+    result_mode: str
+        result mode,
+            - `mixture`: mixture result only (default)
+            - `all`: mixture and individual component results
     **kwargs: Optional[Dict]
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
@@ -307,6 +322,17 @@ def check_multi_component_eos_roots(
                 component_key=component_key,
                 **kwargs
             )
+
+            # ! >> check
+            if result_mode == 'mixture':
+                return MixtureEosRootResult(**res['mixture'])
+            elif result_mode == 'all':
+                # >> set model
+                res['mixture'] = MixtureEosRootResult(**res['mixture'])
+                res['components'] = {
+                    k: ComponentEosRootResult(**v)
+                    for k, v in res['components'].items()
+                }
 
             # return
             return res

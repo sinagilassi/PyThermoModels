@@ -261,7 +261,7 @@ class EOSUtils:
                     "temperature": T,
                     "temperature_unit": "K",
                     "root": _root_analysis[k],
-                    "root-no": _root_no[k],
+                    "root_no": _root_no[k],
                     "phase": phase,
                     "vapor_pressure": _VaPr,
                     "vapor_pressure_unit": "Pa",

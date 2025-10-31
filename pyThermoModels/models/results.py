@@ -284,3 +284,203 @@ class MixtureFugacityResult(BaseModel):
         ...,
         description="Dictionary mapping phase names to another dictionary that maps component names to their respective GasFugacityPhaseResult models"
     )
+
+# SECTION: component eos root results model
+# {
+#     'component_name': 'propane-g',
+#     'pressure': 1000000.0,
+#     'pressure_unit': 'Pa',
+#     'temperature': 300.1,
+#     'temperature_unit': 'K',
+#     'root': 2,
+#     'root-no': '1 real root (liquid)',
+#     'phase': 'LIQUID',
+#     'vapor_pressure': 999723.1044,
+#     'vapor_pressure_unit': 'Pa',
+#     'critical_temperature': 369.83,
+#     'critical_temperature_unit': 'K',
+#     'critical_pressure': 4248000.0,
+#     'critical_pressure_unit': 'Pa',
+#     'tolerance': 0.1,
+#     'vapor_pressure_check': -276.8956000000471,
+#     'temperature_equality_value': 69.72999999999996,
+#     'pressure_equality_check': False,
+#     'temperature_equality_check': False,
+#     'message': 'Component propane-g at T=300.1 K and P=1000000.0 Pa is in liquid phase.'
+# }
+
+
+class ComponentEosRootResult(BaseModel):
+    '''
+    Component EOS root analysis result model
+    '''
+    component_name: str = Field(
+        ...,
+        description="Name of the component"
+    )
+    pressure: float = Field(
+        ...,
+        description="Pressure value"
+    )
+    pressure_unit: str = Field(
+        ...,
+        description="Unit of the pressure"
+    )
+    temperature: float = Field(
+        ...,
+        description="Temperature value"
+    )
+    temperature_unit: str = Field(
+        ...,
+        description="Unit of the temperature"
+    )
+    root: int = Field(
+        ...,
+        description="Selected root number"
+    )
+    root_no: str = Field(
+        ...,
+        description="Description of the number of real roots"
+    )
+    phase: str = Field(
+        ...,
+        description="Predicted phase of the component"
+    )
+    vapor_pressure: float = Field(
+        ...,
+        description="Vapor pressure value"
+    )
+    vapor_pressure_unit: str = Field(
+        ...,
+        description="Unit of the vapor pressure"
+    )
+    critical_temperature: float = Field(
+        ...,
+        description="Critical temperature value"
+    )
+    critical_temperature_unit: str = Field(
+        ...,
+        description="Unit of the critical temperature"
+    )
+    critical_pressure: float = Field(
+        ...,
+        description="Critical pressure value"
+    )
+    critical_pressure_unit: str = Field(
+        ...,
+        description="Unit of the critical pressure"
+    )
+    tolerance: float = Field(
+        ...,
+        description="Tolerance used in the analysis"
+    )
+    vapor_pressure_check: float = Field(
+        ...,
+        description="Difference between system pressure and vapor pressure"
+    )
+    temperature_equality_value: float = Field(
+        ...,
+        description="Difference between system temperature and saturation temperature"
+    )
+    pressure_equality_check: bool = Field(
+        ...,
+        description="Check if system pressure equals vapor pressure within tolerance"
+    )
+    temperature_equality_check: bool = Field(
+        ...,
+        description="Check if system temperature equals saturation temperature within tolerance"
+    )
+    message: str = Field(
+        ...,
+        description="Summary message of the EOS root analysis"
+    )
+
+
+# NOTE: mixture eos root results model
+# {
+#     'component_name': 'carbon dioxide-g | n-butane-g',
+#     'pressure': 1000000.0,
+#     'pressure_unit': 'Pa',
+#     'temperature': 444.0,
+#     'temperature_unit': 'K',
+#     'bubble_pressure': 18796812.05906,
+#     'bubble_pressure_unit': 'Pa',
+#     'dew_point_pressure': 5845352.760145266,
+#     'dew_point_pressure_unit': 'Pa',
+#     'bubble_point_temperature': 444.0,
+#     'bubble_point_temperature_unit': 'K',
+#     'dew_point_temperature': 444.0,
+#     'dew_point_temperature_unit': 'K',
+#     'phase': 'VAPOR',
+#     'tolerance': 0.1,
+#     'message': 'Mixture carbon dioxide-g | n-butane-g at T=444.0 K and P=1000000.0 Pa is in vapor phase as P < Dew Point Pressure (5845352.760145266 Pa).'
+# }
+
+class MixtureEosRootResult(BaseModel):
+    '''
+    Mixture EOS root analysis result model
+    '''
+    component_name: str = Field(
+        ...,
+        description="Names of the components in the mixture"
+    )
+    pressure: float = Field(
+        ...,
+        description="Pressure value"
+    )
+    pressure_unit: str = Field(
+        ...,
+        description="Unit of the pressure"
+    )
+    temperature: float = Field(
+        ...,
+        description="Temperature value"
+    )
+    temperature_unit: str = Field(
+        ...,
+        description="Unit of the temperature"
+    )
+    bubble_pressure: float = Field(
+        ...,
+        description="Bubble point pressure value"
+    )
+    bubble_pressure_unit: str = Field(
+        ...,
+        description="Unit of the bubble point pressure"
+    )
+    dew_point_pressure: float = Field(
+        ...,
+        description="Dew point pressure value"
+    )
+    dew_point_pressure_unit: str = Field(
+        ...,
+        description="Unit of the dew point pressure"
+    )
+    bubble_point_temperature: float = Field(
+        ...,
+        description="Bubble point temperature value"
+    )
+    bubble_point_temperature_unit: str = Field(
+        ...,
+        description="Unit of the bubble point temperature"
+    )
+    dew_point_temperature: float = Field(
+        ...,
+        description="Dew point temperature value"
+    )
+    dew_point_temperature_unit: str = Field(
+        ...,
+        description="Unit of the dew point temperature"
+    )
+    phase: str = Field(
+        ...,
+        description="Predicted phase of the mixture"
+    )
+    tolerance: float = Field(
+        ...,
+        description="Tolerance used in the analysis"
+    )
+    message: str = Field(
+        ...,
+        description="Summary message of the EOS root analysis for the mixture"
+    )

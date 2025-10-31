@@ -6,7 +6,9 @@ from .results import (
     ComponentGasFugacityResult,
     ComponentLiquidFugacityPhaseResult,
     ComponentLiquidFugacityResult,
-    MixtureFugacityResult
+    MixtureFugacityResult,
+    ComponentEosRootResult,
+    MixtureEosRootResult
 )
 __all__ = [
     'OperatingConditions',
@@ -15,5 +17,7 @@ __all__ = [
     'ComponentGasFugacityResult',
     'ComponentLiquidFugacityPhaseResult',
     'ComponentLiquidFugacityResult',
-    'MixtureFugacityResult'
+    'MixtureFugacityResult',
+    'ComponentEosRootResult',
+    'MixtureEosRootResult'
 ]
