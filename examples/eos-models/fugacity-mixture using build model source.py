@@ -394,6 +394,6 @@ res = calc_mixture_fugacity(
     pressure=pressure,
     temperature=temperature,
     model_source=model_source_,
-    component_key='Formula-State'
+    component_key='Name-State'
 )
 print(res)
