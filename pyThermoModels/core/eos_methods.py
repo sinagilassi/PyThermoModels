@@ -12,7 +12,7 @@ from ..utils import (
     parse_liquid_fugacity_calc_result,
     parse_mixture_fugacity_calc_result
 )
-from ..models import ComponentGasFugacityResult, ComponentLiquidFugacityResult, MixtureGasFugacityResult
+from ..models import ComponentGasFugacityResult, ComponentLiquidFugacityResult, MixtureFugacityResult
 
 
 # NOTE: logger
@@ -698,7 +698,7 @@ def calc_mixture_fugacity(
         Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
     ] = ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'],
     **kwargs
-) -> MixtureGasFugacityResult:
+) -> MixtureFugacityResult:
     '''
     Starts calculating fugacity for the single and multi-component systems
 
@@ -746,7 +746,7 @@ def calc_mixture_fugacity(
 
     Returns
     -------
-    res: MixtureGasFugacityResult
+    res: MixtureFugacityResult
         results of fugacity calculation for the mixture.
 
     Notes

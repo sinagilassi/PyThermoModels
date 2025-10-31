@@ -269,7 +269,7 @@ class ComponentLiquidFugacityResult(BaseModel):
 #     'component': ['CO2', 'n-butane']
 # }
 
-class MixtureGasFugacityResult(BaseModel):
+class MixtureFugacityResult(BaseModel):
     '''
     '''
     phase: list[str] = Field(

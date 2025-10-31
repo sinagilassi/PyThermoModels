@@ -8,7 +8,7 @@ from ..models import (
     ComponentGasFugacityResult,
     ComponentLiquidFugacityPhaseResult,
     ComponentLiquidFugacityResult,
-    MixtureGasFugacityResult
+    MixtureFugacityResult
 )
 
 # NOTE: logger
@@ -266,9 +266,9 @@ def parse_mixture_fugacity_calc_result(
     phase_names: List[
         Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
     ] = ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
-) -> MixtureGasFugacityResult:
+) -> MixtureFugacityResult:
     '''
-    Parse mixture fugacity result dictionary into MixtureGasFugacityResult model
+    Parse mixture fugacity result dictionary into MixtureFugacityResult model
 
     Parameters
     ----------
@@ -279,7 +279,7 @@ def parse_mixture_fugacity_calc_result(
 
     Returns
     -------
-    MixtureGasFugacityResult
+    MixtureFugacityResult
         Parsed mixture fugacity result model
     '''
     try:
@@ -363,8 +363,8 @@ def parse_mixture_fugacity_calc_result(
                 # add to phase results
                 phase_results[phase_name] = phase_result
 
-        # create MixtureGasFugacityResult
-        mixture_fugacity_result = MixtureGasFugacityResult(
+        # create MixtureFugacityResult
+        mixture_fugacity_result = MixtureFugacityResult(
             components=res_components,
             phase=res_phase,
             results=phase_results
