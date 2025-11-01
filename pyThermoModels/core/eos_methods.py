@@ -695,7 +695,8 @@ def calc_liquid_fugacity(
             # ! parse result
             res = parse_liquid_fugacity_calc_result(
                 res=res,
-                phase_names=phase_names
+                phase_names=phase_names,
+                liquid_fugacity_mode=liquid_fugacity_mode
             )
 
             return res

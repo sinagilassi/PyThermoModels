@@ -230,7 +230,7 @@ class ComponentLiquidFugacityResult(BaseModel):
         ...,
         description="Component name for which fugacity is calculated"
     )
-    results: Dict[str, ComponentLiquidFugacityPhaseResult] = Field(
+    results: Dict[str, ComponentLiquidFugacityPhaseResult | ComponentGasFugacityPhaseResult] = Field(
         ...,
         description="Dictionary mapping phase names to their respective LiquidFugacityPhaseResult models"
     )

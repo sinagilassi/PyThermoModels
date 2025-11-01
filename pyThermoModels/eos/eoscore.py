@@ -414,7 +414,6 @@ class eosCore(ThermoLinkDB, ReferenceManager):
 
         # model input
         model_input = {
-            "component": component,
             "phase": phase, # optional
             "pressure": [P, 'Pa'],
             "temperature": [T, 'K'],

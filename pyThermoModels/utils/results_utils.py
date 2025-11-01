@@ -135,6 +135,7 @@ def parse_liquid_fugacity_calc_result(
     phase_names: List[
         Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
     ] = ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'],
+    liquid_fugacity_mode: Literal['EOS', 'Poynting'] = 'EOS'
 ) -> ComponentLiquidFugacityResult:
     '''
     Parse liquid fugacity result dictionary into LiquidFugacityResult model
@@ -145,10 +146,12 @@ def parse_liquid_fugacity_calc_result(
         Result dictionary from fugacity calculation
     phase_names : List[Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']], optional
         List of phase names to consider, by default ['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID']
+    liquid_fugacity_mode : Literal['EOS', 'Poynting'], optional
+        Liquid fugacity calculation mode, by default 'EOS'
 
     Returns
     -------
-    ComponentLiquidFugacityResult
+    ComponentLiquidFugacityResult | ComponentGasFugacityResult
         Parsed liquid fugacity result model
     '''
     try:
@@ -183,69 +186,120 @@ def parse_liquid_fugacity_calc_result(
                 # extract phase data
                 phase_data = res_normalized[phase_name]
 
-                # update
-                phase_result = ComponentLiquidFugacityPhaseResult(
-                    mole_fraction=phase_data['mole_fraction'],
-                    temperature=PropertyValue(
-                        value=phase_data['temperature']['value'],
-                        unit=phase_data['temperature']['unit'],
-                        symbol=phase_data['temperature']['symbol']
-                    ),
-                    pressure=PropertyValue(
-                        value=phase_data['pressure']['value'],
-                        unit=phase_data['pressure']['unit'],
-                        symbol=phase_data['pressure']['symbol']
-                    ),
-                    vapor_pressure=PropertyValue(
-                        value=phase_data['vapor_pressure']['value'],
-                        unit=phase_data['vapor_pressure']['unit'],
-                        symbol=phase_data['vapor_pressure']['symbol']
-                    ),
-                    molar_volume=PropertyValue(
-                        value=phase_data['molar_volume']['value'],
-                        unit=phase_data['molar_volume']['unit'],
-                        symbol=phase_data['molar_volume']['symbol']
-                    ),
-                    compressibility_coefficient=PropertyValue(
-                        value=phase_data['compressibility_coefficient']['value'],
-                        unit=phase_data['compressibility_coefficient']['unit'],
-                        symbol=phase_data['compressibility_coefficient']['symbol']
-                    ),
-                    fugacity_coefficient_sat=PropertyValue(
-                        value=phase_data['fugacity_coefficient_sat']['value'],
-                        unit=phase_data['fugacity_coefficient_sat']['unit'],
-                        symbol=phase_data['fugacity_coefficient_sat']['symbol']
-                    ),
-                    fugacity_coefficient=PropertyValue(
-                        value=phase_data['fugacity_coefficient']['value'],
-                        unit=phase_data['fugacity_coefficient']['unit'],
-                        symbol=phase_data['fugacity_coefficient']['symbol']
-                    ),
-                    Poynting_term=PropertyValue(
-                        value=phase_data['Poynting_term']['value'],
-                        unit=phase_data['Poynting_term']['unit'],
-                        symbol=phase_data['Poynting_term']['symbol']
-                    ),
-                    fugacity_sat=PropertyValue(
-                        value=phase_data['fugacity_sat']['value'],
-                        unit=phase_data['fugacity_sat']['unit'],
-                        symbol=phase_data['fugacity_sat']['symbol']
-                    ),
-                    fugacity=PropertyValue(
-                        value=phase_data['fugacity']['value'],
-                        unit=phase_data['fugacity']['unit'],
-                        symbol=phase_data['fugacity']['symbol']
-                    ),
-                    roots=PropertyValue(
-                        value=phase_data['roots']['value'],
-                        unit=phase_data['roots']['unit'],
-                        symbol='Z_roots'  # assuming symbol for roots
-                    ),
-                    mode=phase_data['mode'],
-                    phase=cast(
-                        Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'], phase_name),
-                    eos_model=phase_data['eos_model']
-                )
+                # NOTE: set
+                if liquid_fugacity_mode == 'EOS':
+                    # ! update using EOS method
+                    phase_result = ComponentGasFugacityPhaseResult(
+                        mole_fraction=phase_data['mole_fraction'],
+                        temperature=PropertyValue(
+                            value=phase_data['temperature']['value'],
+                            unit=phase_data['temperature']['unit'],
+                            symbol=phase_data['temperature']['symbol']
+                        ),
+                        pressure=PropertyValue(
+                            value=phase_data['pressure']['value'],
+                            unit=phase_data['pressure']['unit'],
+                            symbol=phase_data['pressure']['symbol']
+                        ),
+                        molar_volume=PropertyValue(
+                            value=phase_data['molar_volume']['value'],
+                            unit=phase_data['molar_volume']['unit'],
+                            symbol=phase_data['molar_volume']['symbol']
+                        ),
+                        compressibility_coefficient=PropertyValue(
+                            value=phase_data['compressibility_coefficient']['value'],
+                            unit=phase_data['compressibility_coefficient']['unit'],
+                            symbol=phase_data['compressibility_coefficient']['symbol']
+                        ),
+                        fugacity_coefficient=PropertyValue(
+                            value=phase_data['fugacity_coefficient']['value'],
+                            unit=phase_data['fugacity_coefficient']['unit'],
+                            symbol=phase_data['fugacity_coefficient']['symbol']
+                        ),
+                        fugacity=PropertyValue(
+                            value=phase_data['fugacity']['value'],
+                            unit=phase_data['fugacity']['unit'],
+                            symbol=phase_data['fugacity']['symbol']
+                        ),
+                        roots=PropertyValue(
+                            value=phase_data['roots']['value'],
+                            unit=phase_data['roots']['unit'],
+                            symbol='Z_roots'  # assuming symbol for roots
+                        ),
+                        mode=phase_data['mode'],
+                        phase=cast(
+                            Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'], phase_name),
+                        eos_model=phase_data['eos_model']
+                    )
+                elif liquid_fugacity_mode == 'Poynting':
+                    # ! update using Poynting method
+                    phase_result = ComponentLiquidFugacityPhaseResult(
+                        mole_fraction=phase_data['mole_fraction'],
+                        temperature=PropertyValue(
+                            value=phase_data['temperature']['value'],
+                            unit=phase_data['temperature']['unit'],
+                            symbol=phase_data['temperature']['symbol']
+                        ),
+                        pressure=PropertyValue(
+                            value=phase_data['pressure']['value'],
+                            unit=phase_data['pressure']['unit'],
+                            symbol=phase_data['pressure']['symbol']
+                        ),
+                        vapor_pressure=PropertyValue(
+                            value=phase_data['vapor_pressure']['value'],
+                            unit=phase_data['vapor_pressure']['unit'],
+                            symbol=phase_data['vapor_pressure']['symbol']
+                        ),
+                        molar_volume=PropertyValue(
+                            value=phase_data['molar_volume']['value'],
+                            unit=phase_data['molar_volume']['unit'],
+                            symbol=phase_data['molar_volume']['symbol']
+                        ),
+                        compressibility_coefficient=PropertyValue(
+                            value=phase_data['compressibility_coefficient']['value'],
+                            unit=phase_data['compressibility_coefficient']['unit'],
+                            symbol=phase_data['compressibility_coefficient']['symbol']
+                        ),
+                        fugacity_coefficient_sat=PropertyValue(
+                            value=phase_data['fugacity_coefficient_sat']['value'],
+                            unit=phase_data['fugacity_coefficient_sat']['unit'],
+                            symbol=phase_data['fugacity_coefficient_sat']['symbol']
+                        ),
+                        fugacity_coefficient=PropertyValue(
+                            value=phase_data['fugacity_coefficient']['value'],
+                            unit=phase_data['fugacity_coefficient']['unit'],
+                            symbol=phase_data['fugacity_coefficient']['symbol']
+                        ),
+                        Poynting_term=PropertyValue(
+                            value=phase_data['Poynting_term']['value'],
+                            unit=phase_data['Poynting_term']['unit'],
+                            symbol=phase_data['Poynting_term']['symbol']
+                        ),
+                        fugacity_sat=PropertyValue(
+                            value=phase_data['fugacity_sat']['value'],
+                            unit=phase_data['fugacity_sat']['unit'],
+                            symbol=phase_data['fugacity_sat']['symbol']
+                        ),
+                        fugacity=PropertyValue(
+                            value=phase_data['fugacity']['value'],
+                            unit=phase_data['fugacity']['unit'],
+                            symbol=phase_data['fugacity']['symbol']
+                        ),
+                        roots=PropertyValue(
+                            value=phase_data['roots']['value'],
+                            unit=phase_data['roots']['unit'],
+                            symbol='Z_roots'  # assuming symbol for roots
+                        ),
+                        mode=phase_data['mode'],
+                        phase=cast(
+                            Literal['VAPOR', 'LIQUID', 'SUPERCRITICAL', 'VAPOR-LIQUID'], phase_name),
+                        eos_model=phase_data['eos_model']
+                    )
+                else:
+                    logger.error(
+                        f"Invalid liquid fugacity mode: {liquid_fugacity_mode}")
+                    raise ValueError(
+                        f"Invalid liquid fugacity mode: {liquid_fugacity_mode}")
 
                 # add to phase results
                 phase_results[phase_name] = phase_result
