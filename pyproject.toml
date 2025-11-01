@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyThermoModels"
-version = "1.5.5"
+version = "1.5.6"
 description = "PyThermoModels is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties."
 readme = "README.md"
 requires-python = ">=3.11"
