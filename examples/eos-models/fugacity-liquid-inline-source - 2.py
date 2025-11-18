@@ -192,7 +192,6 @@ model_source_: ComponentModelSource = build_component_model_source(
 # SECTION: THERMODB LINK CONFIGURATION
 # =======================================
 
-
 # build datasource & equationsource
 datasource = model_source_.data_source
 equationsource = model_source_.equation_source
