@@ -170,3 +170,4 @@ cython_debug/
 *.pkl
 
 /notes
+/notebooks
