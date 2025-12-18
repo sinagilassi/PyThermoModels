@@ -8,14 +8,16 @@ from .main import (
     calc_tau_ij_with_dU_ij_using_uniquac_model,
     calc_tau_ij
 )
+from .unifac import UNIFAC
 
 __all__ = [
     'ActivityCore',
     'NRTL',
     'UNIQUAC',
+    'UNIFAC',
     'calc_dg_ij_using_nrtl_model',
     'calc_tau_ij_with_dg_ij_using_nrtl_model',
     'calc_dU_ij_using_uniquac_model',
     'calc_tau_ij_with_dU_ij_using_uniquac_model',
-    'calc_tau_ij'
+    'calc_tau_ij',
 ]
