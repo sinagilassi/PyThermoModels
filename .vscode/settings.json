@@ -22,6 +22,7 @@
         "thermodb",
         "thermodbhub",
         "thermomodelcore",
+        "UNIFAC",
         "UNIQUAC",
         "Vsat",
         "xtol"
