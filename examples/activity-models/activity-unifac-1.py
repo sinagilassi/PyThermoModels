@@ -71,14 +71,23 @@ activity_unifac.load_data(
 )
 
 print("UNIFAC data set successfully.")
+
+# NOTE: group ids
+group_ids = activity_unifac.get_group_ids()
+print("Available UNIFAC group IDs:")
+print(group_ids)
+
 # =======================================
 # NOTE COMPONENT GROUP ASSIGNMENT
 # =======================================
 # Component Definitions: List of {Subgroup ID: Count}
+# Component 1:
 acetone_structure = {"1": 1.0, "18": 1.0}
+acetone_structure = {"CH3": 1.0, "CH3CO": 1.0}  # or by names
 
 # Component 2:
 n_heptane_structure = {"1": 2.0, "2": 3.0}
+n_heptane_structure = {"CH3": 2.0, "CH2": 3.0}  # or by names
 
 components_group_data = {
     "acetone": acetone_structure,
