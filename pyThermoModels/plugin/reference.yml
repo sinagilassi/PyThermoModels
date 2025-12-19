@@ -137,3 +137,6 @@ REFERENCES:
         symbol: tau
         unit: None
     DEPENDANT-EQUATIONS: None
+  UNIFAC:
+    DEPENDANT-DATA: None
+    DEPENDANT-EQUATIONS: None
