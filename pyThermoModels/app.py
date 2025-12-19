@@ -1,7 +1,12 @@
 # import packages/modules
 from typing import Dict, Optional, Literal, List, Any
 # local
-from .activity import ActivityCore, NRTL, UNIQUAC
+from .activity import (
+    ActivityCore,
+    NRTL,
+    UNIQUAC,
+    UNIFAC
+)
 from .docs import ThermoModelCore
 from .utils import add_attributes
 from .plugin import EQUATION_OF_STATE_MODELS, ACTIVITY_MODELS
@@ -51,7 +56,7 @@ def eos(**kwargs):
 @add_attributes(metadata=ACTIVITY_MODELS)
 def activity(
         components: List[str],
-        model_name: Literal['NRTL', 'UNIQUAC'],
+        model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC'],
         model_source: Optional[Dict[str, Any]] = None,
         **kwargs
 ) -> ActivityCore:
@@ -63,9 +68,10 @@ def activity(
     components: list
         List of component names to be used in the activity model, such as ['ethanol', 'butyl-methyl-ether'].
     model_name: str
-        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC').
-            1. NRTL: Non-Random Two-Liquid Model
-            2. UNIQUAC: Universal Quasi-Chemical Model
+        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC').
+            1. `NRTL`: Non-Random Two-Liquid Model
+            2. `UNIQUAC`: Universal Quasi-Chemical Model
+            3. `UNIFAC`: Universal Functional Activity Coefficient Model
     model_source: dict, optional
         Dictionary containing the source of the activity model data.
         If None, default values will be used.
@@ -89,7 +95,8 @@ def activity(
             components=components,
             model_name=model_name,
             model_source=model_source,
-            **kwargs)
+            **kwargs
+        )
     except Exception as e:
         raise Exception("Initialization failed!, ", e)
 
@@ -97,10 +104,10 @@ def activity(
 @add_attributes(metadata=ACTIVITY_MODELS)
 def activities(
         components: List[str],
-        model_name: Literal['NRTL', 'UNIQUAC'],
+        model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC'],
         model_source: Optional[Dict[str, Any]] = None,
         **kwargs
-) -> NRTL | UNIQUAC:
+) -> NRTL | UNIQUAC | UNIFAC:
     '''
     Initialize activity calculation library
 
@@ -109,9 +116,10 @@ def activities(
     components: list
         List of component names to be used in the activity model, such as ['ethanol', 'butyl-methyl-ether'].
     model_name: str
-        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC').
-            1. NRTL: Non-Random Two-Liquid Model
-            2. UNIQUAC: Universal Quasi-Chemical Model
+        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC').
+            1. `NRTL`: Non-Random Two-Liquid Model
+            2. `UNIQUAC`: Universal Quasi-Chemical Model
+            3. `UNIFAC`: Universal Functional Activity Coefficient Model
     model_source: dict, optional
         Dictionary containing the source of the activity model data.
         If None, default values will be used.
@@ -124,7 +132,7 @@ def activities(
 
     Returns
     -------
-    NRTL | UNIQUAC: object
+    NRTL | UNIQUAC | UNIFAC: object
         Instance of the selected activity model class.
     '''
     try:
