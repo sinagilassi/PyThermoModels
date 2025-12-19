@@ -242,6 +242,105 @@ class UNIFAC():
         except Exception as e:
             raise Exception(f"Error initializing UNIFAC model: {e}") from e
 
+    def get_group_ids(self) -> Dict[str, str]:
+        '''
+        Get the group IDs for each component based on the loaded group data.
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary mapping component names to their group IDs.
+        '''
+        try:
+            # NOTE: Check if model is initialized
+            if self._model is None:
+                raise Exception(
+                    "UNIFAC model data not loaded. Call load_data() first.")
+
+            # SECTION: Retrieve group IDs from the UNIFAC1 model
+            components_group_ids: Dict[str, str] = self._model.group_ids
+
+            return components_group_ids
+        except Exception as e:
+            raise Exception(f"Error retrieving group IDs: {e}") from e
+
+    def _find_group_id_by_name(
+            self,
+            component_group: Dict[str, float | int],
+    ) -> Dict[str, float | int]:
+        '''
+        Find the group ID corresponding to a given group name.
+
+        Parameters
+        ----------
+        component_group : Dict[str, float|int]
+            Dictionary of component group contributions.
+
+        Returns
+        -------
+        Optional[str]
+            The corresponding group ID if found, otherwise None.
+        '''
+        try:
+            # NOTE: groups ids
+            group_ids: Dict[str, str] = self.get_group_ids()
+
+            # NOTE: init
+            component_group_upd = {}
+
+            # NOTE: iterate group data
+            for gid, gdata in component_group.items():
+                # ! check gid is name not number string
+                if gid.isdigit():
+                    # update
+                    component_group_upd[gid] = gdata
+                    # skip
+                    continue
+
+                # ! check if gid is in group ids
+                if gid in group_ids.keys():
+                    key_ = group_ids[gid]
+                    component_group_upd[key_] = gdata
+
+            # return
+            return component_group_upd
+        except Exception as e:
+            raise Exception(
+                f"Error finding group ID by name: {e}") from e
+
+    def _set_component_groups_by_name(
+            self,
+            component_groups: Dict[str, Dict[str, float | int]]
+    ) -> Dict[str, Dict[str, float | int]]:
+        '''
+        Set the component group contributions using group names.
+
+        Parameters
+        ----------
+        component_groups : Dict[str, Dict[str, float|int]]
+            Dictionary mapping component names to their group contributions using group names.
+
+        Returns
+        -------
+        Dict[str, Dict[str, float|int]]
+            Dictionary mapping component names to their group contributions using group IDs.
+        '''
+        try:
+            # NOTE: init
+            component_groups_upd: Dict[str, Dict[str, float | int]] = {}
+
+            # iterate components
+            for comp, comp_group in component_groups.items():
+                # find group ids
+                comp_group_upd = self._find_group_id_by_name(comp_group)
+                # set
+                component_groups_upd[comp] = comp_group_upd
+
+            return component_groups_upd
+        except Exception as e:
+            raise Exception(
+                f"Error setting component groups by name: {e}") from e
+
     def set_component_groups(
             self,
             component_groups: Dict[str, Dict[str, float | int]]
@@ -253,12 +352,24 @@ class UNIFAC():
         ----------
         component_groups : Dict[str, Dict[str, float|int]]
             Dictionary mapping component names to their group contributions.
-            Example:
-            {
-                "Component1": {"Group1": 2, "Group2": 1},
-                "Component2": {"Group1": 1, "Group3": 3},
-                ...
-            }
+
+
+        Examples
+        --------
+        Define component groups as follows:
+        ```python
+        # group id: count
+        components_group_data = {
+            "acetone": {"1": 1.0, "18": 1.0},
+            "n_heptane": {"1": 2.0, "2": 3.0}
+        }
+
+        # group name: count
+        components_group_data = {
+            "acetone": {"CH3": 1.0, "CO": 1.0},
+            "n_heptane": {"CH3": 2.0, "CH2": 3.0}
+        }
+        ```
         '''
         try:
             # NOTE: Check if model is initialized
@@ -266,19 +377,24 @@ class UNIFAC():
                 raise Exception(
                     "UNIFAC model data not loaded. Call load_data() first.")
 
+            # SECTION: Check if group ids are names or numbers
+            component_groups_upd = self._set_component_groups_by_name(
+                component_groups=component_groups
+            )
+
             # SECTION: Validate component_groups based on defined components
             # NOTE: init component data
             component_groups_validated: List[Dict[str, float | int]] = []
 
             # iterate components
             for comp in self.components:
-                if comp not in component_groups:
+                if comp not in component_groups_upd:
                     raise KeyError(
                         f"Component '{comp}' not found in component_groups."
                     )
 
                 # set
-                component_groups_validated.append(component_groups[comp])
+                component_groups_validated.append(component_groups_upd[comp])
 
             # NOTE: Set component groups in the UNIFAC1 model
             self._model.component_group_data = component_groups_validated
