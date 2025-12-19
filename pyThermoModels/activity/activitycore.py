@@ -4,6 +4,7 @@ from math import log
 # local
 from .nrtl import NRTL
 from .uniquac import UNIQUAC
+from .unifac import UNIFAC
 
 
 class ActivityCore:
@@ -13,6 +14,7 @@ class ActivityCore:
     # NOTE: activity model
     __nrtl: Optional[NRTL] = None
     __uniquac: Optional[UNIQUAC] = None
+    __unifac: Optional[UNIFAC] = None
 
     # NOTE: mixture id
     _mixture_id: Optional[str] = None
@@ -63,6 +65,13 @@ class ActivityCore:
             datasource=self.datasource,
             equationsource=self.equationsource,
             mixture_id=self._mixture_id,
+        )
+        # ! unifac
+        self.__unifac = UNIFAC(
+            components=self.components,
+            datasource=self.datasource,
+            equationsource=self.equationsource,
+            **kwargs
         )
 
     @property
@@ -122,7 +131,27 @@ class ActivityCore:
         except Exception as e:
             raise Exception(f"Error in UNIQUAC: {e}") from e
 
-    def select(self, model_name: str) -> Union[NRTL, UNIQUAC]:
+    @property
+    def unifac(self):
+        '''
+        Initialize the UNIFAC activity model.
+
+        Returns
+        -------
+        UNIFAC
+            Instance of the UNIFAC activity model class.
+        '''
+        try:
+            # NOTE: UNIFAC
+            # check if unifac is None
+            if self.__unifac is None:
+                # err
+                raise ValueError("UNIFAC model not initialized.")
+            return self.__unifac
+        except Exception as e:
+            raise Exception(f"Error in UNIFAC: {e}") from e
+
+    def select(self, model_name: str) -> Union[NRTL, UNIQUAC, UNIFAC]:
         '''
         Select the activity model based on the model name.
 
@@ -139,10 +168,22 @@ class ActivityCore:
         try:
             if model_name == 'NRTL':
                 return NRTL(
-                    self.components, self.datasource, self.equationsource)
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
             elif model_name == 'UNIQUAC':
                 return UNIQUAC(
-                    self.components, self.datasource, self.equationsource)
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
+            elif model_name == 'UNIFAC':
+                return UNIFAC(
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
             else:
                 raise ValueError(f"Model {model_name} not supported.")
         except Exception as e:

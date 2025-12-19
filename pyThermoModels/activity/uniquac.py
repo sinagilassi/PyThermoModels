@@ -123,7 +123,7 @@ class UNIQUAC:
         The dU_ij equation is defined as:
         - dU_ij = a_ij + b_ij * T + c_ij * T^2
         '''
-        # SECTION:
+        # SECTION: inputs
         # Check datasource
         if not isinstance(datasource, dict):
             raise TypeError("datasource must be a dict")
