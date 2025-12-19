@@ -1,9 +1,10 @@
 # import libs
 import logging
+import numpy as np
 from typing import (
     List,
-    Literal,
-    Dict
+    Dict,
+    Optional,
 )
 from pythermodb_settings.models import (
     Component,
@@ -173,3 +174,41 @@ def convert_str_numeric_to_int(
     except Exception as e:
         logging.error(f"Failed to convert string to numeric: {e}")
         raise ValueError(f"Failed to convert string to numeric: {e}") from e
+
+
+def sanitize_mole_fractions(x, eps=1e-30) -> Optional[List[float]]:
+    """
+    Sanitize mole fractions to ensure they are non-negative and sum to 1.
+
+    Parameters
+    ----------
+    x : List[float] | np.ndarray
+        List or array of mole fractions.
+    eps : float, optional
+        Small value to floor mole fractions to avoid log(0), by default 1e-30.
+
+    Returns
+    -------
+    np.ndarray
+        Sanitized mole fractions as a numpy array.
+    """
+    try:
+        x = np.asarray(x, dtype=float)
+        if np.any(x < 0):
+            raise ValueError("Mole fractions must be non-negative.")
+        s = x.sum()
+        if s <= 0:
+            raise ValueError("Sum of mole fractions must be > 0.")
+        x = x / s
+
+        # floor tiny/zero values to avoid log(0)
+        x = np.maximum(x, eps)
+        x = x / x.sum()
+
+        # convert back to list
+        x = x.tolist()
+
+        return x
+    except Exception as e:
+        logging.error(f"Failed to sanitize mole fractions: {e}")
+        return None
