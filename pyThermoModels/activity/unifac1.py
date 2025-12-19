@@ -68,6 +68,23 @@ class UNIFAC1:
         self.Q_k: List[float] = []
         self.main_groups: List[str] = []
 
+        # NOTE: group id
+        self._group_ids: Dict[str, str] = {
+            v['group-id']: v['sub-group'] for v in self.group_data.values()
+        }
+
+    @property
+    def group_ids(self) -> Dict[str, str]:
+        """
+        Get the list of group IDs defined in the group data such as `CH3`: 1.
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary mapping group IDs to subgroup names.
+        """
+        return self._group_ids
+
     @property
     def component_group_data(self) -> List[Dict[str, float | int]]:
         """
