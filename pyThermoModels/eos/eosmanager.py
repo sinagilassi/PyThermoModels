@@ -323,7 +323,7 @@ class EOSManager(EOSModels):
             # compressibility factor
             Z = []
             # bound
-            bound = guess_no*[(0, 0)]
+            bound = guess_no*[(0.0, 0.0)]
             # cost
             fZ_cost = np.zeros(guess_no)
             # set index
