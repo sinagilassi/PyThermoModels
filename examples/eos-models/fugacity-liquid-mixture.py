@@ -1,9 +1,14 @@
 # import packages/modules
 import os
+import logging
 from rich import print
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
+
+# Enable debug logs from EOS root solver
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(name)s:%(message)s")
+logging.getLogger("pyThermoModels.eos.eosmanager").setLevel(logging.DEBUG)
 
 # version
 print(ptm.__version__)

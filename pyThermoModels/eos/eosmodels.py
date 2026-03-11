@@ -680,7 +680,8 @@ class EOSModels():
         a2 = beta*(q + epsilon*sigma*beta - (1+beta)*(sigma+epsilon))
         a3 = (beta**2)*(q + (1+beta)*epsilon*sigma)
 
-        return [a0, a1, a2, a3]
+        # Match eos_equation(): f(Z) = a0*Z^3 + a1*Z^2 + a2*Z - a3
+        return [a0, a1, a2, -a3]
 
     def eos_equation_mixture(self, x, params):
         """

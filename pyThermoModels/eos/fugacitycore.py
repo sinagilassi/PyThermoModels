@@ -328,6 +328,15 @@ class FugacityCore(EOSManager):
                 mode=mode
             )
 
+            # ! take only (near-)real roots
+            _Zi = np.asarray(_Zi, dtype=np.complex128)
+            _Zi = [float(np.real(x)) for x in _Zi if abs(np.imag(x)) < 1e-10]
+            if len(_Zi) == 0:
+                logger.warning(
+                    "No valid real EOS roots found for mixture in gas_fugacity; returning empty result."
+                )
+                return {}
+
             # Zi loop
             Zis = []
 
@@ -515,6 +524,15 @@ class FugacityCore(EOSManager):
                 mode=mode
             )
 
+            # ! take only (near-)real roots
+            _Zi = np.asarray(_Zi, dtype=np.complex128)
+            _Zi = [float(np.real(x)) for x in _Zi if abs(np.imag(x)) < 1e-10]
+            if len(_Zi) == 0:
+                logger.warning(
+                    "No valid real EOS roots found for single component in gas_fugacity; returning empty result."
+                )
+                return {}
+
             # Zi loop
             Zis = []
             # phase loop
@@ -639,7 +657,7 @@ class FugacityCore(EOSManager):
                         'symbol': 'Fug_PURE'
                     },
                     'roots': {
-                        'value': _Zi.tolist(),
+                        'value': _Zi,
                         'unit': 'dimensionless',
                         'symbol': 'Z_i'
                     },

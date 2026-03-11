@@ -2,6 +2,7 @@
 # ----------------
 
 # import packages/modules
+import logging
 import numpy as np
 from scipy import optimize
 from math import exp, log
@@ -9,6 +10,9 @@ from typing import List, Dict, Literal, Callable
 # local
 from .eosmodels import EOSModels
 from ..configs import R_CONST
+
+# NOTE: logger
+logger = logging.getLogger(__name__)
 
 
 class EOSManager(EOSModels):
@@ -176,6 +180,23 @@ class EOSManager(EOSModels):
             fZ_coeff = self.eos_equation_coefficient_mixture(_eos_params_0)
         else:
             raise Exception("mode must be 'single' or 'mixture'")
+
+        # NOTE: debug EOS polynomial coefficients/function form used for root solving
+        if mode == 'single':
+            poly_format = "f(Z) = a0*Z^3 + a1*Z^2 + a2*Z - a3"
+        else:
+            poly_format = "f(Z) = Z^3 + alpha*Z^2 + beta*Z + gamma"
+
+        logger.debug(
+            "EOS polynomial | mode=%s solver=%s root_id=%s P=%s Pa T=%s K format=\"%s\" coeff=%s",
+            mode,
+            solver_method,
+            _root_0,
+            P,
+            T,
+            poly_format,
+            np.asarray(fZ_coeff).tolist()
+        )
 
         # NOTE: fZ prime and second
         fpZ = None  # eos_equation_prime

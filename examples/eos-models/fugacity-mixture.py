@@ -1,9 +1,15 @@
 # import packages/modules
+import logging
 import os
 from rich import print
 import pyThermoModels as ptm
 import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
+
+# Enable debug logs from EOS root solver
+logging.basicConfig(level=logging.DEBUG,
+                    format="%(levelname)s:%(name)s:%(message)s")
+logging.getLogger("pyThermoModels.eos.eosmanager").setLevel(logging.DEBUG)
 
 # version
 print(ptm.__version__)
@@ -192,6 +198,7 @@ model_inputs_parsed = eos.parse_model_inputs(model_input_content)
 
 # SECTION: model input
 model_input = {
+    "phase": phase,
     "feed-specification": N0s,
     "pressure": [P, 'bar'],
     "temperature": [T, 'K'],
@@ -220,7 +227,7 @@ print(res_)
 # calculate fugacity
 res = eos.cal_fugacity_mixture(
     model_name=eos_model,
-    model_input=model_inputs_parsed,
+    model_input=model_input,
     model_source=model_source,
 )
 print(res)
