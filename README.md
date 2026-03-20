@@ -7,11 +7,13 @@
 ![Python Version](https://img.shields.io/pypi/pyversions/pyThermoModels.svg)
 ![License](https://img.shields.io/pypi/l/pyThermoModels)
 ![Read the Docs](https://img.shields.io/readthedocs/pyThermoModels)
-
+[![Download on the App Store](https://img.shields.io/badge/Download_on_the_App_Store-0D0D0D?logo=apple&logoColor=white)](https://apps.apple.com/ca/app/mozithermocalc/id6759209992)
 
 `PyThermoModels` is an open-source Python package designed to facilitate thermodynamic modeling and calculations. This package provides a comprehensive and user-friendly interface to popular thermodynamic models, enabling quick and accurate estimation of key properties.
 
 **Important**: PyThermoModels is now suitable for production and critical applications. However, users are encouraged to thoroughly test the package in their specific use cases.
+
+Calculations can also be done on your mobile with the MoziThermoCalc iOS app: [Download on the App Store](https://apps.apple.com/ca/app/mozithermocalc/id6759209992).
 
 ---
 
