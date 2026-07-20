@@ -442,3 +442,68 @@ REFERENCES:
             - [5,'acetic acid','C2H4O2','l',1.0560E-03,298.15,1,'CRC/List of viscosities tabulated value at 25 C']
             - [6,'ethyl acetate','C4H8O2','l',4.2600E-04,298.15,1,'CRC/Lange tabulated value near 25 C']
 """
+
+# =======================================
+# ! NRTL TERNARY REFERENCE DATA
+# =======================================
+# This block is used by the ternary activity example to build a modern model
+# source directly from reusable table data.
+NRTL_TERNARY_REFERENCE_CONTENT = """
+REFERENCES:
+    NRTL:
+      DATABOOK-ID: 2
+      TABLES:
+        NRTL parameters for methanol-ethanol-butyl-methyl-ether:
+          TABLE-ID: 1
+          DESCRIPTION:
+            This table provides ternary NRTL non-randomness and interaction
+            energy data for methanol, ethanol, and butyl-methyl-ether.
+          MATRIX-SYMBOL:
+            - alpha constant: alpha
+            - binary interaction parameter: dg
+          STRUCTURE:
+            COLUMNS: [No.,Mixture,Name,Formula,State,alpha_i_1,alpha_i_2,alpha_i_3,dg_i_1,dg_i_2,dg_i_3]
+            SYMBOL: [None,None,None,None,None,alpha_i_1,alpha_i_2,alpha_i_3,dg_i_1,dg_i_2,dg_i_3]
+            UNIT: [None,None,None,None,None,1,1,1,J/mol,J/mol,J/mol]
+          VALUES:
+            - [1,methanol|ethanol|butyl-methyl-ether,methanol,CH3OH,l,0,0.30,0.31,0,900,750]
+            - [2,methanol|ethanol|butyl-methyl-ether,ethanol,C2H5OH,l,0.30,0,0.28,850,0,700]
+            - [3,methanol|ethanol|butyl-methyl-ether,butyl-methyl-ether,C5H12O,l,0.31,0.28,0,650,500,0]
+"""
+
+NRTL_TERNARY_MIXTURE_NAME = "methanol|ethanol|butyl-methyl-ether"
+NRTL_TERNARY_MIXTURE_FORMULA = "CH3OH|C2H5OH|C5H12O"
+NRTL_TERNARY_ALPHA = [
+    [0.00, 0.30, 0.31],
+    [0.30, 0.00, 0.28],
+    [0.31, 0.28, 0.00],
+]
+NRTL_TERNARY_DG = [
+    [0.0, 900.0, 750.0],
+    [850.0, 0.0, 700.0],
+    [650.0, 500.0, 0.0],
+]
+
+NRTL_TERNARY_ALPHA_DICT = {
+    'methanol | methanol': 0.0,
+    'methanol | ethanol': 0.30,
+    'methanol | butyl-methyl-ether': 0.31,
+    'ethanol | methanol': 0.30,
+    'ethanol | ethanol': 0.0,
+    'ethanol | butyl-methyl-ether': 0.28,
+    'butyl-methyl-ether | methanol': 0.31,
+    'butyl-methyl-ether | ethanol': 0.28,
+    'butyl-methyl-ether | butyl-methyl-ether': 0.0,
+}
+
+NRTL_TERNARY_DG_DICT = {
+    'methanol | methanol': 0.0,
+    'methanol | ethanol': 900.0,
+    'methanol | butyl-methyl-ether': 750.0,
+    'ethanol | methanol': 850.0,
+    'ethanol | ethanol': 0.0,
+    'ethanol | butyl-methyl-ether': 700.0,
+    'butyl-methyl-ether | methanol': 650.0,
+    'butyl-methyl-ether | ethanol': 500.0,
+    'butyl-methyl-ether | butyl-methyl-ether': 0.0,
+}
