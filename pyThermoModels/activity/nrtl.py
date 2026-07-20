@@ -1302,6 +1302,7 @@ class NRTL:
                 inputs_ = self.inputs_generator(
                     temperature=model_input['temperature'],
                     model_input=model_input,
+                    symbol_delimiter=symbol_delimiter,
                 )
 
                 # looping through the missed keys
@@ -1810,6 +1811,9 @@ class NRTL:
         temperature: Optional[
             List[float | str]
         ] = None,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
         **kwargs
     ):
         '''
@@ -1819,6 +1823,8 @@ class NRTL:
         ----------
         temperature : List[float | str], optional
             Temperature in any units as: [300, 'K'], it is automatically converted to Kelvin.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for component-pair dictionary keys. Default is "|".
         kwargs : dict
             Additional parameters for the model.
             - interaction-energy-parameter : list, optional
@@ -2018,9 +2024,14 @@ class NRTL:
                     dg_ij = np.array(dg_ij_src)
                 elif isinstance(dg_ij_src, np.ndarray):
                     dg_ij = dg_ij_src
+                elif isinstance(dg_ij_src, dict):
+                    dg_ij = self.to_matrix_ij(
+                        dg_ij_src,
+                        symbol_delimiter=symbol_delimiter
+                    )
                 else:
                     raise ValueError(
-                        "Invalid source for interaction energy parameter (Δg_ij). Must be TableMatrixData, list of lists, or numpy array.")
+                        "Invalid source for interaction energy parameter (Δg_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
                 # set method
                 tau_ij_cal_method = 1
             else:
@@ -2031,16 +2042,24 @@ class NRTL:
             # SECTION: extract data
             # NOTE: α_ij, non-randomness parameter
             # check
-            if alpha_ij_src is not None or alpha_ij_src != 'None':
+            if (
+                alpha_ij_src is not None and
+                alpha_ij_src != 'None'
+            ):
                 if isinstance(alpha_ij_src, TableMatrixData):
                     alpha_ij = alpha_ij_src.mat('alpha', self.components)
                 elif isinstance(alpha_ij_src, list):
                     alpha_ij = np.array(alpha_ij_src)
                 elif isinstance(alpha_ij_src, np.ndarray):
                     alpha_ij = alpha_ij_src
+                elif isinstance(alpha_ij_src, dict):
+                    alpha_ij = self.to_matrix_ij(
+                        alpha_ij_src,
+                        symbol_delimiter=symbol_delimiter
+                    )
                 else:
                     raise ValueError(
-                        "Invalid source for non-randomness parameter (α_ij). Must be TableMatrixData, list of lists, or numpy array.")
+                        "Invalid source for non-randomness parameter (α_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
             else:
                 # set default value
                 alpha_ij = None
