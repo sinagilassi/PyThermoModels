@@ -138,7 +138,7 @@ pressure = Pressure(value=30, unit='bar')
 # SECTION: CALCULATION
 # =======================================
 # NOTE: calculate activity
-res_, others_ = calc_activity_coefficient(
+res_, others_, _ = calc_activity_coefficient(
     components=[ethanol, butyl_methyl_ether],
     pressure=pressure,
     temperature=temperature,
