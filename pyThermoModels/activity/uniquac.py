@@ -625,24 +625,27 @@ class UNIQUAC:
         """
         try:
             # SECTION: check
-            if (not isinstance(a_ij, np.ndarray) and
+            if (
+                not isinstance(a_ij, np.ndarray) and
                 not isinstance(a_ij, dict) and
                 not isinstance(a_ij, TableMatrixData)
-                ):
+            ):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
-            if (not isinstance(b_ij, np.ndarray) and
+            if (
+                not isinstance(b_ij, np.ndarray) and
                 not isinstance(b_ij, dict) and
                 not isinstance(b_ij, TableMatrixData)
-                ):
+            ):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
-            if (not isinstance(c_ij, np.ndarray) and
+            if (
+                not isinstance(c_ij, np.ndarray) and
                 not isinstance(c_ij, dict) and
                 not isinstance(c_ij, TableMatrixData)
-                ):
+            ):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
@@ -1491,9 +1494,15 @@ class UNIQUAC:
             q_i = model_input['q_i']
 
             # check r_i and q_i
-            if r_i is None or q_i is None:
+            if r_i is None:
                 # log
-                logger.error("r_i and q_i are not provided in model_input")
+                logger.error("q_i is not provided in model_input")
+                raise ValueError("r_i is required in model_input")
+
+            if q_i is None:
+                # log
+                logger.error("q_i is not provided in model_input")
+                raise ValueError("q_i is required in model_input")
 
             # SECTION: calculate activity coefficients
             return self.__calculate_activity_coefficients(
@@ -2080,8 +2089,28 @@ class UNIQUAC:
 
             # NOTE: check model inputs
             if kwargs.get('model_input') is not None:
+                if datasource is None:
+                    datasource = {}
+
+                if not isinstance(datasource, dict):
+                    raise ValueError(
+                        "datasource must be a dictionary.")
+
                 # update the datasource
                 datasource.update(kwargs['model_input'])
+
+            # NOTE: final datasource validation
+            if datasource is None:
+                raise ValueError(
+                    "datasource cannot be None.")
+
+            if not isinstance(datasource, dict):
+                raise ValueError(
+                    "datasource must be a dictionary.")
+
+            if len(datasource) == 0:
+                raise ValueError(
+                    "datasource cannot be empty.")
 
             # ! set initial values
             r_i = None
@@ -2092,17 +2121,6 @@ class UNIQUAC:
             c_ij = None
             d_ij = None
 
-            # NOTE: check if datasource is a dictionary
-            if datasource is not None:
-                # check if datasource is a dictionary
-                if not isinstance(datasource, dict):
-                    raise ValueError(
-                        "datasource must be a dictionary.")
-                # check if datasource is empty
-                if len(datasource) == 0:
-                    raise ValueError(
-                        "datasource cannot be empty.")
-
             # SECTION: extract data from components
             # ! extract r_i and q_i
             # NOTE: r_i, relative van der Waals volume of component i
@@ -2110,6 +2128,7 @@ class UNIQUAC:
             if r_i_src is None:
                 # set default value
                 r_i_src = datasource.get('r', None)
+
             # NOTE: default r_i values for common components
             # ! Name-State
             if r_i_src is None:
@@ -2119,6 +2138,7 @@ class UNIQUAC:
                         'r', None).get('value', None)
                     for comp in self.components_ids['Name-State']
                 }
+
             # ! Formula-State
             if r_i_src is None:
                 # extract each from components
