@@ -499,23 +499,23 @@ class NRTL:
         try:
             # SECTION: check
             if (not isinstance(a_ij, np.ndarray) and
-                not isinstance(a_ij, dict) and
-                    not isinstance(a_ij, TableMatrixData)
-                ):
+                    not isinstance(a_ij, dict) and
+                        not isinstance(a_ij, TableMatrixData)
+                    ):
                 raise TypeError(
                     "a_ij must be numpy array, dict or TableMatrixData")
 
             if (not isinstance(b_ij, np.ndarray) and
-                not isinstance(b_ij, dict) and
-                    not isinstance(b_ij, TableMatrixData)
-                ):
+                    not isinstance(b_ij, dict) and
+                        not isinstance(b_ij, TableMatrixData)
+                    ):
                 raise TypeError(
                     "b_ij must be numpy array, dict or TableMatrixData")
 
             if (not isinstance(c_ij, np.ndarray) and
-                not isinstance(c_ij, dict) and
-                    not isinstance(c_ij, TableMatrixData)
-                ):
+                    not isinstance(c_ij, dict) and
+                        not isinstance(c_ij, TableMatrixData)
+                    ):
                 raise TypeError(
                     "c_ij must be numpy array, dict or TableMatrixData")
 
@@ -1865,17 +1865,16 @@ class NRTL:
                 )
                 datasource = {}
 
+            if datasource is not None and not isinstance(datasource, dict):
+                raise ValueError(
+                    "datasource must be a dictionary."
+                )
+
+            datasource = {} if datasource is None else dict(datasource)
+
             # NOTE: check model inputs
             # ! when constants are provided in model_input, they override the datasource
             if kwargs.get('model_input') is not None:
-                if datasource is None:
-                    datasource = {}
-
-                if not isinstance(datasource, dict):
-                    raise ValueError(
-                        "datasource must be a dictionary."
-                    )
-
                 # update the datasource
                 datasource.update(kwargs['model_input'])
 
@@ -1967,68 +1966,21 @@ class NRTL:
                 tau_ij_src = datasource.get('tau', None)
 
             # SECTION: extract data
-            # NOTE: check method
-            tau_ij_cal_method = 0
 
             # NOTE: check if dg_ij is provided
-            if dg_ij_src is None:
-                # check if a_ij, b_ij, c_ij are provided
-                if (
-                    a_ij_src is None or
-                    b_ij_src is None or
-                    c_ij_src is None or
-                    d_ij_src is None
-                ):  # SECTION: check if a_ij, b_ij, c_ij, d_ij are provided
-                    raise ValueError(
-                        "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, and d.")
+            if (
+                tau_ij_src is not None and
+                tau_ij_src != 'None'
+            ):
+                # ! use tau_ij
                 # set method
-                tau_ij_cal_method = 2
+                tau_ij_cal_method = 0
 
-                # ! a_ij
-                if isinstance(a_ij_src, TableMatrixData):
-                    a_ij = a_ij_src.mat('a', self.components)
-                elif isinstance(a_ij_src, list):
-                    a_ij = np.array(a_ij_src)
-                elif isinstance(a_ij_src, np.ndarray):
-                    a_ij = a_ij_src
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (a_ij). Must be TableMatrixData, list of lists, or numpy array.")
-
-                # ! b_ij
-                if isinstance(b_ij_src, TableMatrixData):
-                    b_ij = b_ij_src.mat('b', self.components)
-                elif isinstance(b_ij_src, list):
-                    b_ij = np.array(b_ij_src)
-                elif isinstance(b_ij_src, np.ndarray):
-                    b_ij = b_ij_src
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (b_ij). Must be TableMatrixData, list of lists, or numpy array.")
-
-                # ! c_ij
-                if isinstance(c_ij_src, TableMatrixData):
-                    c_ij = c_ij_src.mat('c', self.components)
-                elif isinstance(c_ij_src, list):
-                    c_ij = np.array(c_ij_src)
-                elif isinstance(c_ij_src, np.ndarray):
-                    c_ij = c_ij_src
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (c_ij). Must be TableMatrixData, list of lists, or numpy array.")
-
-                # ! d_ij
-                if isinstance(d_ij_src, TableMatrixData):
-                    d_ij = d_ij_src.mat('d', self.components)
-                elif isinstance(d_ij_src, list):
-                    d_ij = np.array(d_ij_src)
-                elif isinstance(d_ij_src, np.ndarray):
-                    d_ij = d_ij_src
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (d_ij). Must be TableMatrixData, list of lists, or numpy array.")
-            elif dg_ij_src is not None:  # SECTION: check if dg_ij is provided
+            elif dg_ij_src is not None:  # >>> check if dg_ij is provided
                 # ! use dg_ij
+                # set method
+                tau_ij_cal_method = 1
+
                 if isinstance(dg_ij_src, TableMatrixData):
                     dg_ij = dg_ij_src.mat('dg', self.components)
                 elif isinstance(dg_ij_src, list):
@@ -2042,12 +1994,87 @@ class NRTL:
                     )
                 else:
                     raise ValueError(
-                        "Invalid source for interaction energy parameter (Δg_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
+                        "Invalid source for interaction energy parameter (Δg_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
+                    )
+
+            elif (
+                a_ij_src is not None and
+                b_ij_src is not None and
+                c_ij_src is not None and
+                d_ij_src is not None
+            ):
+                # ! use constants a, b, c, d
                 # set method
-                tau_ij_cal_method = 1
+                tau_ij_cal_method = 2
+
+                # ! a_ij
+                if isinstance(a_ij_src, TableMatrixData):
+                    a_ij = a_ij_src.mat('a', self.components)
+                elif isinstance(a_ij_src, list):
+                    a_ij = np.array(a_ij_src)
+                elif isinstance(a_ij_src, np.ndarray):
+                    a_ij = a_ij_src
+                elif isinstance(a_ij_src, dict):
+                    a_ij = self.to_matrix_ij(
+                        a_ij_src,
+                        symbol_delimiter=symbol_delimiter
+                    )
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (a_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
+
+                # ! b_ij
+                if isinstance(b_ij_src, TableMatrixData):
+                    b_ij = b_ij_src.mat('b', self.components)
+                elif isinstance(b_ij_src, list):
+                    b_ij = np.array(b_ij_src)
+                elif isinstance(b_ij_src, np.ndarray):
+                    b_ij = b_ij_src
+                elif isinstance(b_ij_src, dict):
+                    b_ij = self.to_matrix_ij(
+                        b_ij_src,
+                        symbol_delimiter=symbol_delimiter
+                    )
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (b_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
+
+                # ! c_ij
+                if isinstance(c_ij_src, TableMatrixData):
+                    c_ij = c_ij_src.mat('c', self.components)
+                elif isinstance(c_ij_src, list):
+                    c_ij = np.array(c_ij_src)
+                elif isinstance(c_ij_src, np.ndarray):
+                    c_ij = c_ij_src
+                elif isinstance(c_ij_src, dict):
+                    c_ij = self.to_matrix_ij(
+                        c_ij_src,
+                        symbol_delimiter=symbol_delimiter
+                    )
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (c_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
+
+                # ! d_ij
+                if isinstance(d_ij_src, TableMatrixData):
+                    d_ij = d_ij_src.mat('d', self.components)
+                elif isinstance(d_ij_src, list):
+                    d_ij = np.array(d_ij_src)
+                elif isinstance(d_ij_src, np.ndarray):
+                    d_ij = d_ij_src
+                elif isinstance(d_ij_src, dict):
+                    d_ij = self.to_matrix_ij(
+                        d_ij_src,
+                        symbol_delimiter=symbol_delimiter
+                    )
+                else:
+                    raise ValueError(
+                        "Invalid source for interaction energy parameter (d_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
+                    )
             else:
+                # ! no valid source provided
                 raise ValueError(
-                    "No valid source provided for interaction energy parameter (Δg_ij) or constants a, b, c, d."
+                    "No valid source provided for interaction parameter. Provide tau_ij/tau directly, dg_ij/dg, or all a_ij/b_ij/c_ij/d_ij."
                 )
 
             # SECTION: extract data
@@ -2070,20 +2097,24 @@ class NRTL:
                     )
                 else:
                     raise ValueError(
-                        "Invalid source for non-randomness parameter (α_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
+                        "Invalid source for non-randomness parameter (α_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
+                    )
             else:
                 # set default value
                 alpha_ij = None
 
             # NOTE: calculate the binary interaction parameter matrix (tau_ij)
             # check
-            if (
-                tau_ij_src is None or
-                tau_ij_src == 'None'
-            ):
+            if tau_ij_src is None or tau_ij_src == 'None':
                 # ! tau_ij is None
+                if T <= 0:
+                    raise ValueError(
+                        "temperature must be provided and greater than 0 K when calculating tau_ij from dg_ij or a/b/c/d."
+                    )
+
                 # ? check method
                 if tau_ij_cal_method == 1:
+                    # >>> method 1
                     # Check if dg_ij is None and convert values to float if needed
                     if dg_ij is None:
                         raise ValueError(
@@ -2102,6 +2133,7 @@ class NRTL:
                         dg_ij=dg_ij
                     )
                 elif tau_ij_cal_method == 2:
+                    # >>> method 2
                     # check if a_ij, b_ij, c_ij, d_ij are None
                     if (
                         a_ij is None or
@@ -2151,6 +2183,7 @@ class NRTL:
                     )
             else:
                 # ! check if tau_ij is provided
+                # >>> method 0
                 # check types
                 if isinstance(tau_ij_src, TableMatrixData):
                     tau_ij = tau_ij_src.mat('tau', self.components)
@@ -2158,9 +2191,14 @@ class NRTL:
                     tau_ij = np.array(tau_ij_src)
                 elif isinstance(tau_ij_src, np.ndarray):
                     tau_ij = tau_ij_src
+                elif isinstance(tau_ij_src, dict):
+                    tau_ij = self.to_matrix_ij(
+                        tau_ij_src,
+                        symbol_delimiter=symbol_delimiter
+                    )
                 else:
                     raise ValueError(
-                        "Invalid source for interaction energy parameter (tau_ij). Must be TableMatrixData, list of lists, or numpy array.")
+                        "Invalid source for interaction energy parameter (tau_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
 
             # NOTE: nrtl inputs
             inputs = {
