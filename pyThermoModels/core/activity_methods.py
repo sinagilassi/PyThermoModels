@@ -203,7 +203,7 @@ def calc_activity_coefficient(
             }
 
             # NOTE: mixture id
-            # ! default using mixture key
+            # ! default using mixture key (sorted alphabetically)
             mixture_id = create_mixture_id(
                 components=components,
                 mixture_key=mixture_key,
