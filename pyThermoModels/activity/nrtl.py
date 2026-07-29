@@ -1806,6 +1806,7 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
 
+    # SECTION: inputs generator
     def inputs_generator(
         self,
         temperature: Optional[
@@ -1867,8 +1868,32 @@ class NRTL:
             # NOTE: check model inputs
             # ! when constants are provided in model_input, they override the datasource
             if kwargs.get('model_input') is not None:
+                if datasource is None:
+                    datasource = {}
+
+                if not isinstance(datasource, dict):
+                    raise ValueError(
+                        "datasource must be a dictionary."
+                    )
+
                 # update the datasource
                 datasource.update(kwargs['model_input'])
+
+            # NOTE: final datasource validation
+            if datasource is None:
+                raise ValueError(
+                    "datasource cannot be None."
+                )
+
+            if not isinstance(datasource, dict):
+                raise ValueError(
+                    "datasource must be a dictionary."
+                )
+
+            if len(datasource) == 0:
+                raise ValueError(
+                    "datasource cannot be empty."
+                )
 
             # ! set initial values
             a_ij = None
@@ -1878,20 +1903,6 @@ class NRTL:
             dg_ij = None
             alpha_ij = None
             tau_ij = None
-
-            # NOTE: check if datasource is a dictionary
-            if datasource is not None:
-                # check if datasource is a dictionary
-                if not isinstance(datasource, dict):
-                    raise ValueError(
-                        "datasource must be a dictionary."
-                    )
-
-                # check if datasource is empty
-                if len(datasource) == 0:
-                    raise ValueError(
-                        "datasource cannot be empty."
-                    )
 
             # NOTE: check temperature
             # init temperature [K]
