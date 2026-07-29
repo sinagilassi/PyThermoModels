@@ -86,14 +86,16 @@ the model-specific inputs.
 
 | Model | Required mixture data | Required component data |
 | --- | --- | --- |
-| `NRTL` | `alpha` and either `dg` or direct `tau` | none in the shown build-source example |
+| `NRTL` | `alpha` and one of `tau`, `dg`, or all of `a`, `b`, `c`, `d` | none in the shown build-source example |
 | `UNIQUAC` | interaction parameters that can generate `tau`, such as `a`, `b`, `c`, `d`, or direct `tau` | `r` and `q` for each component |
 
 For NRTL:
 
 - `alpha`: non-randomness parameter matrix
 - `dg`: interaction energy parameter matrix used to calculate `tau`
-- optional `tau`: direct binary interaction parameter matrix
+- `a`, `b`, `c`, `d`: coefficient matrices used to calculate `tau` when
+  `dg` is not provided
+- `tau`: direct binary interaction parameter matrix
 
 For UNIQUAC:
 
@@ -105,6 +107,10 @@ For UNIQUAC:
 The inline references must use model-source symbols that the activity models can
 resolve, such as `alpha`, `dg`, `a`, `b`, `c`, `d`, `tau`, `r`, and `q`.
 
+For NRTL build-model-source workflows, the source should include `alpha` plus
+one interaction route: direct `tau`, `dg`, or all four coefficient matrices
+`a`, `b`, `c`, `d`.
+
 ## NRTL: Build Model Source
 
 The NRTL example builds a mixture ThermoDB from inline reference content and then
@@ -114,6 +120,43 @@ The reference must contain a mixture table with matrix symbols for:
 
 - `alpha`: NRTL non-randomness matrix
 - `dg`: NRTL interaction energy matrix
+
+Alternatively, the NRTL source can provide the temperature-dependent coefficient
+set instead of `dg`:
+
+- `a`: coefficient matrix
+- `b`: coefficient matrix
+- `c`: coefficient matrix
+- `d`: coefficient matrix
+
+`nrtl.py` gets or calculates `tau_ij` by one of these source routes:
+
+- direct `tau`
+- from `dg`: `tau_ij = dg_ij / (R * T)`
+- from `a`, `b`, `c`, `d`:
+  `tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T`
+
+Accepted source key aliases are `alpha_ij`/`alpha`, `dg_ij`/`dg`,
+`tau_ij`/`tau`, and `a_ij`/`a`, `b_ij`/`b`, `c_ij`/`c`, `d_ij`/`d`.
+If both source data and `model_input` values are provided, `model_input`
+overrides matching source keys.
+
+`inputs_generator(...)` treats the literal string `"None"` the same as a
+missing `tau`/`tau_ij` source, so it can still calculate `tau_ij` from `dg` or
+from the full `a`/`b`/`c`/`d` coefficient set. A positive temperature is
+required only for calculated `tau_ij`; direct `tau` input does not need
+temperature.
+
+Matrix sources accepted by NRTL input generation are:
+
+- `TableMatrixData`
+- list-of-lists
+- `numpy.ndarray`
+- component-pair dictionaries keyed with the selected delimiter, such as
+  `ethanol | methanol`
+
+This applies to direct `tau`, `alpha`, `dg`, and all four coefficient matrices
+`a`, `b`, `c`, and `d`.
 
 Minimal build pattern:
 
@@ -299,6 +342,20 @@ NRTL direct helper requires:
 - `tau_ij`
 - `alpha_ij`
 
+Direct `NRTL.cal(...)` also requires `mole_fraction`. If both `tau_ij` and
+`alpha_ij` are already present in `model_input`, they are consumed directly as
+the final matrices. Accepted shapes for these final direct inputs are numpy
+arrays, list-of-lists, `TableMatrixData`, or component-pair dictionaries keyed
+with the selected delimiter, such as `ethanol | methanol`.
+
+If `tau_ij` or `alpha_ij` is missing from `model_input`, `NRTL.cal(...)` calls
+`inputs_generator(...)`. `temperature` is required only when `tau_ij` must be
+calculated from `dg` or coefficients. The same source rules apply: provide
+`alpha`/`alpha_ij` plus `tau`/`tau_ij`, `dg`/`dg_ij`, or the complete
+`a`/`b`/`c`/`d` coefficient set. Use Python `None`, omit the `tau` key, or use
+the literal string `"None"` when a source contains a placeholder and tau should
+be calculated instead.
+
 UNIQUAC direct helper requires:
 
 - `tau_ij`
@@ -313,8 +370,8 @@ For the build-model-source examples requested here, prefer
 1. Define at least two liquid `Component` objects.
 2. Set `mole_fraction` on every component and verify the sum is 1.0.
 3. Define `Temperature` and `Pressure` with explicit units.
-4. For NRTL, include mixture interaction data with `alpha` and either `dg` or
-   `tau`.
+4. For NRTL build-source workflows, include mixture interaction data with
+   `alpha` and one of `tau`, `dg`, or all of `a`, `b`, `c`, `d`.
 5. For UNIQUAC, include mixture interaction data plus component data for `r`
    and `q`.
 6. Build a `MixtureThermoDB` with `build_mixture_thermodb_from_reference`.
@@ -332,8 +389,10 @@ For the build-model-source examples requested here, prefer
   the `Component` objects.
 - Single component input: activity models require at least two components.
 - Missing NRTL `alpha`: NRTL needs a non-randomness parameter matrix.
-- Missing NRTL interaction data: provide `dg`, `tau`, or the supported
-  constants used to generate `tau`.
+- Missing NRTL interaction data in a build-source workflow: provide direct
+  `tau`, `dg`, or the full `a`, `b`, `c`, `d` coefficient set.
+- Placeholder NRTL `tau`: use `None`, omit the key, or set `"None"` only when
+  `dg` or all four coefficients are available and temperature is provided.
 - Missing UNIQUAC `r` and `q`: component model sources are required when those
   values are not passed directly.
 - Mixture key mismatch: the generated mixture id must match the source key, for
@@ -345,7 +404,8 @@ For the build-model-source examples requested here, prefer
 
 ## Minimal Decision Guide
 
-- Use `NRTL` when the source contains NRTL `alpha` and `dg` or `tau`.
+- Use `NRTL` when the source contains NRTL `alpha` and one of `tau`, `dg`, or
+  all of `a`, `b`, `c`, `d`.
 - Use `UNIQUAC` when the source contains UNIQUAC interaction data and
   pure-component `r` and `q`.
 - Use `calc_activity_coefficient` for build-model-source workflows.
