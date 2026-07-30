@@ -6,6 +6,8 @@ shown in:
 
 - `examples/activity-models/calc activity using nrtl inline source and build model source - 1.py`
 - `examples/activity-models/calc activity using uniquac inline source and build model source - 1.py`
+- `examples/activity-models/calc activity using nrtl inline source and build model source - multi.py`
+- `examples/activity-models/calc activity using uniquac inline source and build model source - multi.py`
 
 Prefer the newer core helper when writing agent-generated code:
 
@@ -79,6 +81,33 @@ The mole fractions should sum to 1.0. The core helper internally prepares:
 - mole-fraction feed data keyed by component name
 - pressure and temperature as `[value, unit]`
 
+For the multi-component NRTL and UNIQUAC examples, the component list is:
+
+```python
+methanol = Component(
+    name="methanol",
+    formula="CH3OH",
+    state="l",
+    mole_fraction=0.30,
+)
+
+ethanol = Component(
+    name="ethanol",
+    formula="C2H5OH",
+    state="l",
+    mole_fraction=0.45,
+)
+
+butyl_methyl_ether = Component(
+    name="butyl-methyl-ether",
+    formula="C5H12O",
+    state="l",
+    mole_fraction=0.25,
+)
+
+multi_component_mixture = [methanol, ethanol, butyl_methyl_ether]
+```
+
 ## Required Thermodynamic Inputs
 
 Before preparing `ModelSource`, make sure the source ThermoDB data can provide
@@ -111,6 +140,176 @@ resolve, such as `alpha`, `dg`, `dU`, `a`, `b`, `c`, `d`, `tau`, `r`, and `q`.
 For NRTL build-model-source workflows, the source should include `alpha` plus
 one interaction route: direct `tau`, `dg`, or all four coefficient matrices
 `a`, `b`, `c`, `d`.
+
+## Multi-Component Inline References
+
+For multi-component solutions, keep the `Component` list in the same order used
+for the calculation and encode every binary pair needed by that mixture in the
+inline reference.
+
+For the ternary examples:
+
+```python
+multi_component_mixture = [methanol, ethanol, butyl_methyl_ether]
+```
+
+the inline mixture table stores three binary-pair groups:
+
+- `methanol|ethanol`
+- `methanol|butyl-methyl-ether`
+- `ethanol|butyl-methyl-ether`
+
+Each binary pair has two rows, one row per component in that pair. Therefore a
+ternary source encoded as binary pair rows has six `VALUES` rows. A
+four-component source would need all six binary pairs, each with two rows.
+
+The `Mixture` value must match the default `mixture_key="Name"` behavior unless
+the calculation is explicitly configured to use formula-based keys. With the
+default delimiter, use compact pipe-separated names such as
+`methanol|ethanol`; do not add spaces inside the stored mixture id unless the
+source builder is configured to expect them.
+
+For NRTL multi-component sources, each binary-pair row supplies `alpha` and one
+interaction route. The multi example uses `dg`:
+
+```yaml
+MATRIX-SYMBOL:
+  - alpha constant: alpha
+  - binary interaction parameter: dg
+STRUCTURE:
+  COLUMNS: [No.,Mixture,Name,Formula,State,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
+  SYMBOL: [None,None,None,None,None,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
+```
+
+For UNIQUAC multi-component sources, the mixture table supplies one interaction
+route and component tables supply pure-component `r` and `q`. The multi example
+uses the coefficient route:
+
+```yaml
+MATRIX-SYMBOL:
+  - a constant: a
+  - b constant: b
+  - c constant: c
+  - d constant: d
+STRUCTURE:
+  COLUMNS: [No.,Mixture,Name,Formula,State,a_i_1,a_i_2,b_i_1,b_i_2,c_i_1,c_i_2,d_i_1,d_i_2]
+  SYMBOL: [None,None,None,None,None,a_i_1,a_i_2,b_i_1,b_i_2,c_i_1,c_i_2,d_i_1,d_i_2]
+```
+
+The UNIQUAC `general-data` table must include one row for every component in the
+multi-component mixture. At minimum, the row must resolve symbols `r` and `q`;
+the example uses full general-data columns and maps
+`Volume-Parameter -> r` and `Surface-Area-Parameter -> q`.
+
+## Function Arguments in the Multi Examples
+
+Use these argument contracts when generating or modifying the build-source
+multi-component scripts.
+
+`Component(...)`
+
+- `name`: component name used for `Name` ids and default mixture ids.
+- `formula`: formula used for `Formula` ids.
+- `state`: phase/state string; activity examples use liquid state `"l"`.
+- `mole_fraction`: component mole fraction in the liquid mixture. Required for
+  `calc_activity_coefficient`; all component mole fractions should sum to 1.0.
+
+`Temperature(...)`
+
+- `value`: numeric temperature value.
+- `unit`: unit string, such as `"K"`. Use explicit units.
+
+`Pressure(...)`
+
+- `value`: numeric pressure value.
+- `unit`: unit string, such as `"bar"`. Use explicit units.
+
+`build_mixture_thermodb_from_reference(...)`
+
+- `components`: list of `Component` objects for the full mixture. For
+  multi-component solutions, pass the full list, not only one binary pair.
+- `reference_content`: inline reference string containing the mixture
+  interaction table. For multi-component references encoded as binary rows,
+  include every binary pair for the component set.
+- `thermodb_save`: optional boolean controlling whether the generated ThermoDB
+  is saved to disk. The examples set `True`.
+- `thermodb_save_path`: optional output directory used when `thermodb_save=True`.
+  The examples use `examples/thermodb`.
+- Return value: a mixture ThermoDB wrapper or `None`. Always check for `None`
+  before using `.thermodb`.
+
+`build_component_thermodb_from_reference(...)`
+
+- `component_name`: component name to extract from the inline component/general
+  data table.
+- `component_formula`: component formula to match the requested component.
+- `component_state`: component state to match the requested component.
+- `reference_content`: inline reference string containing component/general
+  data.
+- `thermodb_save`: optional boolean controlling whether the generated component
+  ThermoDB is saved. The UNIQUAC multi example sets `True`.
+- `thermodb_save_path`: optional output directory used when `thermodb_save=True`.
+- Return value: a component ThermoDB wrapper or `None`. Always check each
+  component result before building component model sources.
+- Use this function for UNIQUAC multi-component workflows because each component
+  must provide `r` and `q`. It is not needed in the shown NRTL multi example.
+
+`build_mixture_model_source(...)`
+
+- `mixture_thermodb`: mixture ThermoDB wrapper returned by
+  `build_mixture_thermodb_from_reference`.
+- Return value: `MixtureModelSource`, carrying mixture-level `data_source` and
+  `equation_source` data.
+
+`build_components_model_source(...)`
+
+- `components_thermodb`: list of component ThermoDB wrappers, one for each
+  component that must provide pure-component data. For UNIQUAC ternary examples,
+  pass `[methanol_thermodb, ethanol_thermodb, butyl_methyl_ether_thermodb]`.
+- `rules`: optional mapping that can control source/property selection when the
+  builder supports it. The activity multi examples omit it, so the builder uses
+  its default matching behavior.
+- Return value: list of `ComponentModelSource` objects.
+
+`build_model_source(...)`
+
+- `source`: list containing all model-source objects. For NRTL multi-component
+  examples, pass `[mixture_model_source]`. For UNIQUAC multi-component examples,
+  pass all component model sources plus the mixture model source.
+- Return value: `ModelSource`, which is the object passed to
+  `calc_activity_coefficient`.
+
+`calc_activity_coefficient(...)`
+
+- `components`: list of `Component` objects in the target mixture. Keep the
+  order consistent with how matrices should be interpreted.
+- `pressure`: `Pressure` object. Activity models may not always use pressure
+  directly, but the core helper requires it.
+- `temperature`: `Temperature` object. Required when `tau_ij` must be calculated
+  from `dg`, `dU`, or `a`/`b`/`c`/`d`.
+- `model_source`: `ModelSource` built from the thermodb/model-source workflow.
+- `model_name`: activity model name. Use `"NRTL"` for the NRTL multi example and
+  `"UNIQUAC"` for the UNIQUAC multi example.
+- `component_key`: optional component id mode. Default is `"Name-State"`, which
+  creates ids such as `methanol-l`. Use `"Formula-State"` only when the source
+  should be resolved by formula-state ids such as `CH3OH-l`.
+- `mixture_key`: optional mixture id mode. Default is `"Name"`, which creates
+  mixture ids from component names. Use `"Formula"` only when the source stores
+  formula-based mixture ids.
+- `separator_symbol`: optional separator between component id and state.
+  Default is `"-"`, producing ids such as `methanol-l`.
+- `delimiter`: optional delimiter between components in mixture ids. Default is
+  `"|"`, producing ids such as `methanol|ethanol`.
+- `message`: optional custom result/log message. Default is `None`, so the core
+  helper generates the message.
+- `verbose`: optional boolean for diagnostic output. Default is `False`; the
+  examples set `True`.
+- `**kwargs`: optional extra keyword arguments forwarded through the core helper
+  to the selected activity calculation path. Use only when a lower-level model
+  option is needed.
+- Return value: `(res, others, G_ex)`, where `res` contains activity
+  coefficients, `others` contains model intermediates, and `G_ex` contains
+  excess Gibbs energy.
 
 ## NRTL: Build Model Source
 
@@ -165,7 +364,7 @@ Minimal build pattern:
 thermodb_dir = os.path.join(parent_dir, "..", "thermodb")
 
 thermodb_components: MixtureThermoDB | None = build_mixture_thermodb_from_reference(
-    components=components,
+    components=multi_component_mixture,
     reference_content=REFERENCE_CONTENT,
     thermodb_save=True,
     thermodb_save_path=thermodb_dir,
@@ -187,7 +386,7 @@ Then calculate:
 
 ```python
 res, others, G_ex = calc_activity_coefficient(
-    components=components,
+    components=multi_component_mixture,
     pressure=pressure,
     temperature=temperature,
     model_source=model_source,
@@ -253,7 +452,7 @@ Minimal build pattern:
 thermodb_dir = os.path.join(parent_dir, "..", "thermodb")
 
 mixture_thermodb: MixtureThermoDB | None = build_mixture_thermodb_from_reference(
-    components=components,
+    components=multi_component_mixture,
     reference_content=REFERENCE_CONTENT,
     thermodb_save=True,
     thermodb_save_path=thermodb_dir,
@@ -280,7 +479,20 @@ ethanol_thermodb: ComponentThermoDB | None = build_component_thermodb_from_refer
     thermodb_save_path=thermodb_dir,
 )
 
-if methanol_thermodb is None or ethanol_thermodb is None:
+butyl_methyl_ether_thermodb: ComponentThermoDB | None = build_component_thermodb_from_reference(
+    component_name=butyl_methyl_ether.name,
+    component_formula=butyl_methyl_ether.formula,
+    component_state=butyl_methyl_ether.state,
+    reference_content=REFERENCE_CONTENT,
+    thermodb_save=True,
+    thermodb_save_path=thermodb_dir,
+)
+
+if (
+    methanol_thermodb is None or
+    ethanol_thermodb is None or
+    butyl_methyl_ether_thermodb is None
+):
     raise ValueError("component ThermoDB build failed")
 
 mixture_model_source: MixtureModelSource = build_mixture_model_source(
@@ -288,7 +500,11 @@ mixture_model_source: MixtureModelSource = build_mixture_model_source(
 )
 
 components_model_source: list[ComponentModelSource] = build_components_model_source(
-    components_thermodb=[methanol_thermodb, ethanol_thermodb],
+    components_thermodb=[
+        methanol_thermodb,
+        ethanol_thermodb,
+        butyl_methyl_ether_thermodb,
+    ],
 )
 
 source = []
@@ -302,7 +518,7 @@ Then calculate:
 
 ```python
 res, others, G_ex = calc_activity_coefficient(
-    components=[ethanol, methanol],
+    components=multi_component_mixture,
     pressure=pressure,
     temperature=temperature,
     model_source=model_source,
