@@ -87,7 +87,7 @@ the model-specific inputs.
 | Model | Required mixture data | Required component data |
 | --- | --- | --- |
 | `NRTL` | `alpha` and one of `tau`, `dg`, or all of `a`, `b`, `c`, `d` | none in the shown build-source example |
-| `UNIQUAC` | interaction parameters that can generate `tau`, such as `a`, `b`, `c`, `d`, or direct `tau` | `r` and `q` for each component |
+| `UNIQUAC` | one of direct `tau`, `dU`, or all of `a`, `b`, `c`, `d` | `r` and `q` for each component |
 
 For NRTL:
 
@@ -99,13 +99,14 @@ For NRTL:
 
 For UNIQUAC:
 
+- `dU`: interaction energy parameter matrix used to calculate `tau`
 - `a`, `b`, `c`, `d`: interaction constants used to calculate `tau`
 - optional `tau`: direct binary interaction parameter matrix
 - `r`: UNIQUAC volume parameter for each pure component
 - `q`: UNIQUAC surface-area parameter for each pure component
 
 The inline references must use model-source symbols that the activity models can
-resolve, such as `alpha`, `dg`, `a`, `b`, `c`, `d`, `tau`, `r`, and `q`.
+resolve, such as `alpha`, `dg`, `dU`, `a`, `b`, `c`, `d`, `tau`, `r`, and `q`.
 
 For NRTL build-model-source workflows, the source should include `alpha` plus
 one interaction route: direct `tau`, `dg`, or all four coefficient matrices
@@ -212,8 +213,39 @@ The UNIQUAC example needs two source types:
 
 The inline reference must include:
 
-- a mixture interaction table containing symbols such as `a`, `b`, `c`, `d`
+- a mixture interaction table containing one interaction route: direct `tau`,
+  `dU`, or all of `a`, `b`, `c`, `d`
 - a component/general-data table containing `r` and `q`
+
+`uniquac.py` gets or calculates `tau_ij` by one of these source routes:
+
+- direct `tau`
+- from `dU`: `tau_ij = exp(-dU_ij / (R * T))`
+- from `a`, `b`, `c`, `d`:
+  `tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T`
+
+Accepted source key aliases are `r_i`/`r`, `q_i`/`q`, `dU_ij`/`dU`,
+`tau_ij`/`tau`, and `a_ij`/`a`, `b_ij`/`b`, `c_ij`/`c`, `d_ij`/`d`.
+If both source data and `model_input` values are provided, `model_input`
+overrides matching source keys.
+
+`inputs_generator(...)` treats the literal string `"None"` the same as a
+missing `tau`/`tau_ij` source, so it can still calculate `tau_ij` from `dU` or
+from the full `a`/`b`/`c`/`d` coefficient set. A positive temperature is
+required only for calculated `tau_ij`; direct `tau` input does not need
+temperature.
+
+Matrix sources accepted by UNIQUAC input generation are:
+
+- `TableMatrixData`
+- list-of-lists
+- `numpy.ndarray`
+- component-pair dictionaries keyed with the selected delimiter, such as
+  `ethanol | methanol`
+
+This applies to direct `tau`, `dU`, and all four coefficient matrices `a`, `b`,
+`c`, and `d`. Pure-component `r` and `q` can be lists, `numpy.ndarray` values,
+or component dictionaries keyed by component name.
 
 Minimal build pattern:
 
@@ -362,6 +394,13 @@ UNIQUAC direct helper requires:
 - `r_i`
 - `q_i`
 
+Direct `UNIQUAC.cal(...)` also requires `mole_fraction`. If `tau_ij`, `r_i`,
+or `q_i` is missing from `model_input`, `UNIQUAC.cal(...)` calls
+`inputs_generator(...)`. `temperature` is required only when `tau_ij` must be
+calculated from `dU` or coefficients. Use Python `None`, omit the `tau` key, or
+use the literal string `"None"` when a source contains a placeholder and tau
+should be calculated instead.
+
 For the build-model-source examples requested here, prefer
 `calc_activity_coefficient` because it reads the parameters from `ModelSource`.
 
@@ -372,8 +411,8 @@ For the build-model-source examples requested here, prefer
 3. Define `Temperature` and `Pressure` with explicit units.
 4. For NRTL build-source workflows, include mixture interaction data with
    `alpha` and one of `tau`, `dg`, or all of `a`, `b`, `c`, `d`.
-5. For UNIQUAC, include mixture interaction data plus component data for `r`
-   and `q`.
+5. For UNIQUAC, include mixture interaction data with one of `tau`, `dU`, or
+   all of `a`, `b`, `c`, `d`, plus component data for `r` and `q`.
 6. Build a `MixtureThermoDB` with `build_mixture_thermodb_from_reference`.
 7. For UNIQUAC, also build each component ThermoDB with
    `build_component_thermodb_from_reference`.
@@ -395,6 +434,10 @@ For the build-model-source examples requested here, prefer
   `dg` or all four coefficients are available and temperature is provided.
 - Missing UNIQUAC `r` and `q`: component model sources are required when those
   values are not passed directly.
+- Missing UNIQUAC interaction data in a build-source workflow: provide direct
+  `tau`, `dU`, or the full `a`, `b`, `c`, `d` coefficient set.
+- Placeholder UNIQUAC `tau`: use `None`, omit the key, or set `"None"` only
+  when `dU` or all four coefficients are available and temperature is provided.
 - Mixture key mismatch: the generated mixture id must match the source key, for
   example `ethanol|methanol` versus `methanol|ethanol`.
 - Component order mismatch: matrices are interpreted in the component order used
@@ -406,8 +449,8 @@ For the build-model-source examples requested here, prefer
 
 - Use `NRTL` when the source contains NRTL `alpha` and one of `tau`, `dg`, or
   all of `a`, `b`, `c`, `d`.
-- Use `UNIQUAC` when the source contains UNIQUAC interaction data and
-  pure-component `r` and `q`.
+- Use `UNIQUAC` when the source contains UNIQUAC `r` and `q` plus one of
+  `tau`, `dU`, or all of `a`, `b`, `c`, `d`.
 - Use `calc_activity_coefficient` for build-model-source workflows.
 - Use direct model-specific helpers only when the matrices are already prepared
   and no `ModelSource` is needed.
