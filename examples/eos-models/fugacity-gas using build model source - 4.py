@@ -7,9 +7,9 @@ import pyThermoDB as ptdb
 import pyThermoLinkDB as ptdblink
 from pyThermoLinkDB.models import ModelSource
 from pythermodb_settings.models import Component, ComponentRule, ComponentThermoDBSource, Temperature, Pressure
-from pyThermoModels.core import calc_liquid_fugacity, check_component_eos_roots
-# locals
-from examples.source.model_source_2 import model_source, C3H8
+from pyThermoModels.core import calc_gas_fugacity, check_component_eos_roots
+# ! model source & components
+from examples.source.model_source_1 import model_source, C3H8
 
 # check version
 print(ptm.__version__)
@@ -30,12 +30,14 @@ print(thermodb_dir)
 # =======================================
 # ! CALCULATE FUGACITY FOR PURE COMPONENT
 # =======================================
+# NOTE: examples
+# phase
+phase = "VAPOR-LIQUID"
 
-# NOTE: Example 3.13s
 # temperature
-temperature = Temperature(value=340, unit='K')
+temperature = Temperature(value=300.1, unit='K')
 # pressure
-pressure = Pressure(value=30, unit='bar')
+pressure = Pressure(value=9.99, unit='bar')
 
 # ------------------------------------------------
 # NOTE: eos root analysis
@@ -46,6 +48,7 @@ res = check_component_eos_roots(
     temperature=temperature,
     pressure=pressure,
     model_source=model_source,
+    component_key='Name-State',
 )
 print(res)
 
@@ -53,11 +56,11 @@ print(res)
 # NOTE: calculation
 # ------------------------------------------------
 # ! new method
-res = calc_liquid_fugacity(
+res = calc_gas_fugacity(
     component=C3H8,
-    temperature=temperature,
     pressure=pressure,
+    temperature=temperature,
     model_source=model_source,
-    liquid_fugacity_mode='Poynting',
+    component_key='Name-State'
 )
 print(res)

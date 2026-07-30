@@ -56,21 +56,21 @@ C2H2 = Component(
 )
 
 # NOTE: n-butane
-C4H10 = component = Component(
+C4H10 = Component(
     name='n-butane',
     formula='C4H10',
     state='g'
 )
 
 # NOTE: ethanol
-C2H5OH = component = Component(
+C2H5OH = Component(
     name='ethanol',
     formula='C2H5OH',
     state='l'
 )
 
 # NOTE: methanol
-CH3OH = component = Component(
+CH3OH = Component(
     name='methanol',
     formula='CH3OH',
     state='g'
@@ -97,7 +97,7 @@ CH4 = Component(
     state='g'
 )
 
-components = [CO2, C2H2, C4H10, C2H5OH, CH3OH, C4H8, C3H8, CH4]
+components = [CO2, C3H8, CH3OH, C4H10]
 
 
 # NOTE: ignore state properties
