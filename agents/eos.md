@@ -78,10 +78,16 @@ thermodb_rules = {
         },
         "EQUATIONS": {
             "CUSTOM-REF-1::vapor-pressure": "VaPr",
-            "CUSTOM-REF-1::ideal-gas-heat-capacity": "Cp_IG",
         },
     }
 }
+```
+
+Add `Cp_IG` only when the shared model source also needs ideal-gas heat
+capacity for other workflows:
+
+```python
+"CUSTOM-REF-1::ideal-gas-heat-capacity": "Cp_IG"
 ```
 
 For pure gas fugacity with a manually supplied vapor phase, the EOS path mainly
@@ -126,7 +132,6 @@ thermodb_rules: Dict[str, Dict[str, ComponentRule]] = {
         },
         "EQUATIONS": {
             "CUSTOM-REF-1::vapor-pressure": "VaPr",
-            "CUSTOM-REF-1::ideal-gas-heat-capacity": "Cp_IG",
         },
     }
 }
@@ -136,6 +141,9 @@ model_source: ModelSource = ptdblink.load_and_build_model_source(
     rules=thermodb_rules,
 )
 ```
+
+Add `"CUSTOM-REF-1::ideal-gas-heat-capacity": "Cp_IG"` to `EQUATIONS` only
+when the same source will be reused for ideal-gas heat-capacity calculations.
 
 ### Option 2: Import a Reusable Model Source Module
 
@@ -347,8 +355,8 @@ When using the reusable source module:
 
 1. Define `Component` objects with correct `name`, `formula`, and `state`.
 2. Wrap ThermoDB pickle paths in `ComponentThermoDBSource`.
-3. Build `ModelSource` inline with rules mapping `Pc`, `Tc`, `AcFa`, `VaPr`,
-   and optionally `Cp_IG`, or import a prepared `model_source` from
+3. Build `ModelSource` inline with rules mapping `Pc`, `Tc`, `AcFa`, and
+   `VaPr`, optionally adding `Cp_IG`, or import a prepared `model_source` from
    `examples.source.model_source_1`.
 4. Use `Temperature(value=..., unit="K")` and `Pressure(value=..., unit="bar")`
    or another supported unit.
