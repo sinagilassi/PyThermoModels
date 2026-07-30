@@ -1,9 +1,11 @@
 # Reference Table Guidance
 
 Use this file as the format contract for custom `REFERENCE_CONTENT` blocks used
-to build `pyThermoDB` sources for activity models. The examples in
-`examples/configs` and `examples/matrix-1` show that activity-model reference
-data is provided as YAML under:
+to build `pyThermoDB` sources for activity and EOS workflows. Activity-model
+interaction data is usually provided as mixture matrix tables. EOS data is
+usually provided as component data and equation tables. The examples in
+`examples/configs`, `examples/matrix-1`, `examples/activity-models`, and
+`examples/eos-models` show reference data as YAML under:
 
 ```yaml
 REFERENCES:
@@ -14,11 +16,14 @@ REFERENCES:
         TABLE-ID: <integer>
         DESCRIPTION: <text>
         MATRIX-SYMBOL:
-          - <description>: <base symbol>
+          - <description>: <base symbol>   # matrix tables only
+        EQUATIONS:
+          <equation-id>: ...               # equation tables only
         STRUCTURE:
           COLUMNS: [...]
           SYMBOL: [...]
           UNIT: [...]
+          CONVERSION: [...]                # normal data tables when needed
         VALUES:
           - [...]
 ```
@@ -26,6 +31,8 @@ REFERENCES:
 ## Matrix Table Rules
 
 - Activity interaction parameters must be encoded as mixture matrix tables.
+- EOS binary interaction parameters, when stored in reference content, should
+  also use mixture matrix tables.
 - Each row represents one component in one binary pair.
 - `Mixture` must contain the two component names for that binary pair joined by
   `|`, for example `ethanol|butyl-methyl-ether`, when
@@ -123,8 +130,8 @@ trimmed, sorted, and compared using the active `mixture_key`.
 
 ## Examples
 
-The following NRTL and UNIQUAC sections are examples of the general matrix-table
-format. Do not treat model-specific values such as diagonal zeros as global
+The following NRTL, UNIQUAC, and EOS sections are examples of the table formats.
+Do not treat model-specific values such as diagonal zeros as global
 reference-table rules.
 
 ## Example: NRTL
@@ -212,8 +219,8 @@ NRTL:
 The UNIQUAC model needs both mixture interaction data and pure component
 parameters:
 
-- Mixture matrix data: `dU` or `tau`, or coefficient matrices `a`, `b`, `c`,
-  and `d`.
+- Mixture matrix data: one of direct `tau`, `dU`, or all coefficient matrices
+  `a`, `b`, `c`, and `d`.
 - Component data: `r` volume parameter and `q` surface-area parameter.
 
 The examples may store the UNIQUAC interaction-energy matrix under a table
@@ -221,7 +228,7 @@ symbol named `dg` and map it to model symbol `dU` in `thermodb_config_link.yml`.
 Prefer naming the matrix symbol `dU` in new references when possible; if using
 `dg`, the link config must map `dg: dU`.
 
-Mixture interaction table format:
+Mixture interaction table format using the coefficient route:
 
 ```text
 components = [methanol, ethanol]
@@ -271,6 +278,19 @@ REFERENCES:
         VALUES:
           - [1,methanol|ethanol,methanol,CH3OH,l,0,0.300492719,0,1.564200272,0,35.05450323,0,0]
           - [2,methanol|ethanol,ethanol,C2H5OH,l,0.380229054,0,-20.63243601,0,0.059982839,0,0,0]
+```
+
+If the reference uses direct `tau`, provide a full `tau` matrix instead of
+`dU` or the coefficient set. If it uses the interaction-energy route, provide a
+full `dU` matrix:
+
+```yaml
+MATRIX-SYMBOL:
+  - interaction energy parameter: dU
+STRUCTURE:
+  COLUMNS: [No.,Mixture,Name,Formula,State,dU_i_1,dU_i_2]
+  SYMBOL: [None,None,None,None,None,dU_i_1,dU_i_2]
+  UNIT: [None,None,None,None,None,J/mol,J/mol]
 ```
 
 Pure component data for UNIQUAC must include `r` and `q` in a normal component
@@ -329,4 +349,100 @@ uniquac:
     tau: tau
   EQUATIONS:
     None
+```
+
+## Example: EOS Component Data and Equations
+
+EOS fugacity workflows use component-level ThermoDB data rather than mixture
+matrix tables for the core pure-component properties. The practical model-source
+symbols from `agents/eos.md` are:
+
+- `Pc`: critical pressure.
+- `Tc`: critical temperature.
+- `AcFa`: acentric factor.
+- `VaPr`: vapor-pressure equation.
+- `Cp_IG`: optional ideal-gas heat-capacity equation, commonly included in
+  shared EOS sources but not required by fugacity/root calculations.
+
+Use a normal component data table for scalar properties such as `Pc`, `Tc`, and
+`AcFa`. Data tables can include `CONVERSION`, unlike matrix tables.
+
+```yaml
+general-data:
+  TABLE-ID: 1
+  DESCRIPTION:
+    Pure component critical properties and acentric factor.
+  DATA: []
+  STRUCTURE:
+    COLUMNS: [No.,Name,Formula,State,critical-temperature,critical-pressure,acentric-factor]
+    SYMBOL: [None,None,None,None,Tc,Pc,AcFa]
+    UNIT: [None,None,None,None,K,bar,None]
+    CONVERSION: [None,None,None,None,1,1,1]
+  VALUES:
+    - [1,propane,C3H8,g,369.83,42.48,0.152]
+```
+
+Use equation tables for correlations such as vapor pressure and, when needed by
+other workflows, ideal-gas heat capacity. Equation tables include an
+`EQUATIONS` block whose result key should use the model-source symbol, such as
+`VaPr` or optional `Cp_IG`. The coefficient columns and equation body must match
+the expression being encoded.
+
+```yaml
+vapor-pressure:
+  TABLE-ID: 2
+  DESCRIPTION:
+    Vapor-pressure equation.
+  EQUATIONS:
+    EQ-1:
+      BODY:
+        - Tr = args['temperature | T | K'] / parms['critical-temperature | Tc | K']
+        - tau = 1 - Tr
+        - expo = (1 / Tr) * (
+            parms['A | A | 1'] * tau +
+            parms['B | B | 1'] * math.pow(tau, 1.5) +
+            parms['C | C | 1'] * math.pow(tau, 2.5) +
+            parms['D | D | 1'] * math.pow(tau, 5)
+          )
+        - ps_bar = parms['critical-pressure | Pc | bar'] * math.exp(expo)
+        - res['vapor-pressure | VaPr | bar'] = ps_bar
+      BODY-INTEGRAL:
+        None
+      BODY-FIRST-DERIVATIVE:
+        None
+      BODY-SECOND-DERIVATIVE:
+        None
+  STRUCTURE:
+    COLUMNS: [No.,Name,Formula,State,A,B,C,D,critical-temperature,critical-pressure,Eq]
+    SYMBOL: [None,None,None,None,A,B,C,D,Tc,Pc,VaPr]
+    UNIT: [None,None,None,None,1,1,1,1,K,bar,bar]
+  VALUES:
+    - [1,propane,C3H8,g,-6.715816,1.387038,-1.311343,-2.563166,369.83,42.48,1]
+```
+
+For `pyThermoLinkDB` rules, map source table labels to the EOS model-source
+symbols expected by the core helpers:
+
+```python
+thermodb_rules = {
+    "ALL": {
+        "DATA": {
+            "critical-pressure": "Pc",
+            "critical-temperature": "Tc",
+            "acentric-factor": "AcFa",
+        },
+        "EQUATIONS": {
+            "CUSTOM-REF-1::vapor-pressure": "VaPr",
+        },
+    }
+}
+```
+
+For EOS fugacity examples, include `Pc`, `Tc`, and `AcFa` at minimum. Include
+`VaPr` for automatic phase detection, EOS root analysis, and Poynting liquid
+fugacity. Add `Cp_IG` only when building reusable shared EOS sources that also
+need ideal-gas heat capacity outside the fugacity/root workflow:
+
+```python
+"CUSTOM-REF-1::ideal-gas-heat-capacity": "Cp_IG"
 ```
