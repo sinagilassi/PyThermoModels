@@ -8,6 +8,8 @@ import pyThermoLinkDB as ptdblink
 from pyThermoLinkDB.models import ModelSource
 from pythermodb_settings.models import Component, ComponentRule, ComponentThermoDBSource, Temperature, Pressure
 from pyThermoModels.core import calc_liquid_fugacity, check_component_eos_roots
+# locals
+from examples.source.model_source_2 import CO2, model_source, model_source_dict
 
 # check version
 print(ptm.__version__)
@@ -24,148 +26,6 @@ print(parent_dir)
 # NOTE: thermodb directory
 thermodb_dir = os.path.join(parent_dir, '..', 'thermodb')
 print(thermodb_dir)
-
-# ! CO2
-# thermodb file name
-CO2_thermodb_file = os.path.join(thermodb_dir, 'carbon dioxide-g.pkl')
-
-# ! acetylene
-# thermodb file name
-acetylene_thermodb_file = os.path.join(thermodb_dir, 'acetylene-g.pkl')
-
-# ! n-butane
-# thermodb file name
-n_butane_thermodb_file = os.path.join(thermodb_dir, 'n-butane-g.pkl')
-
-# ! ethanol
-# thermodb file name
-ethanol_thermodb_file = os.path.join(thermodb_dir, 'ethanol-l.pkl')
-
-# ! methanol
-# thermodb file name
-methanol_thermodb_file = os.path.join(thermodb_dir, 'methanol-g.pkl')
-
-# ! 1-butene
-# thermodb file name
-butene_thermodb_file = os.path.join(thermodb_dir, '1-butene-g.pkl')
-
-# ! propane
-# thermodb file name
-propane_thermodb_file = os.path.join(thermodb_dir, 'propane-g.pkl')
-
-# ! methane
-# thermodb file name
-methane_thermodb_file = os.path.join(thermodb_dir, 'methane-g.pkl')
-
-# =======================================
-# SECTION: COMPONENTS THERMODB SOURCE
-# =======================================
-# NOTE: carbon dioxide
-CO2_comp = Component(
-    name='carbon dioxide',
-    formula='CO2',
-    state='g'
-)
-CO2_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=CO2_comp,
-    source=CO2_thermodb_file
-)
-
-# NOTE: acetylene
-acetylene_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=Component(
-        name='acetylene',
-        formula='C2H2',
-        state='g'
-    ),
-    source=acetylene_thermodb_file
-)
-
-# NOTE: n-butane
-n_butane_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=Component(
-        name='n-butane',
-        formula='C4H10',
-        state='g'
-    ),
-    source=n_butane_thermodb_file
-)
-
-# NOTE: ethanol
-ethanol_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=Component(
-        name='ethanol',
-        formula='C2H5OH',
-        state='l'
-    ),
-    source=ethanol_thermodb_file
-)
-
-# NOTE: methanol
-methanol_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=Component(
-        name='methanol',
-        formula='CH3OH',
-        state='g'
-    ),
-    source=methanol_thermodb_file
-)
-
-# NOTE: 1-butene
-butene_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=Component(
-        name='1-butene',
-        formula='C4H8',
-        state='g'
-    ),
-    source=butene_thermodb_file
-)
-
-# NOTE: propane
-C3H8_Comp = Component(
-    name='propane',
-    formula='C3H8',
-    state='g'
-)
-propane_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=C3H8_Comp,
-    source=propane_thermodb_file
-)
-
-# NOTE: methane
-CH4_Comp = Component(
-    name='methane',
-    formula='CH4',
-    state='g'
-)
-methane_component_thermodb: ComponentThermoDBSource = ComponentThermoDBSource(
-    component=CH4_Comp,
-    source=methane_thermodb_file
-)
-
-# NOTE: component thermodb source
-_component_thermodb: list = [
-    CO2_component_thermodb,
-    acetylene_component_thermodb,
-    n_butane_component_thermodb,
-    ethanol_component_thermodb,
-    methanol_component_thermodb,
-    butene_component_thermodb,
-    propane_component_thermodb,
-    methane_component_thermodb,
-]
-# =======================================
-# SECTION: BUILD THERMODB MODEL SOURCE
-# =======================================
-model_source_: ModelSource = ptdblink.load_and_build_model_source(
-    thermodb_sources=_component_thermodb,
-    rules=None,
-)
-print(model_source_)
-
-# get data source and equation source
-datasource = model_source_.data_source
-equationsource = model_source_.equation_source
 
 # ========================================
 # NOTE: INITIALIZE OBJECT
@@ -242,7 +102,6 @@ T = 340
 # pressure [bar]
 P = 30
 
-
 # SECTION: model input
 # temperature
 temperature = Temperature(value=T, unit='K')
@@ -256,12 +115,6 @@ model_input = {
     "temperature": [T, 'K'],
 }
 
-# SECTION: model source
-model_source = {
-    "datasource": datasource,
-    "equationsource": equationsource
-}
-
 
 # ------------------------------------------------
 # NOTE: eos root analysis
@@ -270,37 +123,37 @@ model_source = {
 res = eos.check_eos_roots_single_component(
     model_name=eos_model,
     model_input=model_input,
-    model_source=model_source
+    model_source=model_source_dict
 )
 print(res)
 
 # ! new method
 res = check_component_eos_roots(
-    component=C3H8_Comp,
+    component=CO2,
     temperature=temperature,
     pressure=pressure,
-    model_source=model_source_,
+    model_source=model_source,
 )
 print(res)
 
 # ------------------------------------------------
 # NOTE: calculation
 # ------------------------------------------------
-# NOTE: gas fugacity calculation method
+# NOTE: liquid fugacity calculation method
 # ! old method
 res = eos.cal_fugacity(
     model_name=eos_model,
     model_input=model_input,
-    model_source=model_source,
+    model_source=model_source_dict,
     liquid_fugacity_mode='Poynting'
 )
 print(res)
 
 # ! new method
 res = eos.calc_fugacity(
-    component=CO2_comp,
+    component=CO2,
     model_input=model_input,
-    model_source=model_source_,
+    model_source=model_source,
     liquid_fugacity_mode='Poynting'
 )
 print(res)
@@ -310,10 +163,10 @@ print(res)
 # ------------------------------------------------
 # ! new method
 res = calc_liquid_fugacity(
-    component=CO2_comp,
+    component=CO2,
     temperature=temperature,
     pressure=pressure,
-    model_source=model_source_,
+    model_source=model_source,
     liquid_fugacity_mode='Poynting',
 )
 print(res)
