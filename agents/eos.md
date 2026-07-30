@@ -1,40 +1,23 @@
 # Fugacity Calculation Guide for Agents
 
-This guide summarizes how to calculate fugacity in `PyThermoModels` using the
-build-model-source workflow shown in:
+This guide summarizes the current fugacity workflow in `PyThermoModels` using
+the build-model-source API shown in:
 
-- `examples/eos-models/fugacity-gas using build model source - 2.py`
-- `examples/eos-models/fugacity-gas using build model source - 3.py`
-- `examples/eos-models/fugacity-liquid using build model source - 2.py`
-- `examples/eos-models/fugacity-mixture using build model source.py`
+- `examples/eos-models/fugacity-gas using build model source - 4.py`
+- `examples/eos-models/fugacity-liquid using build model source - 3.py`
+- `examples/eos-models/fugacity-mixture using build model source - 1.py`
+- `examples/source/model_source_1.py`
+- `examples/source/model_source_2.py`
 
-Prefer the newer core functions when writing agent-generated code:
+Use the `pyThermoModels.core` helpers with a `ModelSource` object. Do not use
+the older `ptm.eos()` object API for new agent-generated fugacity examples.
 
-- `calc_gas_fugacity`
-- `calc_liquid_fugacity`
-- `calc_mixture_fugacity`
-- `check_component_eos_roots`
-- `check_multi_component_eos_roots`
+## Current API
 
-The older `ptm.eos()` methods are still useful for compatibility examples, but
-new examples should use `Component`, `Temperature`, `Pressure`, and
-`ModelSource` objects directly.
-
-## Required Imports
+Import the core helpers directly:
 
 ```python
-import os
-from typing import Dict
-
-import pyThermoLinkDB as ptdblink
-from pyThermoLinkDB.models import ModelSource
-from pythermodb_settings.models import (
-    Component,
-    ComponentRule,
-    ComponentThermoDBSource,
-    Pressure,
-    Temperature,
-)
+from pythermodb_settings.models import Component, Pressure, Temperature
 from pyThermoModels.core import (
     calc_gas_fugacity,
     calc_liquid_fugacity,
@@ -44,177 +27,260 @@ from pyThermoModels.core import (
 )
 ```
 
-## Shared Setup: Build `ModelSource`
+The current helper signatures use structured objects:
 
-Every fugacity calculation needs a `ModelSource` containing component data and
-equations. The examples now show two supported ways to obtain it:
+- `component` or `components`: `Component` object or list of `Component`
+  objects.
+- `temperature`: `Temperature(value=..., unit=...)`.
+- `pressure`: `Pressure(value=..., unit=...)`.
+- `model_source`: a `pyThermoLinkDB.models.ModelSource` instance.
+- `model_name`: optional EOS name, default is `"SRK"`.
+- `component_key`: optional component lookup mode, default is `"Name-State"`.
 
-- Build the source inline from existing ThermoDB pickle files.
-- Import a reusable source module that builds ThermoDB data from reference
-  content and exports `model_source`, `model_source_dict`, and components.
+## Function Argument Reference
 
-### Required Thermodynamic Inputs
+When writing agent guidance or generated examples, describe every argument used
+by the selected function, including optional arguments that rely on defaults.
+Defaults are part of the API contract and should be chosen intentionally.
 
-Before preparing `ModelSource`, make sure the source ThermoDB data can provide
-the thermodynamic inputs required by the EOS and phase logic:
+### `check_component_eos_roots(...)`
 
-| Input | Model-source symbol | Required for |
-| --- | --- | --- |
-| Critical pressure | `Pc` | EOS parameter construction and root analysis |
-| Critical temperature | `Tc` | EOS parameter construction and phase/root analysis |
-| Acentric factor | `AcFa` | EOS model data completeness and model-source compatibility |
-| Vapor-pressure equation | `VaPr` | automatic phase detection, EOS root analysis, and Poynting liquid fugacity |
-| Ideal-gas heat-capacity equation | `Cp_IG` | optional for fugacity itself, but commonly included in EOS examples and shared model sources |
+Use for pure-component EOS root and phase analysis before pure gas or liquid
+fugacity calculations.
 
-The minimum practical rule set for fugacity examples is:
+- `component`: required `Component`. Must include `name`, `formula`, and
+  `state` matching the selected `component_key`.
+- `pressure`: required `Pressure`. Use explicit units, for example
+  `Pressure(value=9.99, unit="bar")`.
+- `temperature`: required `Temperature`. Use explicit units, for example
+  `Temperature(value=300.1, unit="K")`.
+- `model_source`: required `ModelSource`. Pass the object exported by the
+  source module, not `model_source_dict`.
+- `model_name`: optional EOS model. Default is `"SRK"`; accepted values are
+  `"SRK"`, `"PR"`, `"vdW"`, and `"RK"`.
+- `component_key`: optional lookup mode. Default is `"Name-State"`; use
+  `"Formula-State"` only when the source keys are formula-state keys.
+- `**kwargs`: optional calculation controls. Common keys include `phase` for an
+  explicit phase hint and `tolerance` for numerical/root comparison tolerance.
+
+### `check_multi_component_eos_roots(...)`
+
+Use for mixture EOS root and phase analysis before mixture fugacity.
+
+- `components`: required list of `Component` objects. Each component must carry
+  `mole_fraction` for mixture calculations.
+- `pressure`: required `Pressure` with explicit units.
+- `temperature`: required `Temperature` with explicit units.
+- `model_source`: required `ModelSource` containing all mixture components.
+- `model_name`: optional EOS model. Default is `"SRK"`; accepted values are
+  `"SRK"`, `"PR"`, `"vdW"`, and `"RK"`.
+- `bubble_point_pressure_mode`: optional bubble-point method. Default is
+  `"Raoult"`.
+- `dew_point_pressure_mode`: optional dew-point method. Default is `"Raoult"`.
+- `component_key`: optional lookup mode. Default is `"Name-State"`.
+- `**kwargs`: optional calculation controls such as `tolerance`.
+
+### `calc_gas_fugacity(...)`
+
+Use for pure-component vapor/gas fugacity.
+
+- `component`: required `Component` for the pure component.
+- `pressure`: required `Pressure` with explicit units.
+- `temperature`: required `Temperature` with explicit units.
+- `model_source`: required `ModelSource`; do not pass the old dictionary form.
+- `model_name`: optional EOS model. Default is `"SRK"`; accepted values are
+  `"SRK"`, `"PR"`, `"RK"`, and `"vdW"`.
+- `solver_method`: optional numerical solver. Default is `"ls"`; accepted
+  values are `"ls"`, `"newton"`, `"fsolve"`, and `"root"`.
+- `component_key`: optional lookup mode. Default is `"Name-State"`.
+- `phase_names`: optional list of phases considered by the calculation. Default
+  is `["VAPOR", "LIQUID", "SUPERCRITICAL", "VAPOR-LIQUID"]`.
+- `**kwargs`: optional calculation controls. Common keys include `phase` and
+  `tolerance`.
+
+### `calc_liquid_fugacity(...)`
+
+Use for pure-component liquid fugacity.
+
+- `component`: required `Component` for the pure component.
+- `pressure`: required `Pressure` with explicit units.
+- `temperature`: required `Temperature` with explicit units.
+- `model_source`: required `ModelSource`; do not pass the old dictionary form.
+- `model_name`: optional EOS model. Default is `"SRK"`; accepted values are
+  `"SRK"`, `"PR"`, `"RK"`, and `"vdW"`.
+- `solver_method`: optional numerical solver. Default is `"ls"`; accepted
+  values are `"ls"`, `"newton"`, `"fsolve"`, and `"root"`.
+- `liquid_fugacity_mode`: optional liquid method. Default is `"EOS"`; use
+  `"Poynting"` for the Poynting correction path shown in the current liquid
+  example.
+- `component_key`: optional lookup mode. Default is `"Name-State"`.
+- `phase_names`: optional list of phases considered by the calculation. Default
+  is `["VAPOR", "LIQUID", "SUPERCRITICAL", "VAPOR-LIQUID"]`.
+- `**kwargs`: optional calculation controls. Common keys include `phase` and
+  `tolerance`.
+
+### `calc_mixture_fugacity(...)`
+
+Use for multi-component fugacity.
+
+- `components`: required list of `Component` objects. Each component must carry
+  `mole_fraction`; the fractions should sum to 1.0.
+- `pressure`: required `Pressure` with explicit units.
+- `temperature`: required `Temperature` with explicit units.
+- `model_source`: required `ModelSource` containing every component in the
+  mixture.
+- `model_name`: optional EOS model. Default is `"SRK"`; accepted values are
+  `"SRK"`, `"PR"`, `"RK"`, and `"vdW"`.
+- `solver_method`: optional numerical solver. Default is `"ls"`; accepted
+  values are `"ls"`, `"newton"`, `"fsolve"`, and `"root"`.
+- `liquid_fugacity_mode`: optional liquid treatment for liquid-phase mixture
+  paths. Default is `"EOS"`; `"Poynting"` is available where the target path
+  supports it.
+- `component_key`: optional lookup mode. Default is `"Name-State"`.
+- `phase_names`: optional list of phases considered by the calculation. Default
+  is `["VAPOR", "LIQUID", "SUPERCRITICAL", "VAPOR-LIQUID"]`.
+- `**kwargs`: optional calculation controls such as `tolerance`; pass binary
+  interaction data only when the called path supports and needs it.
+
+## Building Model Sources
+
+Reusable model-source modules should build ThermoDB components from reference
+content, then convert those ThermoDB objects into a `ModelSource`.
+
+Use this API:
 
 ```python
-thermodb_rules = {
-    "ALL": {
-        "DATA": {
-            "critical-pressure": "Pc",
-            "critical-temperature": "Tc",
-            "acentric-factor": "AcFa",
-        },
-        "EQUATIONS": {
-            "CUSTOM-REF-1::vapor-pressure": "VaPr",
-        },
-    }
-}
+from pyThermoDB import build_component_thermodb_from_reference
+from pyThermoLinkDB import build_components_model_source, build_model_source
+from pyThermoLinkDB.models import ComponentModelSource, ModelSource
+from pythermodb_settings.models import Component
 ```
 
-Add `Cp_IG` only when the shared model source also needs ideal-gas heat
-capacity for other workflows:
+Pattern:
 
 ```python
-"CUSTOM-REF-1::ideal-gas-heat-capacity": "Cp_IG"
-```
+thermodb_components = []
 
-For pure gas fugacity with a manually supplied vapor phase, the EOS path mainly
-needs `Pc` and `Tc`. In normal agent workflows, still include `VaPr` because
-automatic phase detection and root checks depend on it. For liquid fugacity with
-`liquid_fugacity_mode="Poynting"`, `VaPr` is mandatory.
+for comp in components:
+    thermodb_component = build_component_thermodb_from_reference(
+        component_name=comp.name,
+        component_formula=comp.formula,
+        component_state=comp.state,
+        reference_content=REFERENCE_CONTENT,
+        ignore_state_props=["MW", "VaPr"],
+        thermodb_save=True,
+        thermodb_save_path=thermodb_dir,
+    )
+    if thermodb_component is None:
+        raise ValueError(f"thermodb_component for {comp.name} is None")
+    thermodb_components.append(thermodb_component)
 
-### Option 1: Build Inline From ThermoDB Files
-
-Build the source from ThermoDB pickle files with
-`ptdblink.load_and_build_model_source`.
-
-```python
-parent_dir = os.path.dirname(os.path.abspath(__file__))
-thermodb_dir = os.path.join(parent_dir, "..", "thermodb")
-
-CO2 = Component(name="carbon dioxide", formula="CO2", state="g")
-C3H8 = Component(name="propane", formula="C3H8", state="g")
-C4H10 = Component(name="n-butane", formula="C4H10", state="g")
-
-component_thermodb = [
-    ComponentThermoDBSource(
-        component=CO2,
-        source=os.path.join(thermodb_dir, "carbon dioxide-g.pkl"),
-    ),
-    ComponentThermoDBSource(
-        component=C3H8,
-        source=os.path.join(thermodb_dir, "propane-g.pkl"),
-    ),
-    ComponentThermoDBSource(
-        component=C4H10,
-        source=os.path.join(thermodb_dir, "n-butane-g.pkl"),
-    ),
-]
-
-thermodb_rules: Dict[str, Dict[str, ComponentRule]] = {
-    "ALL": {
-        "DATA": {
-            "critical-pressure": "Pc",
-            "critical-temperature": "Tc",
-            "acentric-factor": "AcFa",
-        },
-        "EQUATIONS": {
-            "CUSTOM-REF-1::vapor-pressure": "VaPr",
-        },
-    }
-}
-
-model_source: ModelSource = ptdblink.load_and_build_model_source(
-    thermodb_sources=component_thermodb,
-    rules=thermodb_rules,
+component_model_source: list[ComponentModelSource] = build_components_model_source(
+    components_thermodb=thermodb_components,
+    rules=None,
 )
+
+model_source: ModelSource = build_model_source(source=component_model_source)
 ```
 
-Add `"CUSTOM-REF-1::ideal-gas-heat-capacity": "Cp_IG"` to `EQUATIONS` only
-when the same source will be reused for ideal-gas heat-capacity calculations.
+### Source-Builder Arguments
 
-### Option 2: Import a Reusable Model Source Module
+The reusable source modules use these builder functions before any EOS helper is
+called.
 
-The `fugacity-gas using build model source - 3.py` example uses
-`examples/source/model_source_1.py`. That module builds component ThermoDB data
-from `examples.references.reference_2.REFERENCE_CONTENT`, then builds a
-`ModelSource` with:
+`build_component_thermodb_from_reference(...)` builds one `ComponentThermoDB`
+object from reference content.
 
-- `build_components_model_source(...)`
-- `build_model_source(...)`
+- `component_name`: required component name, normally `comp.name` from the
+  `Component` object.
+- `component_formula`: required chemical formula, normally `comp.formula`.
+- `component_state`: required state suffix, normally `comp.state` such as `"g"`
+  or `"l"`.
+- `reference_content`: required reference-data object, such as
+  `REFERENCE_CONTENT` imported from an `examples.references` module.
+- `ignore_state_props`: optional list of state properties to ignore while
+  building the component ThermoDB. Current source modules pass `["MW", "VaPr"]`.
+- `thermodb_save`: optional save flag. Current source modules pass `True`, which
+  means imports may write ThermoDB files.
+- `thermodb_save_path`: required when `thermodb_save=True`; directory where the
+  generated ThermoDB files are written.
 
-Use this pattern when an example or agent workflow should centralize component
-source construction in one file.
+`build_components_model_source(...)` converts one or more component ThermoDB
+objects into component model-source objects.
+
+- `components_thermodb`: required list of `ComponentThermoDB` objects produced
+  by `build_component_thermodb_from_reference(...)`.
+- `rules`: optional mapping that controls property/equation selection. Current
+  source modules pass `None` so the builder uses its default matching behavior.
+
+`build_model_source(...)` combines component model-source objects into the
+`ModelSource` required by the new EOS helpers.
+
+- `source`: required list of `ComponentModelSource` objects returned by
+  `build_components_model_source(...)`.
+
+Important points:
+
+- Prefer `rules=None` with `build_components_model_source(...)` when following
+  `model_source_1.py` and `model_source_2.py`.
+- Export `model_source` from reusable source modules and pass it directly to
+  the new core helpers.
+- `model_source_dict = {"datasource": ..., "equationsource": ...}` is only for
+  older compatibility code. New fugacity examples should not need it.
+- Importing these source modules can create or update files under the selected
+  `thermodb_save_path` because `thermodb_save=True`.
+
+## Reusable Source Modules
+
+Use `examples.source.model_source_1` for the pure propane gas example:
 
 ```python
-from examples.source.model_source_1 import (
-    C3H8,
-    model_source,
-    model_source_dict,
-)
+from examples.source.model_source_1 import C3H8, model_source
 ```
 
-Then use:
+`model_source_1.py` currently builds a source for:
 
-- `model_source` with the newer core helpers such as `calc_gas_fugacity`.
-- `model_source_dict` with older `ptm.eos()` methods that expect a dictionary
-  containing `datasource` and `equationsource`.
+- `C3H8` as propane gas.
+
+Use `examples.source.model_source_2` for liquid and mixture examples:
 
 ```python
-temperature = Temperature(value=300.1, unit="K")
-pressure = Pressure(value=9.99, unit="bar")
-
-root_result = check_component_eos_roots(
-    component=C3H8,
-    temperature=temperature,
-    pressure=pressure,
-    model_source=model_source,
-    component_key="Name-State",
-)
-
-fugacity_result = calc_gas_fugacity(
-    component=C3H8,
-    temperature=temperature,
-    pressure=pressure,
-    model_source=model_source,
-    component_key="Name-State",
-)
+from examples.source.model_source_2 import C3H8, model_source
+from examples.source.model_source_2 import CO2, C4H10, model_source
 ```
 
-Important: importing `examples.source.model_source_1` executes its build steps.
-It can create or update ThermoDB files in `examples/thermodb` because it calls
-`build_component_thermodb_from_reference(..., thermodb_save=True, ...)`.
+`model_source_2.py` currently builds a source for:
 
-### Component Keys
+- `CO2` as carbon dioxide gas.
+- `C3H8` as propane gas.
+- `CH3OH` as methanol gas.
+- `C4H10` as n-butane gas.
 
-`component_key` controls how the component is matched against `model_source`.
+When a reusable module is imported, use its exported `Component` objects when
+possible. For mixtures, recreate the components with `mole_fraction` values,
+as shown below.
 
-- Use `"Name-State"` for keys like `propane-g`, `carbon dioxide-g`,
+## Component Keys
+
+`component_key` controls how components are looked up in `model_source`.
+
+- `"Name-State"` uses keys such as `propane-g`, `carbon dioxide-g`,
   `n-butane-g`.
-- Use `"Formula-State"` for keys like `C3H8-g`, `CO2-g`, `C4H10-g`.
+- `"Formula-State"` uses keys such as `C3H8-g`, `CO2-g`, `C4H10-g`.
 
-The `Component` object must contain the matching `name`, `formula`, and `state`.
-For mixtures, each `Component` must also include `mole_fraction`.
+The current fugacity examples use `"Name-State"` explicitly for gas and mixture
+and rely on the same default for liquid.
 
-## Gas Fugacity: Pure Component
+## Gas Fugacity
 
-Use `calc_gas_fugacity` for a pure-component vapor/gas calculation. Optionally
-run `check_component_eos_roots` first to confirm the phase selected by the EOS
-root analysis.
+Use `check_component_eos_roots` first when root or phase behavior matters, then
+use `calc_gas_fugacity`.
 
 ```python
+from pythermodb_settings.models import Pressure, Temperature
+from pyThermoModels.core import calc_gas_fugacity, check_component_eos_roots
+from examples.source.model_source_1 import C3H8, model_source
+
 temperature = Temperature(value=300.1, unit="K")
 pressure = Pressure(value=9.99, unit="bar")
 
@@ -223,7 +289,6 @@ root_result = check_component_eos_roots(
     temperature=temperature,
     pressure=pressure,
     model_source=model_source,
-    model_name="PR",
     component_key="Name-State",
 )
 
@@ -232,85 +297,86 @@ fugacity_result = calc_gas_fugacity(
     temperature=temperature,
     pressure=pressure,
     model_source=model_source,
-    model_name="PR",
     component_key="Name-State",
 )
 ```
 
-Expected output is a `ComponentGasFugacityResult`-style object containing the
-phase, component, fugacity coefficient, fugacity, compressibility coefficient,
-molar volume, temperature, pressure, and EOS model.
+`model_name` is optional. If omitted, the helper uses `"SRK"`.
 
-## Liquid Fugacity: Pure Component
+## Liquid Fugacity
 
-Use `calc_liquid_fugacity` for pure-liquid fugacity. The liquid helper defaults
-the phase to `"LIQUID"` internally, but passing `phase="LIQUID"` is acceptable
-when clarity is useful.
+Use `calc_liquid_fugacity` for pure-component liquid fugacity. The current
+liquid example uses propane from `model_source_2.py` and the Poynting mode.
 
 ```python
+from pythermodb_settings.models import Pressure, Temperature
+from pyThermoModels.core import calc_liquid_fugacity, check_component_eos_roots
+from examples.source.model_source_2 import C3H8, model_source
+
 temperature = Temperature(value=340, unit="K")
 pressure = Pressure(value=30, unit="bar")
 
 root_result = check_component_eos_roots(
-    component=CO2,
+    component=C3H8,
     temperature=temperature,
     pressure=pressure,
     model_source=model_source,
-    model_name="PR",
-    component_key="Name-State",
 )
 
 fugacity_result = calc_liquid_fugacity(
-    component=CO2,
+    component=C3H8,
     temperature=temperature,
     pressure=pressure,
     model_source=model_source,
-    model_name="PR",
     liquid_fugacity_mode="Poynting",
-    component_key="Name-State",
 )
 ```
 
 `liquid_fugacity_mode` can be:
 
 - `"EOS"`: calculate liquid fugacity from the liquid EOS root.
-- `"Poynting"`: use the Poynting correction path shown in the liquid example.
+- `"Poynting"`: use the Poynting correction path.
 
 ## Mixture Fugacity
 
-Use `calc_mixture_fugacity` for multi-component fugacity. Each component must
-carry its mole fraction. The mole fractions should sum to 1.0.
+Use `calc_mixture_fugacity` for multi-component fugacity. Each component in the
+calculation must include `mole_fraction`.
 
 ```python
-CO2_mix = Component(
-    name="carbon dioxide",
-    formula="CO2",
-    state="g",
-    mole_fraction=0.15,
+from pythermodb_settings.models import Component, Pressure, Temperature
+from pyThermoModels.core import (
+    calc_mixture_fugacity,
+    check_multi_component_eos_roots,
 )
-C4H10_mix = Component(
-    name="n-butane",
-    formula="C4H10",
-    state="g",
-    mole_fraction=0.85,
-)
-components = [CO2_mix, C4H10_mix]
+from examples.source.model_source_2 import model_source
 
 temperature = Temperature(value=444, unit="K")
 pressure = Pressure(value=10, unit="bar")
 
-# Optional binary interaction parameters. Omit this block when unavailable.
-k_ij = [
-    [0, 0.18],
-    [0.18, 0],
-]
+N0s = {
+    "CO2-g": 0.15,
+    "n-butane-g": 0.85,
+}
+
+CO2 = Component(
+    name="carbon dioxide",
+    formula="CO2",
+    state="g",
+    mole_fraction=N0s.get("CO2-g", 0),
+)
+C4H10 = Component(
+    name="n-butane",
+    formula="C4H10",
+    state="g",
+    mole_fraction=N0s.get("n-butane-g", 0),
+)
+components = [CO2, C4H10]
 
 root_result = check_multi_component_eos_roots(
     components=components,
     temperature=temperature,
     pressure=pressure,
     model_source=model_source,
-    model_name="RK",
     component_key="Name-State",
 )
 
@@ -319,24 +385,16 @@ fugacity_result = calc_mixture_fugacity(
     temperature=temperature,
     pressure=pressure,
     model_source=model_source,
-    model_name="RK",
     component_key="Name-State",
-    k_ij=k_ij,
 )
 ```
 
-Expected output is a `MixtureFugacityResult`-style object with per-component
-fugacity coefficients and fugacities for the detected phase or phases.
-
-`k_ij` is optional for mixture fugacity. Pass it only when binary interaction
-parameters are known and should be included in the EOS mixing rule. If no
-`k_ij` is supplied, the calculation uses the model's default interaction
-parameter handling.
+The mixture helper also accepts optional settings such as `model_name`,
+`solver_method`, `liquid_fugacity_mode`, `phase_names`, and keyword arguments.
+Only pass optional binary interaction data when the target helper path supports
+and needs it.
 
 ## Old API to New API Mapping
-
-The examples include both old and new call styles. When preparing new code,
-prefer the new API.
 
 | Task | Old API | New API |
 | --- | --- | --- |
@@ -346,48 +404,28 @@ prefer the new API.
 | Mixture EOS root analysis | `eos.check_eos_roots_multi_component(...)` | `check_multi_component_eos_roots(...)` |
 | Mixture fugacity | `eos.cal_fugacity_mixture(...)` | `calc_mixture_fugacity(...)` |
 
-When using the reusable source module:
+## Agent Checklist
 
-- Old API calls should receive `model_source=model_source_dict`.
-- New API calls should receive `model_source=model_source`.
-
-## Common Agent Checklist
-
-1. Define `Component` objects with correct `name`, `formula`, and `state`.
-2. Wrap ThermoDB pickle paths in `ComponentThermoDBSource`.
-3. Build `ModelSource` inline with rules mapping `Pc`, `Tc`, `AcFa`, and
-   `VaPr`, optionally adding `Cp_IG`, or import a prepared `model_source` from
-   `examples.source.model_source_1`.
-4. Use `Temperature(value=..., unit="K")` and `Pressure(value=..., unit="bar")`
-   or another supported unit.
-5. Pick `model_name`, commonly `"PR"` for Peng-Robinson or `"RK"` for
-   Redlich-Kwong examples.
-6. Run the relevant root-analysis helper before fugacity when phase behavior is
-   unclear.
-7. Use the same `component_key` in root analysis and fugacity calculation.
-8. For mixtures, set `mole_fraction` on each `Component`; optionally pass
-   `k_ij` through `**kwargs` when binary interaction parameters are available.
+1. Import a reusable `model_source` from `examples.source.model_source_1` or
+   `examples.source.model_source_2`, or build one with
+   `build_components_model_source(..., rules=None)` and `build_model_source`.
+2. Use `Temperature` and `Pressure` objects with explicit units.
+3. Use `Component` objects with matching `name`, `formula`, and `state`.
+4. For mixtures, set `mole_fraction` on each `Component`; do not rely only on a
+   separate feed dictionary.
+5. Pass the `ModelSource` object directly to the new core helper.
+6. Keep `component_key` consistent between root checks and fugacity calls.
+7. Add `model_name` only when the example needs a specific EOS; otherwise use
+   the helper default.
 
 ## Common Failure Points
 
-- Component key mismatch: `component_key="Name-State"` requires model-source
-  keys based on names, while `"Formula-State"` requires formula-based keys.
-- Missing vapor-pressure equation: liquid and phase-root checks depend on
-  `VaPr`; include the vapor-pressure rule in `thermodb_rules`.
-- Missing critical properties: EOS fugacity requires `Pc`, `Tc`, and `AcFa`.
-- Incorrect state suffix: examples use gas-state ThermoDB files like
-  `propane-g.pkl` and component states like `state="g"`.
-- Incomplete mixture data: mixture calculations need `mole_fraction` values on
-  the `Component` objects, not just a separate feed dictionary.
-- Unit ambiguity: always construct `Temperature` and `Pressure` with explicit
-  units.
-- Import side effects: reusable source modules may build and save ThermoDB files
-  at import time; account for that when using them in tests or scripts.
-
-## Minimal Decision Guide
-
-- Pure gas or vapor phase: `calc_gas_fugacity`.
-- Pure liquid phase: `calc_liquid_fugacity`.
-- Mixture with mole fractions: `calc_mixture_fugacity`.
-- Unsure phase/root behavior: call the matching `check_*_eos_roots` helper
-  first.
+- Passing `model_source_dict` to a new core helper. New helpers require a
+  `ModelSource` object.
+- Component-key mismatch between the `Component` object and `model_source`.
+- Missing `mole_fraction` values in mixture components.
+- Ambiguous units. Always use `Temperature(value=..., unit=...)` and
+  `Pressure(value=..., unit=...)`.
+- Import side effects from source modules that save ThermoDB files.
+- Copying old examples that instantiate `ptm.eos()` instead of importing from
+  `pyThermoModels.core`.
