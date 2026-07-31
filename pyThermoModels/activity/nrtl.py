@@ -16,12 +16,13 @@ from pythermodb_settings.utils import create_mixture_id
 # local
 from ..utils import add_attributes
 from ..plugin import ACTIVITY_MODELS
+from .binary_interactions import BinaryInteractions
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
 
 
-class NRTL:
+class NRTL(BinaryInteractions):
     """
     The NRTL (`Non-Random Two-Liquid`) model - a thermodynamic framework used to describe the behavior of mixtures,
     particularly in the context of phase equilibria and activity coefficients.
@@ -95,31 +96,12 @@ class NRTL:
 
         The component names define the order of the parameters in the model. The first component in the list is component 1, the second is component 2, and so on.
         '''
-        # SECTION:
-        # Check datasource
-        if not isinstance(datasource, dict):
-            raise TypeError("datasource must be a dict")
-
-        # Check equationsource
-        if not isinstance(equationsource, dict):
-            raise TypeError("equationsource must be a dict")
-
-        # Check if components is a list
-        if not isinstance(components, list):
-            raise TypeError("components must be a list")
-
-        # SECTION: Assign the parameters to instance variables
-        self.datasource = datasource
-        self.equationsource = equationsource
-
-        # components
-        self.components = [components.strip() for components in components]
-
-        # SECTION
-        # Get the number of components
-        self.comp_num = len(components)
-        # idx
-        self.comp_idx = {components[i]: i for i in range(self.comp_num)}
+        super().__init__(
+            components=components,
+            datasource=datasource,
+            equationsource=equationsource,
+            **kwargs
+        )
 
     def __repr__(self) -> str:
         model_ = """
