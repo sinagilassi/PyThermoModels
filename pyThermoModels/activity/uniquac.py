@@ -19,6 +19,7 @@ from pyThermoDB import (
 # local
 from ..plugin import ACTIVITY_MODELS
 from ..utils import add_attributes
+from .local_composition import LocalCompositionModel
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -139,13 +140,21 @@ class UNIQUAC:
         # SECTION: Assign the parameters to instance variables
         self.datasource = datasource
         self.equationsource = equationsource
-        self.components = [components.strip() for components in components]
+        self.components = [component.strip() for component in components]
 
         # SECTION
         # Get the number of components
-        self.comp_num = len(components)
+        self.comp_num = len(self.components)
         # idx
-        self.comp_idx = {components[i]: i for i in range(self.comp_num)}
+        self.comp_idx = {
+            self.components[i]: i for i in range(self.comp_num)
+        }
+
+        # SECTION: local composition model
+        self.local_composition_model = LocalCompositionModel(
+            components=self.components,
+            component_idx=self.comp_idx
+        )
 
     def __str__(self):
         model_ = """
