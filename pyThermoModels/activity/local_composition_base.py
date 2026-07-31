@@ -1,4 +1,5 @@
 # SECTION: imports
+from math import exp, isfinite
 from typing import Any, Dict, List, Literal, TypeAlias, cast
 
 import numpy as np
@@ -6,6 +7,7 @@ from pyThermoDB import TableMatrixData as _TableMatrixData
 
 # SECTION: shared types
 IJData: TypeAlias = np.ndarray | Dict[str, float] | Any
+
 IJ_DATA_TYPES: tuple[type[Any], ...] = (
     np.ndarray,
     dict,
@@ -14,7 +16,13 @@ IJ_DATA_TYPES: tuple[type[Any], ...] = (
 
 
 class LocalCompositionBase:
-    """Shared input and key handling for local-composition models."""
+    """Shared input and key handling for local-composition models.
+
+    This base class centralizes common validation and ij-value extraction so
+    model-specific classes can focus on equation semantics (for example,
+    NRTL tau as a dimensionless ratio versus UNIQUAC tau as an exponential
+    weighting factor).
+    """
 
     # SECTION: initialization
     def __init__(
@@ -24,6 +32,13 @@ class LocalCompositionBase:
         **kwargs
     ):
         # NOTE: component order and index mapping are owned by the parent model
+        if not components:
+            raise ValueError("components must not be empty")
+        if set(components) != set(component_idx.keys()):
+            raise ValueError(
+                "component_idx keys must match the provided component names"
+            )
+
         self.components = components
         self.comp_idx = component_idx
         self.comp_num = len(self.components)
@@ -40,6 +55,11 @@ class LocalCompositionBase:
         # ! local-composition temperature correlations require Kelvin above zero
         if temperature <= 0:
             raise ValueError("temperature must be greater than 0 K")
+
+    def _validate_r_const(self, r_const: float) -> None:
+        # ! gas constant must be positive for dimensionless energy scaling
+        if r_const <= 0:
+            raise ValueError("R_CONST must be greater than 0")
 
     def _validate_same_source_type(self, *values: IJData) -> type:
         # ! all coefficient matrices must use the same source representation
@@ -60,6 +80,22 @@ class LocalCompositionBase:
         if not isinstance(value, IJ_DATA_TYPES):
             raise TypeError(
                 f"{name} must be numpy array, dict or TableMatrixData")
+
+    def _validate_numeric_result(self, value: float, name: str) -> None:
+        # ! protect downstream equations from non-physical inf/nan propagation
+        if not isfinite(value):
+            raise ValueError(
+                f"Computed {name} is not finite. "
+                "Check parameter units, sign convention, and temperature range."
+            )
+
+    def _validate_positive_result(self, value: float, name: str) -> None:
+        # ! exponential weighting terms such as UNIQUAC tau must remain > 0
+        if value <= 0:
+            raise ValueError(
+                f"Computed {name} must be strictly positive. "
+                "Check equation form and sign convention."
+            )
 
     # SECTION: pair helpers
     def _pair_key(
@@ -119,3 +155,17 @@ class LocalCompositionBase:
         if isinstance(data, dict):
             return float(data[pair_key])
         return self._table_value(data, symbol, i, j)
+
+    # SECTION: numeric helpers
+    def _exp_checked(self, exponent: float, name: str) -> float:
+        """Exponentiate safely and fail with a domain-specific message."""
+        try:
+            value = exp(exponent)
+        except OverflowError as err:
+            raise ValueError(
+                f"Overflow while computing {name}. "
+                "Check equation form, units, and sign convention."
+            ) from err
+
+        self._validate_numeric_result(value, name)
+        return value
