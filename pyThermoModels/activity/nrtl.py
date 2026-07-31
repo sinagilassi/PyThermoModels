@@ -124,7 +124,7 @@ class NRTL:
         }
 
         # SECTION: local composition model
-        local_composition_model = LocalCompositionModel(
+        self.local_composition_model = LocalCompositionModel(
             components=self.components,
             component_idx=self.comp_idx
         )
