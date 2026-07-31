@@ -19,7 +19,7 @@ from pyThermoDB import (
 # local
 from ..plugin import ACTIVITY_MODELS
 from ..utils import add_attributes
-from .local_composition import LocalCompositionModel
+from .uniquac_local_composition import UNIQUACLocalComposition
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -151,7 +151,7 @@ class UNIQUAC:
         }
 
         # SECTION: local composition model
-        self.local_composition_model = LocalCompositionModel(
+        self.local_composition_model = UNIQUACLocalComposition(
             components=self.components,
             component_idx=self.comp_idx
         )
@@ -633,6 +633,13 @@ class UNIQUAC:
         2. All parameters including a_ij, b_ij, c_ij must be in the same format (numpy array, dict or TableMatrixData).
         """
         try:
+            return self.local_composition_model.cal_dU_ij_M1(
+                temperature=temperature,
+                a_ij=a_ij,
+                b_ij=b_ij,
+                c_ij=c_ij,
+                symbol_delimiter=symbol_delimiter,
+            )
             # SECTION: check
             if (
                 not isinstance(a_ij, np.ndarray) and
@@ -849,6 +856,13 @@ class UNIQUAC:
         - `dU | {component_i} | {component_j}`.
         """
         try:
+            return self.local_composition_model.cal_tau_ij_M1(
+                temperature=temperature,
+                dU_ij=dU_ij,
+                dU_ij_symbol=dU_ij_symbol,
+                R_CONST=R_CONST,
+                symbol_delimiter=symbol_delimiter,
+            )
             # check
             if not isinstance(dU_ij, np.ndarray) and not isinstance(dU_ij, dict) and not isinstance(dU_ij, TableMatrixData):
                 raise TypeError(
@@ -1014,6 +1028,14 @@ class UNIQUAC:
         2. All parameters including a_ij, b_ij, c_ij, d_ij must be in the same format (numpy array, dict or TableMatrixData).
         """
         try:
+            return self.local_composition_model.cal_tau_ij_M2(
+                temperature=temperature,
+                a_ij=a_ij,
+                b_ij=b_ij,
+                c_ij=c_ij,
+                d_ij=d_ij,
+                symbol_delimiter=symbol_delimiter,
+            )
             # SECTION: check
             if (not isinstance(a_ij, np.ndarray) and
                 not isinstance(a_ij, dict) and
