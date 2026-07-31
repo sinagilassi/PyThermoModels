@@ -8,7 +8,12 @@ from .local_composition_base import IJData, LocalCompositionBase
 
 
 class NRTLLocalComposition(LocalCompositionBase):
-    """NRTL local-composition interaction-parameter calculations."""
+    """NRTL local-composition interaction-parameter calculations.
+
+    NOTE: In NRTL, tau_ij is dimensionless and defined directly by
+    dg_ij / (R*T) or by a declared tau-correlation. The exponential term is
+    applied later to compute G_ij, not to redefine tau_ij.
+    """
 
     # SECTION: interaction energy
     def cal_dg_ij_M1(
@@ -20,9 +25,12 @@ class NRTLLocalComposition(LocalCompositionBase):
         symbol_delimiter: Literal["|", "_"] = "|"
     ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
-        Calculate NRTL interaction-energy parameter.
+        Calculate NRTL interaction-energy difference matrix.
 
+        SECTION: equation
         dg_ij = a_ij + b_ij*T + c_ij*T^2
+
+        NOTE: dg_ij is typically interpreted as energy per mole.
         """
         try:
             # SECTION: validation
@@ -34,6 +42,8 @@ class NRTLLocalComposition(LocalCompositionBase):
             dg_ij_comp = {}
 
             # SECTION: calculate dg_ij
+            temperature_sq = pow(temperature, 2)
+
             for i in range(self.comp_num):
                 for j in range(self.comp_num):
                     key = self._pair_key(i, j, symbol_delimiter)
@@ -49,9 +59,9 @@ class NRTLLocalComposition(LocalCompositionBase):
                     value = (
                         self._ij_value(a_ij, "a", i, j, key)
                         + self._ij_value(b_ij, "b", i, j, key) * temperature
-                        + self._ij_value(c_ij, "c", i, j, key)
-                        * pow(temperature, 2)
+                        + self._ij_value(c_ij, "c", i, j, key) * temperature_sq
                     )
+                    self._validate_numeric_result(value, f"dg_ij[{key}]")
                     dg_ij[row, col] = value
                     dg_ij_comp[key] = value
 
@@ -69,13 +79,18 @@ class NRTLLocalComposition(LocalCompositionBase):
         symbol_delimiter: Literal["|", "_"] = "|"
     ) -> Tuple[np.ndarray, Dict[str, float]]:
         """
-        Calculate NRTL tau from interaction energy.
+        Calculate NRTL tau from interaction-energy difference.
 
+        SECTION: equation
         tau_ij = dg_ij / (R*T)
+
+        NOTE: tau_ij can be negative in NRTL and remains physically acceptable
+        as a dimensionless energy difference.
         """
         try:
             # SECTION: validation
             self._validate_temperature(temperature)
+            self._validate_r_const(R_CONST)
             self._validate_ij_data(dg_ij, "dg_ij")
 
             # SECTION: initialize result containers
@@ -97,6 +112,7 @@ class NRTLLocalComposition(LocalCompositionBase):
                     # NOTE: NRTL tau is a dimensionless energy difference
                     value = self._ij_value(dg_ij, dg_ij_symbol, i, j, key)
                     value = value / (R_CONST * temperature)
+                    self._validate_numeric_result(value, f"tau_ij[{key}]")
                     tau_ij[row, col] = value
                     tau_ij_comp[key] = value
 
@@ -117,7 +133,10 @@ class NRTLLocalComposition(LocalCompositionBase):
         """
         Calculate NRTL tau using a direct four-coefficient correlation.
 
+        SECTION: equation
         tau_ij = a_ij + b_ij/T + c_ij*ln(T) + d_ij*T
+
+        NOTE: this method computes tau_ij directly (dimensionless).
         """
         try:
             # SECTION: validation
@@ -148,9 +167,165 @@ class NRTLLocalComposition(LocalCompositionBase):
                         * log(temperature)
                         + self._ij_value(d_ij, "d", i, j, key) * temperature
                     )
+                    self._validate_numeric_result(value, f"tau_ij[{key}]")
                     tau_ij[row, col] = value
                     tau_ij_comp[key] = value
 
             return tau_ij, tau_ij_comp
         except Exception as e:
             raise Exception(f"Error in cal_tau_ij_M2: {str(e)}")
+
+    # SECTION: direct tau correlation (A + B/T)
+    def cal_tau_ij_M3(
+        self,
+        temperature: float,
+        a_ij: IJData,
+        b_ij: IJData,
+        symbol_delimiter: Literal["|", "_"] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Calculate NRTL tau using a two-coefficient direct correlation.
+
+        SECTION: equation
+        tau_ij = a_ij + b_ij / T
+
+        NOTE: this matches common NRTL direct-tau forms where tau_ij is
+        dimensionless and evaluated without exponential mapping.
+        """
+        try:
+            # SECTION: validation
+            self._validate_temperature(temperature)
+            self._validate_same_source_type(a_ij, b_ij)
+
+            # SECTION: initialize result containers
+            tau_ij = np.zeros((self.comp_num, self.comp_num), dtype=float)
+            tau_ij_comp = {}
+
+            # SECTION: calculate tau_ij
+            for i in range(self.comp_num):
+                for j in range(self.comp_num):
+                    key = self._pair_key(i, j, symbol_delimiter)
+                    row, col = self._component_position(i, j)
+
+                    # NOTE: self-interaction terms are defined as zero
+                    if i == j:
+                        tau_ij[row, col] = 0
+                        tau_ij_comp[key] = 0
+                        continue
+
+                    value = (
+                        self._ij_value(a_ij, "a", i, j, key)
+                        + self._ij_value(b_ij, "b", i, j, key) / temperature
+                    )
+                    self._validate_numeric_result(value, f"tau_ij[{key}]")
+                    tau_ij[row, col] = value
+                    tau_ij_comp[key] = value
+
+            return tau_ij, tau_ij_comp
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij_M3: {str(e)}")
+
+    # SECTION: direct tau correlation (A + B/T + C/T^2)
+    def cal_tau_ij_M4(
+        self,
+        temperature: float,
+        a_ij: IJData,
+        b_ij: IJData,
+        c_ij: IJData,
+        symbol_delimiter: Literal["|", "_"] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Calculate NRTL tau using an inverse-temperature polynomial.
+
+        SECTION: equation
+        tau_ij = a_ij + b_ij / T + c_ij / T^2
+
+        NOTE: this method corresponds to NRTL direct-tau polynomial forms.
+        """
+        try:
+            # SECTION: validation
+            self._validate_temperature(temperature)
+            self._validate_same_source_type(a_ij, b_ij, c_ij)
+
+            # SECTION: initialize result containers
+            tau_ij = np.zeros((self.comp_num, self.comp_num), dtype=float)
+            tau_ij_comp = {}
+
+            # SECTION: calculate tau_ij
+            temperature_sq = pow(temperature, 2)
+            for i in range(self.comp_num):
+                for j in range(self.comp_num):
+                    key = self._pair_key(i, j, symbol_delimiter)
+                    row, col = self._component_position(i, j)
+
+                    # NOTE: self-interaction terms are defined as zero
+                    if i == j:
+                        tau_ij[row, col] = 0
+                        tau_ij_comp[key] = 0
+                        continue
+
+                    value = (
+                        self._ij_value(a_ij, "a", i, j, key)
+                        + self._ij_value(b_ij, "b", i, j, key) / temperature
+                        + self._ij_value(c_ij, "c", i, j, key) / temperature_sq
+                    )
+                    self._validate_numeric_result(value, f"tau_ij[{key}]")
+                    tau_ij[row, col] = value
+                    tau_ij_comp[key] = value
+
+            return tau_ij, tau_ij_comp
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij_M4: {str(e)}")
+
+    # SECTION: direct tau correlation (A + B/T + C*ln(T))
+    def cal_tau_ij_M5(
+        self,
+        temperature: float,
+        a_ij: IJData,
+        b_ij: IJData,
+        c_ij: IJData,
+        symbol_delimiter: Literal["|", "_"] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Calculate NRTL tau using a logarithmic direct correlation.
+
+        SECTION: equation
+        tau_ij = a_ij + b_ij / T + c_ij * ln(T)
+
+        NOTE: this method preserves NRTL semantics where tau_ij is directly
+        computed and may be negative.
+        """
+        try:
+            # SECTION: validation
+            self._validate_temperature(temperature)
+            self._validate_same_source_type(a_ij, b_ij, c_ij)
+
+            # SECTION: initialize result containers
+            tau_ij = np.zeros((self.comp_num, self.comp_num), dtype=float)
+            tau_ij_comp = {}
+
+            # SECTION: calculate tau_ij
+            log_t = log(temperature)
+            for i in range(self.comp_num):
+                for j in range(self.comp_num):
+                    key = self._pair_key(i, j, symbol_delimiter)
+                    row, col = self._component_position(i, j)
+
+                    # NOTE: self-interaction terms are defined as zero
+                    if i == j:
+                        tau_ij[row, col] = 0
+                        tau_ij_comp[key] = 0
+                        continue
+
+                    value = (
+                        self._ij_value(a_ij, "a", i, j, key)
+                        + self._ij_value(b_ij, "b", i, j, key) / temperature
+                        + self._ij_value(c_ij, "c", i, j, key) * log_t
+                    )
+                    self._validate_numeric_result(value, f"tau_ij[{key}]")
+                    tau_ij[row, col] = value
+                    tau_ij_comp[key] = value
+
+            return tau_ij, tau_ij_comp
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij_M5: {str(e)}")
