@@ -16,7 +16,7 @@ from pythermodb_settings.utils import create_mixture_id
 # local
 from ..utils import add_attributes
 from ..plugin import ACTIVITY_MODELS
-from .local_composition import LocalCompositionModel
+from .nrtl_local_composition import NRTLLocalComposition
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ class NRTL:
         }
 
         # SECTION: local composition model
-        self.local_composition_model = LocalCompositionModel(
+        self.local_composition_model = NRTLLocalComposition(
             components=self.components,
             component_idx=self.comp_idx
         )
@@ -505,6 +505,13 @@ class NRTL:
         2. All parameters including a_ij, b_ij, c_ij must be in the same format (numpy array, dict or TableMatrixData).
         """
         try:
+            return self.local_composition_model.cal_dg_ij_M1(
+                temperature=temperature,
+                a_ij=a_ij,
+                b_ij=b_ij,
+                c_ij=c_ij,
+                symbol_delimiter=symbol_delimiter,
+            )
             # SECTION: check
             if (not isinstance(a_ij, np.ndarray) and
                     not isinstance(a_ij, dict) and
@@ -717,6 +724,13 @@ class NRTL:
         - `dg | {component_i} | {component_j}`.
         """
         try:
+            return self.local_composition_model.cal_tau_ij_M1(
+                temperature=temperature,
+                dg_ij=dg_ij,
+                dg_ij_symbol=dg_ij_symbol,
+                R_CONST=R_CONST,
+                symbol_delimiter=symbol_delimiter,
+            )
             # check
             if (
                 not isinstance(dg_ij, np.ndarray) and
@@ -884,6 +898,14 @@ class NRTL:
         2. All parameters including a_ij, b_ij, c_ij, d_ij must be in the same format (numpy array, dict or TableMatrixData).
         """
         try:
+            return self.local_composition_model.cal_tau_ij_M2(
+                temperature=temperature,
+                a_ij=a_ij,
+                b_ij=b_ij,
+                c_ij=c_ij,
+                d_ij=d_ij,
+                symbol_delimiter=symbol_delimiter,
+            )
             # SECTION: check
             if (not isinstance(a_ij, np.ndarray) and
                 not isinstance(a_ij, dict) and
