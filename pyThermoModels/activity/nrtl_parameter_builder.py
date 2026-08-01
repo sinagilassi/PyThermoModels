@@ -52,6 +52,8 @@ class NRTLParameterBuilder:
         self.to_dict_ij = self.component_parameter_mixin.to_dict_ij
         self.to_matrix_ij = self.component_parameter_mixin.to_matrix_ij
 
+    # SECTION: Calculation methods
+
     def cal_dg_ij_M1(
         self,
         temperature: float,
@@ -300,47 +302,36 @@ class NRTLParameterBuilder:
             raise Exception(f"Error in cal_tau_ij_M5: {str(e)}")
 
     # SECTION: inputs generator
-    def inputs_generator(
+    # NOTE: data source generator
+    def data_source_generator(
         self,
-        temperature: Optional[
-            List[float | str]
-        ] = None,
-        tau_correlation: Literal[
-            'M1', 'M2', 'M3', 'M4', 'M5'
-        ] = 'M1',
-        dg_correlation: Literal[
-            'M1'
-        ] = 'M1',
-        symbol_delimiter: Literal[
-            "|", "_"
-        ] = "|",
         mixture_ids: Optional[Dict[str, str]] = None,
         **kwargs
-    ):
-        '''
-        Prepares inputs for the NRTL activity model for calculating activity coefficients.
+    ) -> Dict[str, Any]:
+        """
+        Generate a data source dictionary for NRTL activity model.
 
         Parameters
         ----------
-        temperature : List[float | str], optional
-            Temperature in any units as: [300, 'K'], it is automatically converted to Kelvin.
-        symbol_delimiter : Literal["|", "_"]
-            Delimiter for component-pair dictionary keys. Default is "|".
-        kwargs : dict
-            Additional parameters for the model.
-            - interaction-energy-parameter : list, optional
-                Interaction energy parameters for the components.
-        '''
+        mixture_ids : Optional[Dict[str, str]], optional
+            Dictionary containing mixture identifiers. Default is None.
+
+        Returns
+        -------
+        Dict[str, Any]
+            A dictionary containing the data source for the NRTL activity model.
+        """
         try:
             # SECTION: check src
             # check NRTL & nrtl keys in datasource
             if "NRTL" in self.datasource.keys():
+                # ! NRTL provided
                 datasource = self.datasource["NRTL"]
             elif "nrtl" in self.datasource.keys():
+                # ! nrtl provided
                 datasource = self.datasource["nrtl"]
-            elif (
-                mixture_ids is not None
-            ):
+            elif mixture_ids is not None:
+                # ! mixture_ids provided
                 # init datasource
                 datasource = {}
                 # set datasource by mixture ids
@@ -359,17 +350,22 @@ class NRTLParameterBuilder:
                         if key_ in self.datasource.keys():
                             datasource = self.datasource[key_]
             else:
+                # ! no keys found, use model_input if provided
                 # log
                 logger.warning(
                     "No NRTL or nrtl key found in datasource, using model_input if provided."
                 )
                 datasource = {}
 
-            if datasource is not None and not isinstance(datasource, dict):
+            if (
+                datasource is not None and
+                not isinstance(datasource, dict)
+            ):
                 raise ValueError(
                     "datasource must be a dictionary."
                 )
 
+            # NOTE: set datasource to empty dict if None
             datasource = {} if datasource is None else dict(datasource)
 
             # NOTE: check model inputs
@@ -394,6 +390,105 @@ class NRTLParameterBuilder:
                     "datasource cannot be empty."
                 )
 
+            # return
+            return datasource
+        except Exception as e:
+            raise Exception(
+                f"Failed to generate NRTL activity data source: {e}"
+            ) from e
+
+    # NOTE: extract parameter source
+    def extract_parameter_source(
+            self,
+            datasource: Dict[str, Any]
+    ):
+        # NOTE: method 1
+        # ! Δg_ij, interaction energy parameter
+        dg_ij_src = datasource.get(
+            'dg_ij',
+            None
+        )
+        if dg_ij_src is None:
+            dg_ij_src = datasource.get(
+                'dg',
+                None
+            )
+
+        # NOTE: method 2
+        # ! constants a, b, c, and d
+        a_ij_src = datasource.get('a_ij', None)
+        if a_ij_src is None:
+            a_ij_src = datasource.get('a', None)
+        b_ij_src = datasource.get('b_ij', None)
+        if b_ij_src is None:
+            b_ij_src = datasource.get('b', None)
+        c_ij_src = datasource.get('c_ij', None)
+        if c_ij_src is None:
+            c_ij_src = datasource.get('c', None)
+        d_ij_src = datasource.get('d_ij', None)
+        if d_ij_src is None:
+            d_ij_src = datasource.get('d', None)
+
+        # NOTE: α_ij, non-randomness parameter
+        # ! check if alpha_ij is provided
+        alpha_ij_src = datasource.get('alpha_ij', None)
+        if alpha_ij_src is None:
+            alpha_ij_src = datasource.get('alpha', None)
+
+        # NOTE: tau_ij, binary interaction parameter
+        # ! check if tau_ij is provided
+        tau_ij_src = datasource.get('tau_ij', None)
+        if tau_ij_src is None:
+            tau_ij_src = datasource.get('tau', None)
+
+        return {
+            'dg_ij_src': dg_ij_src,
+            'a_ij_src': a_ij_src,
+            'b_ij_src': b_ij_src,
+            'c_ij_src': c_ij_src,
+            'd_ij_src': d_ij_src,
+            'alpha_ij_src': alpha_ij_src,
+            'tau_ij_src': tau_ij_src
+        }
+
+    # NOTE: inputs generator
+
+    def inputs_generator(
+        self,
+        temperature: Optional[
+            List[float | str]
+        ] = None,
+        tau_correlation: Literal[
+            'M1', 'M2', 'M3', 'M4', 'M5'
+        ] = 'M1',
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+        mixture_ids: Optional[Dict[str, str]] = None,
+        **kwargs
+    ):
+        '''
+        Prepares inputs for the NRTL activity model for calculating activity coefficients.
+
+        Parameters
+        ----------
+        temperature : List[float | str], optional
+            Temperature in any units as: [300, 'K'], it is automatically converted to Kelvin.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for component-pair dictionary keys. Default is "|".
+        kwargs : dict
+            Additional parameters for the model.
+            - interaction-energy-parameter : list, optional
+                Interaction energy parameters for the components.
+        '''
+        try:
+            # SECTION: data source
+            # generate datasource
+            datasource: Dict[str, Any] = self.data_source_generator(
+                mixture_ids=mixture_ids,
+                **kwargs
+            )
+
             # ! set initial values
             a_ij = None
             b_ij = None
@@ -408,17 +503,11 @@ class NRTLParameterBuilder:
 
             def _to_matrix(src, symbol: str, parameter_name: str) -> np.ndarray:
                 if isinstance(src, TableMatrixData):
-                    res_0_ = src.mat(
-                        symbol,
-                        self.components,
-                        symbol_format='numeric'
+                    return self.to_matrix_ij(
+                        src,
+                        property_name=symbol,
+                        symbol_delimiter=symbol_delimiter
                     )
-                    # >> check for numpy
-                    if not isinstance(res_0_, np.ndarray):
-                        raise ValueError(
-                            f"Invalid source for {parameter_name}. Must be TableMatrixData, dict, list of lists, or numpy array."
-                        )
-                    return res_0_
                 if isinstance(src, list):
                     return np.array(src)
                 if isinstance(src, np.ndarray):
@@ -463,44 +552,18 @@ class NRTLParameterBuilder:
                     'K'
                 )
 
-            # NOTE: method 1
-            # ! Δg_ij, interaction energy parameter
-            dg_ij_src = datasource.get(
-                'dg_ij',
-                None
-            )
-            if dg_ij_src is None:
-                dg_ij_src = datasource.get(
-                    'dg',
-                    None
-                )
+            # SECTION: extract parameter source
+            parameter_sources = self.extract_parameter_source(datasource)
+            # >> unpack
+            dg_ij_src = parameter_sources['dg_ij_src']
+            a_ij_src = parameter_sources['a_ij_src']
+            b_ij_src = parameter_sources['b_ij_src']
+            c_ij_src = parameter_sources['c_ij_src']
+            d_ij_src = parameter_sources['d_ij_src']
+            alpha_ij_src = parameter_sources['alpha_ij_src']
+            tau_ij_src = parameter_sources['tau_ij_src']
 
-            # NOTE: method 2
-            # ! constants a, b, c, and d
-            a_ij_src = datasource.get('a_ij', None)
-            if a_ij_src is None:
-                a_ij_src = datasource.get('a', None)
-            b_ij_src = datasource.get('b_ij', None)
-            if b_ij_src is None:
-                b_ij_src = datasource.get('b', None)
-            c_ij_src = datasource.get('c_ij', None)
-            if c_ij_src is None:
-                c_ij_src = datasource.get('c', None)
-            d_ij_src = datasource.get('d_ij', None)
-            if d_ij_src is None:
-                d_ij_src = datasource.get('d', None)
-
-            # NOTE: α_ij, non-randomness parameter
-            # ! check if alpha_ij is provided
-            alpha_ij_src = datasource.get('alpha_ij', None)
-            if alpha_ij_src is None:
-                alpha_ij_src = datasource.get('alpha', None)
-
-            # NOTE: tau_ij, binary interaction parameter
-            # ! check if tau_ij is provided
-            tau_ij_src = datasource.get('tau_ij', None)
-            if tau_ij_src is None:
-                tau_ij_src = datasource.get('tau', None)
+            # SECTION: check correlation methods
 
             allowed_tau_correlations = ('M1', 'M2', 'M3', 'M4', 'M5')
             allowed_dg_correlations = ('M1',)
@@ -510,17 +573,11 @@ class NRTLParameterBuilder:
                     f"tau_correlation must be one of {allowed_tau_correlations}."
                 )
 
-            if dg_correlation not in allowed_dg_correlations:
-                raise ValueError(
-                    f"dg_correlation must be one of {allowed_dg_correlations}."
-                )
-
             # SECTION: extract data
 
             # NOTE: check if dg_ij is provided
             if (
-                tau_ij_src is not None and
-                tau_ij_src != 'None'
+                tau_ij_src is not None
             ):
                 # ! use tau_ij
                 # set method
@@ -555,7 +612,6 @@ class NRTLParameterBuilder:
                 tau_ij_cal_method = 2
 
                 tau_required_sources = {
-                    'M1': {'a_ij': a_ij_src, 'b_ij': b_ij_src, 'c_ij': c_ij_src},
                     'M2': {'a_ij': a_ij_src, 'b_ij': b_ij_src, 'c_ij': c_ij_src, 'd_ij': d_ij_src},
                     'M3': {'a_ij': a_ij_src, 'b_ij': b_ij_src},
                     'M4': {'a_ij': a_ij_src, 'b_ij': b_ij_src, 'c_ij': c_ij_src},
@@ -614,7 +670,7 @@ class NRTLParameterBuilder:
 
             # NOTE: calculate the binary interaction parameter matrix (tau_ij)
             # check
-            if tau_ij_src is None or tau_ij_src == 'None':
+            if tau_ij_src is None:
                 # ! tau_ij is None
                 if T <= 0:
                     raise ValueError(
@@ -645,7 +701,6 @@ class NRTLParameterBuilder:
                 elif tau_ij_cal_method == 2:
                     # >>> method 2
                     required_arrays = {
-                        'M1': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij},
                         'M2': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij, 'd_ij': d_ij},
                         'M3': {'a_ij': a_ij, 'b_ij': b_ij},
                         'M4': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij},
@@ -680,36 +735,7 @@ class NRTLParameterBuilder:
                         else:
                             raise ValueError("c_ij must be a numpy array")
 
-                    if d_ij is not None:
-                        if isinstance(d_ij, np.ndarray):
-                            d_ij = d_ij.astype(float)
-                        else:
-                            raise ValueError("d_ij must be a numpy array")
-
-                    # >> calculate based on selected tau correlation
-                    if tau_correlation == 'M1':
-                        if dg_correlation == 'M1':
-                            a_ij_m1 = _require_matrix(a_ij, "a_ij")
-                            b_ij_m1 = _require_matrix(b_ij, "b_ij")
-                            c_ij_m1 = _require_matrix(c_ij, "c_ij")
-                            dg_ij, _ = self.cal_dg_ij_M1(
-                                temperature=T,
-                                a_ij=a_ij_m1,
-                                b_ij=b_ij_m1,
-                                c_ij=c_ij_m1,
-                                symbol_delimiter=symbol_delimiter
-                            )
-                            dg_ij = dg_ij.astype(float)
-                            tau_ij, tau_ij_comp = self.cal_tau_ij_M1(
-                                temperature=T,
-                                dg_ij=dg_ij,
-                                symbol_delimiter=symbol_delimiter
-                            )
-                        else:
-                            raise ValueError(
-                                f"dg_correlation '{dg_correlation}' not supported!"
-                            )
-                    elif tau_correlation == 'M2':
+                    if tau_correlation == 'M2':
                         a_ij_m2 = _require_matrix(a_ij, "a_ij")
                         b_ij_m2 = _require_matrix(b_ij, "b_ij")
                         c_ij_m2 = _require_matrix(c_ij, "c_ij")
