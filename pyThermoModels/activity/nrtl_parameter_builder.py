@@ -645,10 +645,7 @@ class NRTLParameterBuilder:
             # SECTION: extract data
             # NOTE: α_ij, non-randomness parameter
             # check
-            if (
-                alpha_ij_src is not None and
-                alpha_ij_src != 'None'
-            ):
+            if alpha_ij_src is not None:
                 if isinstance(alpha_ij_src, TableMatrixData):
                     alpha_ij = alpha_ij_src.mat('alpha', self.components)
                 elif isinstance(alpha_ij_src, list):
