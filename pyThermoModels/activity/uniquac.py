@@ -273,7 +273,8 @@ class UNIQUAC:
         ----------
         model_inputs: str
             Model inputs in string format, such as:
-            - { mole_fraction: { ethanol: 0.4, butyl-methyl-ether: 0.6 }, temperature: [323.15, 'K'], tau_ij: [[],[]], r_i: [[],[]] }
+            - { mole_fraction: { ethanol: 0.4, butyl-methyl-ether: 0.6 },
+                temperature: [323.15, 'K'], tau_ij: [[],[]], r_i: [[],[]] }
 
         Returns
         -------
@@ -1218,6 +1219,107 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in cal_tauij: {str(e)}")
 
+    # SECTION: additional UNIQUAC tau correlations
+    def cal_tau_ij_M3(
+        self,
+        temperature: float,
+        a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        sign: Literal["negative", "positive"] = "negative",
+        symbol_delimiter: Literal["|", "_"] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Calculate UNIQUAC tau_ij from an energy-over-R form.
+
+        SECTION: equation
+        if sign == "negative": tau_ij = exp(-a_ij / T)
+        if sign == "positive": tau_ij = exp(+a_ij / T)
+        """
+        try:
+            return self.local_composition_model.cal_tau_ij_M3(
+                temperature=temperature,
+                a_ij=a_ij,
+                sign=sign,
+                symbol_delimiter=symbol_delimiter,
+            )
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij_M3: {str(e)}")
+
+    def cal_tau_ij_M4(
+        self,
+        temperature: float,
+        a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        symbol_delimiter: Literal["|", "_"] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Calculate UNIQUAC tau_ij using:
+
+        SECTION: equation
+        ln(tau_ij) = a_ij + b_ij / T
+        tau_ij = exp(ln(tau_ij))
+        """
+        try:
+            return self.local_composition_model.cal_tau_ij_M4(
+                temperature=temperature,
+                a_ij=a_ij,
+                b_ij=b_ij,
+                symbol_delimiter=symbol_delimiter,
+            )
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij_M4: {str(e)}")
+
+    def cal_tau_ij_M5(
+        self,
+        temperature: float,
+        a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        symbol_delimiter: Literal["|", "_"] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Calculate UNIQUAC tau_ij using:
+
+        SECTION: equation
+        ln(tau_ij) = a_ij + b_ij / T + c_ij / T^2
+        tau_ij = exp(ln(tau_ij))
+        """
+        try:
+            return self.local_composition_model.cal_tau_ij_M5(
+                temperature=temperature,
+                a_ij=a_ij,
+                b_ij=b_ij,
+                c_ij=c_ij,
+                symbol_delimiter=symbol_delimiter,
+            )
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij_M5: {str(e)}")
+
+    def cal_tau_ij_M6(
+        self,
+        temperature: float,
+        a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        symbol_delimiter: Literal["|", "_"] = "|"
+    ) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Calculate UNIQUAC tau_ij using:
+
+        SECTION: equation
+        ln(tau_ij) = a_ij + b_ij / T + c_ij * ln(T)
+        tau_ij = exp(ln(tau_ij))
+        """
+        try:
+            return self.local_composition_model.cal_tau_ij_M6(
+                temperature=temperature,
+                a_ij=a_ij,
+                b_ij=b_ij,
+                c_ij=c_ij,
+                symbol_delimiter=symbol_delimiter,
+            )
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij_M6: {str(e)}")
+
     def __X_ij(
             self,
             ij_data: TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]],
@@ -1230,7 +1332,8 @@ class UNIQUAC:
 
         Parameters
         ----------
-        ij_data : TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]]
+        ij_data : TableMatrixData | np.ndarray | Dict[str,
+            float] | List[List[float]]
             Interaction parameters (tau_ij) between component i and j.
         prop_symbol : str
             Interaction parameter symbol.
@@ -2480,6 +2583,7 @@ class UNIQUAC:
                 else:
                     raise ValueError(
                         "Invalid tau_ij_cal_method. Must be 1 or 2.")
+
             else:
                 # ! check if tau_ij is provided
                 # check types
