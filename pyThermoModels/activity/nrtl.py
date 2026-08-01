@@ -366,11 +366,10 @@ class NRTL:
         calculation_mode: Literal[
             'V1', 'V2'
         ] = 'V1',
+        tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5'] = 'M1',
         symbol_delimiter: Literal[
             "|", "_"
         ] = "|",
-        tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5'] = 'M1',
-        dg_correlation: Literal['M1'] = 'M1',
         message: Optional[str] = None,
         **kwargs
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -391,6 +390,8 @@ class NRTL:
                     Non-randomness parameters (alpha_ij) between component i and j.
         calculation_mode: Literal['V1', 'V2']
             Mode of calculation. If 'V1', use the first version of the NRTL model. If 'V2', use the second version.
+        tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5']
+            Correlation method for calculating tau_ij. Default is 'M1'.
         symbol_delimiter: Literal["|", "_"]
             Delimiter for the component id. Default is "|".
         message: Optional[str]
@@ -525,7 +526,6 @@ class NRTL:
                     model_input=model_input,
                     symbol_delimiter=symbol_delimiter,
                     tau_correlation=tau_correlation,
-                    dg_correlation=dg_correlation,
                     mixture_ids=self.mixture_ids,
                     **kwargs
                 )
