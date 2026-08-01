@@ -94,7 +94,7 @@ class ComponentParameterMixin:
             for i in range(comp_num):
                 for j in range(comp_num):
                     # key
-                    key_ = f"{prop_symbol}_{self.components[i]}-{self.components[j]}"
+                    key_ = f"{prop_symbol}_{self.components[i]}_{self.components[j]}"
                     # val
                     val = data.ij(key_)
 
@@ -104,7 +104,7 @@ class ComponentParameterMixin:
                         mat_ij[i, j] = float(val["value"])
                     else:
                         raise ValueError(
-                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}-{self.components[j]}")
+                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}_{self.components[j]}")
 
                     # to dict
                     key_ = f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"
@@ -114,14 +114,17 @@ class ComponentParameterMixin:
                         dict_ij[key_] = float(val["value"])
                     else:
                         raise ValueError(
-                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}-{self.components[j]}")
+                            f"Invalid value for {prop_symbol}: {val} for key: {prop_symbol}_{self.components[i]}_{self.components[j]}")
 
             # res
             return mat_ij, dict_ij
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
-    def to_i(self, data: Dict[str, float]):
+    def to_i(
+            self,
+            data: Dict[str, float]
+    ):
         """
         Convert data to numpy array with respect to component id.
 
@@ -269,7 +272,8 @@ class ComponentParameterMixin:
     # SECTION: Transform dictionary or list to numpy array
     def to_matrix_ij(
         self,
-        data: Dict[str, float | int] | List[List[float | int]],
+        data: Dict[str, float | int] | List[List[float | int]] | TableMatrixData | np.ndarray,
+        property_name: Optional[str] = None,
         symbol_delimiter: Literal[
             "|", "_"
         ] = "|"
@@ -279,8 +283,10 @@ class ComponentParameterMixin:
 
         Parameters
         ----------
-        data : Dict[str, float | int] | List[List[float | int]]
+        data : Dict[str, float | int] | List[List[float | int]] | TableMatrixData | np.ndarray
             Dictionary of parameters where keys are component pairs and values are their respective values or matrix-like list of values according to the component id.
+        property_name : Optional[str], default=None
+            Property name for the parameter. If provided, it will be used to extract values from TableMatrixData. If not provided, the function will attempt to use the keys in the data dictionary or the indices in the list.
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
 
@@ -290,9 +296,15 @@ class ComponentParameterMixin:
             Parameter matrix (numpy array).
         """
         try:
-            # NOTE: check
-            if not isinstance(data, (dict, list)):
-                raise TypeError("data must be dict or list")
+            # NOTE: check dict, list, or TableMatrixData
+            if (
+                not isinstance(data, dict) and
+                not isinstance(data, list) and
+                not isinstance(data, TableMatrixData) and
+                not isinstance(data, np.ndarray)
+            ):
+                raise TypeError(
+                    "data must be dict, list, TableMatrixData, or numpy array")
 
             # Get the number of components
             comp_num = self.comp_num
@@ -310,6 +322,7 @@ class ComponentParameterMixin:
 
             # Set the interaction energy parameter matrix
             if isinstance(data, dict):
+                # ! dict
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # key
@@ -324,6 +337,7 @@ class ComponentParameterMixin:
                         # to matrix
                         mat_ij[comp_id_i, comp_id_j] = float(val)
             elif isinstance(data, list):
+                # ! list
                 for i in range(comp_num):
                     for j in range(comp_num):
                         # val
@@ -335,6 +349,39 @@ class ComponentParameterMixin:
 
                         # to matrix
                         mat_ij[comp_id_i, comp_id_j] = float(val)
+            elif isinstance(data, TableMatrixData):
+                # ! TableMatrixData
+                if property_name is None:
+                    raise ValueError(
+                        "property_name must be provided for TableMatrixData")
+
+                for i in range(comp_num):
+                    for j in range(comp_num):
+                        # key
+                        key_ = f"{property_name}_{self.components[i]}_{self.components[j]}"
+                        # val
+                        val = data.ij(key_)
+
+                        # find the component id
+                        comp_id_i = self.comp_idx[self.components[i]]
+                        comp_id_j = self.comp_idx[self.components[j]]
+
+                        # to matrix
+                        if val is not None and val["value"] is not None:
+                            mat_ij[comp_id_i, comp_id_j] = float(val["value"])
+                        else:
+                            raise ValueError(
+                                f"Invalid value for {property_name}: {val} for key: {key_}")
+            elif isinstance(data, np.ndarray):
+                # ! numpy array
+                if data.shape != (comp_num, comp_num):
+                    raise ValueError(
+                        f"data shape must be ({comp_num}, {comp_num}) for numpy array"
+                    )
+
+                mat_ij = data
+            else:
+                raise TypeError("data must be dict, list, or TableMatrixData")
 
             # res
             return mat_ij
