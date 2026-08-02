@@ -24,6 +24,13 @@ class UNIFAC():
     # constant
     Z = 10.0
 
+    # NOTE: mixture ids
+    # ! default ids: Name and Formula
+    _mixture_ids: Dict[str, str] = {}
+
+    # NOTE: mixture id
+    _mixture_id: str = ""
+
     # NOTE: components ids
     _components_ids: Dict[str, List[str]] = {}
 
@@ -84,6 +91,9 @@ class UNIFAC():
         # SECTION: Assign the parameters to instance variables
         self.datasource = datasource
         self.equationsource = equationsource
+        self._mixture_ids = {}
+        self._mixture_id = ""
+        self._components_ids = {}
         self.components = [components.strip() for components in components]
 
         # SECTION
@@ -110,6 +120,65 @@ class UNIFAC():
             f"Data source: {type(self.datasource).__name__}\n"
             f"Equation source: {type(self.equationsource).__name__}\n"
         )
+
+    @property
+    def mixture_ids(self) -> Dict[str, str]:
+        '''
+        Get the mixture ids.
+
+        Returns
+        -------
+        mixture_ids: Dict[str, str]
+            Dictionary of mixture ids.
+        '''
+        return self._mixture_ids
+
+    @mixture_ids.setter
+    def mixture_ids(self, mixture_ids: Dict[str, str]) -> None:
+        '''
+        Set the mixture ids.
+
+        Parameters
+        ----------
+        mixture_ids: Dict[str, str]
+            Dictionary of mixture ids.
+        '''
+        # SECTION: validate mixture ids
+        if not isinstance(mixture_ids, dict):
+            raise TypeError("mixture_ids must be a dict")
+
+        # NOTE: reset before assigning to avoid stale ids
+        self._mixture_ids = {}
+        self._mixture_ids = mixture_ids
+
+    @property
+    def mixture_id(self) -> str:
+        '''
+        Get the mixture id.
+
+        Returns
+        -------
+        mixture_id: str
+            Mixture id.
+        '''
+        return self._mixture_id
+
+    @mixture_id.setter
+    def mixture_id(self, mixture_id: str) -> None:
+        '''
+        Set the mixture id.
+
+        Parameters
+        ----------
+        mixture_id: str
+            Mixture id.
+        '''
+        # SECTION: validate mixture id
+        if not isinstance(mixture_id, str):
+            raise TypeError("mixture_id must be a str")
+
+        # NOTE: store selected mixture id for generic activity-model handling
+        self._mixture_id = mixture_id
 
     @property
     def components_ids(self) -> Dict[str, List[str]]:
@@ -140,6 +209,36 @@ class UNIFAC():
         self._components_ids = {}
         # set
         self._components_ids = components_ids
+
+    @property
+    def component_ids_dict(self) -> Dict[str, List[str]]:
+        '''
+        Get the component ids dictionary.
+
+        Returns
+        -------
+        component_ids_dict: Dict[str, List[str]]
+            Dictionary of component ids. This is an alias for
+            `components_ids` used by generic activity-model code.
+        '''
+        return self.components_ids
+
+    @component_ids_dict.setter
+    def component_ids_dict(
+        self,
+        component_ids_dict: Dict[str, List[str]]
+    ) -> None:
+        '''
+        Set the component ids dictionary.
+
+        Parameters
+        ----------
+        component_ids_dict: Dict[str, List[str]]
+            Dictionary of component ids. This is assigned to
+            `components_ids`.
+        '''
+        # NOTE: route alias writes through the canonical validator
+        self.components_ids = component_ids_dict
 
     @property
     def group_data(self) -> Dict[str, Dict[str, Any]]:
