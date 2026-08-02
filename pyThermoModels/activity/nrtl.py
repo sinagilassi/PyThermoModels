@@ -435,6 +435,14 @@ class NRTL:
         - `tau_ij`: np.ndarray
         - `alpha_ij`: np.ndarray
 
+        tau_ij can be calculated using constants or temperature-dependent correlations. The `tau_correlation` parameter specifies the method used to calculate tau_ij.
+
+        - M1: tau_ij = dg_ij / (R * T)
+        - M2: tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T
+        - M3: tau_ij = a_ij + b_ij / T
+        - M4: tau_ij = a_ij + b_ij / T + c_ij / T^2
+        - M5: tau_ij = a_ij + b_ij / T + c_ij * ln(T)
+
         If the `tau_ij` and `alpha_ij` are not provided, they are generated using the `inputs_generator` method.
         The `inputs_generator` method generates the required input parameters based on the provided temperature and model input values.
 
