@@ -3,7 +3,7 @@ import time
 import logging
 from typing import Dict, Literal, List, Optional
 from pythermodb_settings.models import Component, Temperature, Pressure
-from pythermodb_settings.utils import set_component_id, create_mixture_id
+from pythermodb_settings.utils import set_component_id, create_mixture_id, measure_time
 from pyThermoLinkDB.models import ModelSource
 # local
 from ..docs import ThermoModelCore
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # SECTION: activity coefficient calculation
 
 
+@measure_time
 def calc_activity_coefficient(
     components: List[Component],
     pressure: Pressure,
@@ -83,6 +84,8 @@ def calc_activity_coefficient(
         If True, detailed logs will be printed, by default False.
     **kwargs : dict
         Additional keyword arguments.
+        - mode : Literal['silent', 'log', 'attach'], optional
+            Mode for time measurement logging. Default is 'silent'.
 
     Returns
     -------
