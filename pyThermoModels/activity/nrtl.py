@@ -61,8 +61,8 @@ class NRTL:
     def __init__(
         self,
         components: List[str],
-        datasource: Dict = {},
-        equationsource: Dict = {},
+        datasource: Optional[Dict] = None,
+        equationsource: Optional[Dict] = None,
         **kwargs
     ):
         '''
@@ -94,6 +94,9 @@ class NRTL:
 
         The component names define the order of the parameters in the model. The first component in the list is component 1, the second is component 2, and so on.
         '''
+        datasource = {} if datasource is None else datasource
+        equationsource = {} if equationsource is None else equationsource
+
         # Check datasource
         if not isinstance(datasource, dict):
             raise TypeError("datasource must be a dict")
@@ -109,6 +112,9 @@ class NRTL:
         # Assign the parameters to instance variables
         self.datasource = datasource
         self.equationsource = equationsource
+        self._mixture_ids = {}
+        self._mixture_id = ""
+        self._components_ids = {}
 
         # components
         self.components = [component.strip() for component in components]
@@ -124,7 +130,7 @@ class NRTL:
         # SECTION: nrtl parameter builder
         self.nrtl_parameter_builder = NRTLParameterBuilder(
             components=self.components,
-            component_idx=self.comp_idx,
+            comp_idx=self.comp_idx,
             datasource=self.datasource,
             equationsource=self.equationsource,
             **kwargs
