@@ -178,6 +178,7 @@ class UNIQUAC:
         self.to_dict_ij = self.component_parameter_mixin.to_dict_ij
         self.to_dict_i = self.component_parameter_mixin.to_dict_i
         self.to_matrix_ij = self.component_parameter_mixin.to_matrix_ij
+        self.to_dict_ij_ext = self.component_parameter_mixin.to_dict_ij_ext
 
     def __str__(self):
         model_ = """
