@@ -523,10 +523,10 @@ class NRTL:
                 # ! tau_ij, dg_ij, alpha_ij
                 inputs_ = self.inputs_generator(
                     temperature=model_input['temperature'],
-                    model_input=model_input,
-                    symbol_delimiter=symbol_delimiter,
                     tau_correlation=tau_correlation,
+                    symbol_delimiter=symbol_delimiter,
                     mixture_ids=self.mixture_ids,
+                    model_input=model_input,
                     **kwargs
                 )
 
@@ -701,7 +701,8 @@ class NRTL:
                 # convert to numpy array and dict
                 res_ = self.to_ij(
                     data=alpha_ij_data,
-                    prop_symbol="alpha")
+                    prop_symbol="alpha"
+                )
                 # set
                 alpha_ij = res_[0]
                 # to dict
