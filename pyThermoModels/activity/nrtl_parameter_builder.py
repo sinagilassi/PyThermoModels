@@ -113,7 +113,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
             # SECTION: temperature validation
             T_K = self.validate_temperature(
                 temperature=temperature,
-                **kwargs
+                unit='K',
             )
 
             # SECTION: extract parameters
