@@ -1,9 +1,9 @@
 # SECTION: imports
 from math import log, pow
 from typing import Dict, Literal, Tuple
-
 import numpy as np
-
+from pyThermoDB import TableMatrixData
+# locals
 from .local_composition_base import IJData, LocalCompositionBase
 
 
@@ -329,3 +329,106 @@ class NRTLLocalComposition(LocalCompositionBase):
             return tau_ij, tau_ij_comp
         except Exception as e:
             raise Exception(f"Error in cal_tau_ij_M5: {str(e)}")
+
+    # NOTE: universal tau calculation method
+
+    def cal_tau_ij(
+        self,
+        temperature: float,
+        dg_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        a_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        b_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        c_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        d_ij: np.ndarray | Dict[str, float] | TableMatrixData,
+        tau_correlation: Literal[
+            'M1', 'M2', 'M3', 'M4', 'M5'
+        ],
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+    ):
+        """
+        Calculate interaction parameters `tau_ij` matrix for NRTL model based on the selected correlation method.
+
+        Parameters
+        ----------
+        temperature : float
+            Temperature in Kelvin [K].
+        dg_ij : np.ndarray | Dict[str, float] | TableMatrixData
+            Interaction energy parameter [J/mol] matrix where dg_ij[i][j] between component i and j.
+        a_ij : np.ndarray | Dict[str, float] | TableMatrixData
+            Interaction parameter a_ij matrix where a_ij[i][j] between component i and j.
+        b_ij : np.ndarray | Dict[str, float] | TableMatrixData
+            Interaction parameter b_ij matrix where b_ij[i][j] between component i and j.
+        c_ij : np.ndarray | Dict[str, float] | TableMatrixData
+            Interaction parameter c_ij matrix where c_ij[i][j] between component i and j.
+        d_ij : np.ndarray | Dict[str, float] | TableMatrixData
+            Interaction parameter d_ij matrix where d_ij[i][j] between component i and j.
+        tau_correlation : Literal['M1', 'M2', 'M3', 'M4', 'M5']
+            Correlation method to use for calculating tau_ij. Default is 'M1'.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for the component id. Default is "|".
+
+        Returns
+        -------
+        tau_ij : np.ndarray
+            interaction parameters `tau_ij` matrix for NRTL model.
+        tau_ij_comp : dict
+            Dictionary of interaction parameters where keys are component pairs and values are their respective tau_ij values.
+
+        Notes
+        -----
+        1. The calculation method for tau_ij depends on the selected correlation method (M1, M2, M3, M4, M5).
+        2. All parameters including a_ij, b_ij, c_ij, d_ij must be in the same format (numpy array, dict or TableMatrixData).
+        3. The equations for each correlation method are as follows:
+
+            M1: tau_ij = dg_ij / (R * T)
+            M2: tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T
+            M3: tau_ij = a_ij + b_ij / T
+            M4: tau_ij = a_ij + b_ij / T + c_ij / T^2
+            M5: tau_ij = a_ij + b_ij / T + c_ij * ln(T)
+        """
+        try:
+            if tau_correlation == 'M1':
+                return self.cal_tau_ij_M1(
+                    temperature=temperature,
+                    dg_ij=dg_ij,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif tau_correlation == 'M2':
+                return self.cal_tau_ij_M2(
+                    temperature=temperature,
+                    a_ij=a_ij,
+                    b_ij=b_ij,
+                    c_ij=c_ij,
+                    d_ij=d_ij,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif tau_correlation == 'M3':
+                return self.cal_tau_ij_M3(
+                    temperature=temperature,
+                    a_ij=a_ij,
+                    b_ij=b_ij,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif tau_correlation == 'M4':
+                return self.cal_tau_ij_M4(
+                    temperature=temperature,
+                    a_ij=a_ij,
+                    b_ij=b_ij,
+                    c_ij=c_ij,
+                    symbol_delimiter=symbol_delimiter
+                )
+            elif tau_correlation == 'M5':
+                return self.cal_tau_ij_M5(
+                    temperature=temperature,
+                    a_ij=a_ij,
+                    b_ij=b_ij,
+                    c_ij=c_ij,
+                    symbol_delimiter=symbol_delimiter
+                )
+            else:
+                raise ValueError(
+                    f"Unsupported tau_correlation method: {tau_correlation}")
+        except Exception as e:
+            raise Exception(f"Error in cal_tau_ij: {str(e)}")
