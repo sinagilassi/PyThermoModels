@@ -1032,7 +1032,7 @@ class NRTL:
             res = {
                 "property_name": "Excess Molar Gibbs Free Energy (G^E/RT)",
                 "components": components,
-                "mole_fraction": xi,
+                "mole_fraction": xi.tolist(),
                 "mole_fraction_normalized": x.tolist(),
                 "value": float(gE_RT),
                 "unit": 1,
