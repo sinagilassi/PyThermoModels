@@ -38,6 +38,7 @@ res = check_component_eos_roots(
     pressure=pressure,
     model_source=model_source,
     component_key='Name-State',
+    mode='log',
 )
 print(res)
 
@@ -50,6 +51,7 @@ res = calc_gas_fugacity(
     pressure=pressure,
     temperature=temperature,
     model_source=model_source,
-    component_key='Name-State'
+    component_key='Name-State',
+    mode='log',
 )
 print(res)
