@@ -78,6 +78,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
             "|", "_"
         ] = "|",
         mixture_ids: Optional[Dict[str, str]] = None,
+        include_alpha: bool = True,
         **kwargs
     ):
         '''
@@ -120,6 +121,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
             parameters = self.extract_parameter_values(
                 mixture_ids=mixture_ids,
                 symbol_delimiter=symbol_delimiter,
+                include_alpha=include_alpha,
                 **kwargs
             )
             # >>> unpack parameters
@@ -238,15 +240,15 @@ class NRTLParameterBuilder(NRTLParameterCore):
                 # NOTE: tau_ij is provided, validate it
                 tau_ij = _require_matrix(tau_ij, "tau_ij")
 
-            # NOTE: validate alpha_ij
-            # ! validate alpha_ij
-            alpha_ij = _require_matrix(alpha_ij, "alpha_ij")
-
             # NOTE: nrtl inputs
             inputs = {
-                "alpha_ij": alpha_ij,
                 "tau_ij": tau_ij,
             }
+
+            if include_alpha:
+                # NOTE: validate alpha_ij only for full NRTL model inputs
+                alpha_ij = _require_matrix(alpha_ij, "alpha_ij")
+                inputs["alpha_ij"] = alpha_ij
 
             # res
             return inputs
