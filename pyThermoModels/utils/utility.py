@@ -131,6 +131,7 @@ TauCorrelation: TypeAlias = Literal[
 ]
 
 TauMethod: TypeAlias = Literal["M1", "M2", "M3", "M4", "M5"]
+UNIQUACTauMethod: TypeAlias = Literal["M1", "M2", "M4", "M5", "M6"]
 
 
 def map_tau_correlation_to_method(
@@ -167,5 +168,47 @@ def map_tau_correlation_to_method(
     except KeyError as exc:
         raise ValueError(
             f"Unsupported tau correlation: {tau_correlation!r}. "
+            f"Expected one of: {', '.join(correlation_map)}."
+        ) from exc
+
+
+def map_uniquac_tau_correlation_to_method(
+    tau_correlation: TauCorrelation,
+) -> UNIQUACTauMethod:
+    """
+    Map a descriptive tau-correlation name to its UNIQUAC method code.
+
+    Parameters
+    ----------
+    tau_correlation : TauCorrelation
+        Descriptive name of the tau correlation.
+
+    Returns
+    -------
+    UNIQUACTauMethod
+        UNIQUAC-specific method code. The coefficient correlations do not map
+        one-to-one with NRTL method numbers because UNIQUAC also exposes M3 as
+        a direct energy-over-R helper.
+
+    Raises
+    ------
+    ValueError
+        If an unsupported correlation name is provided.
+    """
+    # SECTION: UNIQUAC-specific public-name to method mapping
+    correlation_map: dict[TauCorrelation, UNIQUACTauMethod] = {
+        "gibbs_energy": "M1",
+        "extended_temperature": "M2",
+        "inverse_temperature": "M4",
+        "inverse_temperature_squared": "M5",
+        "inverse_log_temperature": "M6",
+    }
+
+    try:
+        # NOTE: keep raw Mx method names internal to model dispatch
+        return correlation_map[tau_correlation]
+    except KeyError as exc:
+        raise ValueError(
+            f"Unsupported UNIQUAC tau correlation: {tau_correlation!r}. "
             f"Expected one of: {', '.join(correlation_map)}."
         ) from exc
