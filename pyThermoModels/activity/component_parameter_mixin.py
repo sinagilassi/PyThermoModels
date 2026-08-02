@@ -360,24 +360,14 @@ class ComponentParameterMixin:
                 if property_name is None:
                     raise ValueError(
                         "property_name must be provided for TableMatrixData")
-
-                for i in range(comp_num):
-                    for j in range(comp_num):
-                        # key
-                        key_ = f"{property_name}_{self.components[i]}_{self.components[j]}"
-                        # val
-                        val = data.ij(key_)
-
-                        # find the component id
-                        comp_id_i = self.comp_idx[self.components[i]]
-                        comp_id_j = self.comp_idx[self.components[j]]
-
-                        # to matrix
-                        if val is not None and val["value"] is not None:
-                            mat_ij[comp_id_i, comp_id_j] = float(val["value"])
-                        else:
-                            raise ValueError(
-                                f"Invalid value for {property_name}: {val} for key: {key_}")
+                mat_ij = np.asarray(
+                    data.mat(property_name, self.components),
+                    dtype=float
+                )
+                if mat_ij.shape != (comp_num, comp_num):
+                    raise ValueError(
+                        f"data shape must be ({comp_num}, {comp_num}) for TableMatrixData"
+                    )
             elif isinstance(data, np.ndarray):
                 # ! numpy array
                 if data.shape != (comp_num, comp_num):
