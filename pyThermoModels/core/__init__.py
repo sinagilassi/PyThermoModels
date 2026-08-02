@@ -16,7 +16,9 @@ from .activity_methods import (
 
 # activity parameter calculators
 from .activity_parameter_calculators import (
+    calc_tau_ij,
     calc_tau_ij_using_nrtl_model,
+    calc_tau_ij_using_uniquac_model,
 )
 
 __all__ = [
@@ -28,5 +30,7 @@ __all__ = [
     'calc_activity_coefficient',
     'calc_activity_coefficient_using_nrtl_model',
     'calc_activity_coefficient_using_uniquac_model',
+    'calc_tau_ij',
     'calc_tau_ij_using_nrtl_model',
+    'calc_tau_ij_using_uniquac_model',
 ]
