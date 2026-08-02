@@ -140,7 +140,7 @@ class NRTLParameterCore:
         self,
         ids: List[str],
         datasource: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[Any]:
         try:
             # source
             src: Optional[Dict[str, Any]] = None
