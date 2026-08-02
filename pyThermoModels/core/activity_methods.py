@@ -9,9 +9,12 @@ from pyThermoLinkDB.models import ModelSource
 from ..docs import ThermoModelCore
 from ..activity import NRTL, UNIQUAC
 from ..utils import set_feed_specification
+from ..utils.utility import TauCorrelation, map_tau_correlation_to_method
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
+
+# SECTION: activity coefficient calculation
 
 
 def calc_activity_coefficient(
@@ -20,7 +23,7 @@ def calc_activity_coefficient(
     temperature: Temperature,
     model_source: ModelSource,
     model_name: Literal['NRTL', 'UNIQUAC'],
-    tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5'] = 'M1',
+    tau_correlation: TauCorrelation = "gibbs_energy",
     component_key: Literal[
         "Name-State", "Formula-State"
     ] = "Name-State",
@@ -134,6 +137,35 @@ def calc_activity_coefficient(
         - unit: str
         - symbol: str
         - message: str
+
+    Supported correlations
+    ----------------------
+    For `NRTL` model, the following correlations are supported for calculating tau_ij:
+
+    gibbs_energy : M1
+        Gibbs-energy-based correlation:
+
+        ``tau_ij = dg_ij / (R * T)``
+
+    extended_temperature : M2
+        Extended temperature-dependent correlation:
+
+        ``tau_ij = a_ij + b_ij / T + c_ij * log(T) + d_ij * T``
+
+    inverse_temperature : M3
+        Linear inverse-temperature correlation:
+
+        ``tau_ij = a_ij + b_ij / T``
+
+    inverse_temperature_squared : M4
+        Second-order inverse-temperature correlation:
+
+        ``tau_ij = a_ij + b_ij / T + c_ij / T**2``
+
+    inverse_log_temperature : M5
+        Inverse- and logarithmic-temperature correlation:
+
+        ``tau_ij = a_ij + b_ij / T + c_ij * ln(T)``
     '''
     try:
         # LINK: start time
@@ -291,6 +323,11 @@ def calc_activity_coefficient(
             raise
 
         # SECTION: calculate activity coefficient
+        # NOTE: map tau_correlation to method
+        tau_correlation_selected = map_tau_correlation_to_method(
+            tau_correlation
+        )
+
         try:
             # NOTE: check nrtl
             if isinstance(activity_models, NRTL):
@@ -303,6 +340,7 @@ def calc_activity_coefficient(
                 # NOTE: calculate activity coefficient
                 res, others = activity_models.cal(
                     model_input=model_input,
+                    tau_correlation=tau_correlation_selected,
                     message=message,
                     **kwargs
                 )
