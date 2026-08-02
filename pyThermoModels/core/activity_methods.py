@@ -360,6 +360,7 @@ def calc_activity_coefficient(
                 # NOTE: calculate activity coefficient
                 res, others = activity_models.cal(
                     model_input=model_input,
+                    tau_correlation=tau_correlation,
                     message=message,
                     **kwargs
                 )
