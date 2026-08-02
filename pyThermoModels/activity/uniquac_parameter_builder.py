@@ -86,6 +86,7 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
         symbol_delimiter: Literal["|", "_"] = "|",
         mixture_ids: Optional[Dict[str, str]] = None,
         components_ids: Optional[Dict[str, List[str]]] = None,
+        include_pure_component_parameters: bool = True,
         **kwargs
     ):
         """
@@ -105,6 +106,9 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
             Mixture identifiers used for datasource lookup.
         components_ids : Optional[Dict[str, List[str]]]
             Component identifiers used for r/q component-record fallback.
+        include_pure_component_parameters : bool
+            If True, extract `r_i` and `q_i`. Tau-only calculators set this to
+            False because pure-component parameters are not needed for tau_ij.
         **kwargs : dict
             Additional runtime values, especially `model_input`.
 
@@ -133,6 +137,7 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
                 mixture_ids=mixture_ids,
                 components_ids=components_ids,
                 symbol_delimiter=symbol_delimiter,
+                include_pure_component_parameters=include_pure_component_parameters,
                 **kwargs
             )
 
@@ -210,9 +215,7 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
                 tau_ij = _require_matrix(tau_ij, "tau_ij")
 
             # SECTION: package model inputs
-            return {
-                "r_i": r_i,
-                "q_i": q_i,
+            inputs = {
                 "dU_ij": dU_ij,
                 "tau_ij": tau_ij,
                 "a_ij": a_ij,
@@ -220,6 +223,12 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
                 "c_ij": c_ij,
                 "d_ij": d_ij,
             }
+
+            if include_pure_component_parameters:
+                inputs["r_i"] = r_i
+                inputs["q_i"] = q_i
+
+            return inputs
         except Exception as e:
             raise Exception(
                 f"Failed to generate UNIQUAC activity inputs: {e}"
