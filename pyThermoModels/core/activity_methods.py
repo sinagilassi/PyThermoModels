@@ -406,7 +406,7 @@ def calc_activity_coefficient_using_nrtl_model(
     **kwargs
 ):
     '''
-    Calculate activity coefficient using `NRTL` model.
+    Calculate activity coefficient using `NRTL` model when tau_ij and alpha_ij are provided.
 
     Parameters
     ----------
@@ -723,7 +723,7 @@ def calc_activity_coefficient_using_uniquac_model(
     **kwargs
 ):
     '''
-    Calculate activity coefficient using `UNIQUAC` model.
+    Calculate activity coefficient using `UNIQUAC` model when tau_ij, r_i, and q_i are provided.
 
     Parameters
     ----------
