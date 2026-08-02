@@ -215,9 +215,11 @@ def _activity_tau_configuration(
         )
         return {
             "model_type": NRTL,
-            "required_keys": ['tau_ij', 'alpha_ij'],
             # NOTE: NRTL still expects raw M1-M5 method ids internally
             "tau_correlation": map_tau_correlation_to_method(tau_correlation),
+            "generator_kwargs": {
+                "include_alpha": False,
+            },
         }
 
     # SECTION: UNIQUAC configuration
@@ -230,9 +232,11 @@ def _activity_tau_configuration(
         )
         return {
             "model_type": UNIQUAC,
-            "required_keys": ['tau_ij', 'r_i', 'q_i'],
             # NOTE: UNIQUAC maps descriptive names inside its parameter builder
             "tau_correlation": tau_correlation,
+            "generator_kwargs": {
+                "include_pure_component_parameters": False,
+            },
         }
 
     raise ValueError(
@@ -306,9 +310,9 @@ def calc_tau_ij(
 
     Notes
     -----
-    NRTL requires `alpha_ij` in addition to generated/provided `tau_ij`.
-    UNIQUAC requires pure-component `r_i` and `q_i` in addition to
-    generated/provided `tau_ij`.
+    This function generates only `tau_ij`. It intentionally does not extract
+    full activity-model parameters such as NRTL `alpha_ij` or UNIQUAC
+    `r_i`/`q_i`.
     """
     try:
         # SECTION: validate shared inputs
@@ -384,8 +388,8 @@ def calc_tau_ij(
             raise
 
         # SECTION: calculate tau_ij
-        model_type = tau_config["model_type"]
-        if not isinstance(activity_model, model_type):
+        # model_type = tau_config["model_type"]
+        if not isinstance(activity_model, (NRTL, UNIQUAC)):
             raise TypeError(
                 f"Activity model is not an instance of {model_name}. "
                 f"Found: {type(activity_model)}"
@@ -395,12 +399,14 @@ def calc_tau_ij(
         activity_model.mixture_ids = mixture_ids_dict
         activity_model.components_ids = components_ids_dict
 
-        res = activity_model.check_and_build_inputs(
-            model_input=model_input,
-            required_keys=tau_config["required_keys"],
+        res = activity_model.inputs_generator(
+            temperature=[temperature.value, temperature.unit],
             tau_correlation=tau_config["tau_correlation"],
             symbol_delimiter=delimiter,
-            return_all=False,
+            mixture_ids=mixture_ids_dict,
+            components_ids=components_ids_dict,
+            model_input=model_input,
+            **tau_config["generator_kwargs"],
             **kwargs
         )
 
@@ -448,8 +454,9 @@ def calc_tau_ij_using_nrtl_model(
 
     Notes
     -----
-    NRTL input generation requires `alpha_ij` and either direct `tau_ij`,
-    `dg_ij`, or coefficient matrices compatible with `tau_correlation`.
+    This tau-only helper does not extract `alpha_ij`. It requires either
+    direct `tau_ij`, `dg_ij`, or coefficient matrices compatible with
+    `tau_correlation`.
     """
     # NOTE: thin compatibility wrapper around the shared dispatcher
     return calc_tau_ij(
@@ -494,8 +501,8 @@ def calc_tau_ij_using_uniquac_model(
 
     Notes
     -----
-    UNIQUAC input generation requires `r_i` and `q_i` and either direct
-    `tau_ij`, `dU_ij`, or coefficient matrices compatible with
+    This tau-only helper does not extract `r_i` or `q_i`. It requires either
+    direct `tau_ij`, `dU_ij`, or coefficient matrices compatible with
     `tau_correlation`. The default UNIQUAC correlation is
     `extended_temperature`.
     """
