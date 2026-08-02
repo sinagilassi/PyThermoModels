@@ -122,8 +122,8 @@ class ComponentParameterMixin:
             raise Exception(f"Error in extraction data: {str(e)}")
 
     def to_i(
-            self,
-            data: Dict[str, float]
+        self,
+        data: Dict[str, float]
     ):
         """
         Convert data to numpy array with respect to component id.
@@ -272,7 +272,12 @@ class ComponentParameterMixin:
     # SECTION: Transform dictionary or list to numpy array
     def to_matrix_ij(
         self,
-        data: Dict[str, float | int] | List[List[float | int]] | TableMatrixData | np.ndarray,
+        data: Union[
+            Dict[str, float | int],
+            List[List[float | int]],
+            TableMatrixData |
+            np.ndarray,
+        ],
         property_name: Optional[str] = None,
         symbol_delimiter: Literal[
             "|", "_"
@@ -304,7 +309,8 @@ class ComponentParameterMixin:
                 not isinstance(data, np.ndarray)
             ):
                 raise TypeError(
-                    "data must be dict, list, TableMatrixData, or numpy array")
+                    "data must be dict, list, TableMatrixData, or numpy array"
+                )
 
             # Get the number of components
             comp_num = self.comp_num
@@ -387,3 +393,34 @@ class ComponentParameterMixin:
             return mat_ij
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
+
+    def to_matrix_ij_or(
+            self,
+            data: Union[
+                Dict[str, float | int],
+                List[List[float | int]],
+                TableMatrixData |
+                np.ndarray,
+                None
+            ],
+            property_name: Optional[str] = None,
+            symbol_delimiter: Literal[
+                "|", "_"
+            ] = "|"
+    ):
+        """
+        Wrapper for to_matrix_ij with error handling
+        """
+        try:
+            if data is None:
+                raise ValueError("data cannot be None")
+
+            return self.to_matrix_ij(
+                data=data,
+                property_name=property_name,
+                symbol_delimiter=symbol_delimiter
+            )
+        except Exception as e:
+            raise Exception(
+                f"Failed to convert data to matrix for property '{property_name}': {e}"
+            ) from e
