@@ -12,14 +12,14 @@ from typing import (
     Literal,
     Optional
 )
-import pycuc
 from pyThermoDB import (
     TableMatrixData,
 )
 # local
 from ..plugin import ACTIVITY_MODELS
 from ..utils import add_attributes
-from .uniquac_local_composition import UNIQUACLocalComposition
+from ..utils.utility import TauCorrelation
+from .uniquac_parameter_builder import UNIQUACParameterBuilder
 from .component_parameter_mixin import ComponentParameterMixin
 
 # NOTE: logger
@@ -151,10 +151,20 @@ class UNIQUAC:
             self.components[i]: i for i in range(self.comp_num)
         }
 
-        # SECTION: local composition model
-        self.local_composition_model = UNIQUACLocalComposition(
+        # SECTION: uniquac parameter builder
+        self.uniquac_parameter_builder = UNIQUACParameterBuilder(
             components=self.components,
-            component_idx=self.comp_idx
+            comp_idx=self.comp_idx,
+            datasource=self.datasource,
+            equationsource=self.equationsource,
+            **kwargs
+        )
+        # ! set input generator
+        self.inputs_generator = self.uniquac_parameter_builder.inputs_generator
+
+        # SECTION: local composition model
+        self.local_composition_model = (
+            self.uniquac_parameter_builder.local_composition_model
         )
 
         # SECTION: component parameter mixin
@@ -1155,12 +1165,123 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in extraction data: {str(e)}")
 
+    # SECTION: Check & build inputs
+    def check_and_build_inputs(
+        self,
+        model_input: Dict,
+        required_keys: List[str] = ['tau_ij', 'r_i', 'q_i'],
+        tau_correlation: TauCorrelation = "extended_temperature",
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+        return_all: bool = True,
+        **kwargs
+    ) -> Dict:
+        """
+        Check and build the required input parameters for the UNIQUAC model.
+
+        Parameters
+        ----------
+        model_input : Dict
+            Runtime model input. Must include `mole_fraction`; may include
+            `tau_ij`, `r_i`, `q_i`, `temperature`, `mixture_ids_dict`, and
+            `components_ids_dict`.
+        required_keys : List[str]
+            Required UNIQUAC keys to validate or generate.
+        tau_correlation : TauCorrelation
+            Descriptive tau-correlation name used when `tau_ij` must be
+            generated. Defaults to `extended_temperature`.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter used for component-pair dictionary keys.
+        return_all : bool
+            If False, omit `mole_fraction` from the returned dictionary.
+        **kwargs : dict
+            Additional values forwarded to the parameter builder.
+
+        Returns
+        -------
+        Dict
+            Validated and generated UNIQUAC inputs.
+        """
+        try:
+            # SECTION: validate model input
+            if not isinstance(model_input, dict):
+                raise TypeError("model_input must be dict")
+
+            if 'mole_fraction' not in model_input:
+                raise KeyError("mole_fraction is required in model_input")
+
+            mole_fraction = model_input['mole_fraction']
+
+            # SECTION: identify missing required parameters
+            missed_keys = [
+                key for key in required_keys if key not in model_input
+            ]
+
+            if len(missed_keys) > 0:
+                # SECTION: validate optional temperature before generation
+                temperature = model_input.get('temperature', None)
+
+                if temperature is not None:
+                    if not isinstance(temperature, list):
+                        raise TypeError("temperature must be list")
+                    if len(temperature) == 0:
+                        raise ValueError("temperature list is empty")
+                    if not all(
+                        isinstance(temp, (int, float, str))
+                        for temp in temperature
+                    ):
+                        raise TypeError(
+                            "temperature list must be int, float, or str"
+                        )
+
+                # SECTION: build missing parameters from datasource/model_input
+                inputs_ = self.inputs_generator(
+                    temperature=temperature,
+                    tau_correlation=tau_correlation,
+                    symbol_delimiter=symbol_delimiter,
+                    mixture_ids=(
+                        self.mixture_ids or
+                        model_input.get('mixture_ids_dict', None)
+                    ),
+                    components_ids=(
+                        self.components_ids or
+                        model_input.get('components_ids_dict', None)
+                    ),
+                    model_input=model_input,
+                    **kwargs
+                )
+
+                # NOTE: generated values are written back for downstream use
+                for key in missed_keys:
+                    value_ = inputs_[key]
+                    if value_ is None:
+                        raise ValueError(f"{key} is required in model_input")
+                    model_input[key] = value_
+
+            # SECTION: package validated inputs
+            res = {
+                'mole_fraction': mole_fraction,
+                'tau_ij': model_input['tau_ij'],
+                'r_i': model_input['r_i'],
+                'q_i': model_input['q_i'],
+            }
+
+            if return_all is False:
+                # NOTE: utility callers can request only parameter matrices
+                res.pop('mole_fraction', None)
+
+            return res
+        except Exception as e:
+            raise Exception(f"Error in check_and_build_inputs: {str(e)}")
+
     @add_attributes(metadata=ACTIVITY_MODELS['UNIQUAC'])
     def cal(
         self,
         model_input: Dict,
         Z: Optional[float | int] = None,
         calculation_mode: Literal['V1'] = 'V1',
+        tau_correlation: TauCorrelation = "extended_temperature",
         symbol_delimiter: Literal[
             "|", "_"
         ] = "|",
@@ -1272,77 +1393,18 @@ class UNIQUAC:
         ```
         """
         try:
-            # SECTION: check
-            if not isinstance(model_input, dict):
-                raise TypeError("model_input must be dict")
+            inputs_src = self.check_and_build_inputs(
+                model_input=model_input,
+                tau_correlation=tau_correlation,
+                symbol_delimiter=symbol_delimiter,
+                return_all=True,
+                **kwargs
+            )
 
-            # SECTION: check keys
-            required_keys = ['tau_ij', 'r_i', 'q_i']
-
-            # ? check mole_fraction
-            if 'mole_fraction' not in model_input:
-                raise KeyError("mole_fraction is required in model_input")
-
-            # set
-            mole_fraction = model_input['mole_fraction']
-
-            # ? checking alpha_ij and tau_ij
-            # ! user should provide the required keys
-            missed_keys = [
-                key for key in required_keys if key not in model_input
-            ]
-
-            # check required keys
-            if len(missed_keys) > 0:
-                temperature = model_input.get('temperature', None)
-
-                if temperature is not None:
-                    # check if temperature is list
-                    if not isinstance(temperature, list):
-                        # error
-                        raise TypeError("temperature must be list")
-
-                    # check if temperature is empty
-                    if len(temperature) == 0:
-                        # error
-                        raise ValueError("temperature list is empty")
-
-                    # check format as [300, 'K']
-                    if not all(isinstance(temp, (int, float, str)) for temp in temperature):
-                        # error
-                        raise TypeError(
-                            "temperature list must be int or float")
-
-                # call input generator
-                inputs_ = self.inputs_generator(
-                    temperature=temperature,
-                    model_input=model_input,
-                    symbol_delimiter=symbol_delimiter,
-                )
-
-                # looping through the missed keys
-                for key in missed_keys:
-                    # key value
-                    value_ = inputs_[key]
-
-                    # check
-                    if value_ is None:
-                        # error
-                        raise ValueError(
-                            f"{key} is required in model_input"
-                        )
-
-                    # update the model_input
-                    model_input[key] = value_
-
-            # SECTION: get values
-            # ! tau_ij
-            tau_ij = model_input['tau_ij']
-            # NOTE: r_i and q_i might be provided initially in the `model_input`
-            # ! r_i
-            r_i = model_input['r_i']
-            # ! q_i
-            q_i = model_input['q_i']
+            mole_fraction = inputs_src['mole_fraction']
+            tau_ij = inputs_src['tau_ij']
+            r_i = inputs_src['r_i']
+            q_i = inputs_src['q_i']
 
             # check r_i and q_i
             if r_i is None:
@@ -1864,475 +1926,3 @@ class UNIQUAC:
         except Exception as e:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
 
-    def inputs_generator(
-        self,
-        temperature: Optional[
-            List[float | str]
-        ] = None,
-        symbol_delimiter: Literal[
-            "|", "_"
-        ] = "|",
-        **kwargs
-    ):
-        '''
-        Prepares inputs for the UNIQUAC activity model for calculating activity coefficients.
-
-        Parameters
-        ----------
-        temperature : List[float | str], optional
-            Temperature in any units as: [300, 'K'], it is automatically converted to Kelvin.
-        kwargs : dict
-            Additional parameters for the model.
-            - interaction-energy-parameter : list, optional
-                Interaction energy parameters for the components.
-
-        Returns
-        -------
-        inputs : dict
-            Dictionary of inputs for the UNIQUAC activity model.
-            - tau_ij : np.ndarray
-                Interaction parameters (tau_ij) between component i and j.
-            - r_i : np.ndarray
-                Relative van der Waals volume of component i.
-            - q_i : np.ndarray
-                Relative surface area of component i.
-            a_ij : np.ndarray
-                Interaction energy parameter (a_ij) between component i and j.
-            b_ij : np.ndarray
-                Interaction energy parameter (b_ij) between component i and j.
-            c_ij : np.ndarray
-                Interaction energy parameter (c_ij) between component i and j.
-            d_ij : np.ndarray
-                Interaction energy parameter (d_ij) between component i and j.
-        '''
-        try:
-            # SECTION: check src
-            # extract activity model inputs
-            if 'UNIQUAC' in self.datasource:
-                # get datasource
-                datasource = self.datasource.get('UNIQUAC', {})
-            elif 'uniquac' in self.datasource:
-                # get datasource
-                datasource = self.datasource.get('uniquac', {})
-            elif (
-                self._mixture_ids is not None
-            ):
-                # init datasource
-                datasource = {}
-                # set datasource by mixture ids
-                if 'Name' in self._mixture_ids.keys():
-                    # check not empty
-                    if self._mixture_ids.get('Name', None):
-                        key_ = self._mixture_ids['Name']
-                        # check key in datasource
-                        if key_ in self.datasource.keys():
-                            datasource = self.datasource[key_]
-                elif 'Formula' in self._mixture_ids.keys():
-                    # check not empty
-                    if self._mixture_ids.get('Formula', None):
-                        key_ = self._mixture_ids['Formula']
-                        # check key in datasource
-                        if key_ in self.datasource.keys():
-                            datasource = self.datasource[key_]
-            else:
-                # log
-                logger.warning(
-                    "No UNIQUAC or uniquac key found in datasource, using model_input if provided."
-                )
-                datasource = {}
-
-            if datasource is not None and not isinstance(datasource, dict):
-                raise ValueError(
-                    "datasource must be a dictionary.")
-
-            datasource = {} if datasource is None else dict(datasource)
-
-            # NOTE: check model inputs
-            if kwargs.get('model_input') is not None:
-                # update the datasource
-                datasource.update(kwargs['model_input'])
-
-            # NOTE: final datasource validation
-            if datasource is None:
-                raise ValueError(
-                    "datasource cannot be None.")
-
-            if not isinstance(datasource, dict):
-                raise ValueError(
-                    "datasource must be a dictionary.")
-
-            if len(datasource) == 0:
-                raise ValueError(
-                    "datasource cannot be empty.")
-
-            # ! set initial values
-            r_i = None
-            q_i = None
-            dU_ij = None
-            a_ij = None
-            b_ij = None
-            c_ij = None
-            d_ij = None
-
-            # SECTION: extract data from components
-            # ! extract r_i and q_i
-            # NOTE: r_i, relative van der Waals volume of component i
-            r_i_src = datasource.get('r_i', None)
-            if r_i_src is None:
-                # set default value
-                r_i_src = datasource.get('r', None)
-
-            # NOTE: default r_i values for common components
-            # ! Name-State
-            if r_i_src is None:
-                # extract each from components
-                if 'Name-State' in self.components_ids:
-                    r_i_src = {
-                        comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
-                            'r', {}).get('value', None)
-                        for comp in self.components_ids['Name-State']
-                    }
-
-            # ! Formula-State
-            if r_i_src is None:
-                # extract each from components
-                if 'Formula-State' in self.components_ids:
-                    r_i_src = {
-                        comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
-                            'r', {}).get('value', None)
-                        for comp in self.components_ids['Formula-State']
-                    }
-
-            # check if r_i is a list or numpy array
-            if r_i_src is not None:
-                if isinstance(r_i_src, list):
-                    r_i = np.array(r_i_src)
-                elif isinstance(r_i_src, np.ndarray):
-                    r_i = r_i_src
-                elif isinstance(r_i_src, dict):
-                    r_i = self.to_i(r_i_src)
-                else:
-                    raise ValueError(
-                        "r_i must be a list or numpy array.")
-
-            # NOTE: q_i, relative van der Waals area of component i
-            q_i_src = datasource.get('q_i', None)
-            if q_i_src is None:
-                # set default value
-                q_i_src = datasource.get('q', None)
-            # NOTE: default q_i values for common components
-            # ! Name-State
-            if q_i_src is None:
-                # extract each from components
-                if 'Name-State' in self.components_ids:
-                    q_i_src = {
-                        comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
-                            'q', {}).get('value', None)
-                        for comp in self.components_ids['Name-State']
-                    }
-            # ! Formula-State
-            if q_i_src is None:
-                # extract each from components
-                if 'Formula-State' in self.components_ids:
-                    q_i_src = {
-                        comp.rsplit('-', 1)[0]: self.datasource.get(comp, {}).get(
-                            'q', {}).get('value', None)
-                        for comp in self.components_ids['Formula-State']
-                    }
-
-            # check if q_i is a list or numpy array
-            if q_i_src is not None:
-                if isinstance(q_i_src, list):
-                    q_i = np.array(q_i_src)
-                elif isinstance(q_i_src, np.ndarray):
-                    q_i = q_i_src
-                elif isinstance(q_i_src, dict):
-                    q_i = self.to_i(q_i_src)
-                else:
-                    raise ValueError(
-                        "q_i must be a list or numpy array."
-                    )
-
-            # SECTION: operating conditions
-            # NOTE: check temperature
-            # init T
-            T = -1
-
-            # check if temperature is provided
-            if temperature is not None:
-                # check if temperature is a list
-                if not isinstance(temperature, list):
-                    raise ValueError(
-                        "temperature must be a list of floats or strings.")
-
-                # temperature
-                T_value = float(temperature[0])
-                T_unit = str(temperature[1])
-
-                # convert temperature to Kelvin
-                T = pycuc.convert_from_to(
-                    T_value, T_unit, 'K'
-                )
-
-            # SECTION: extract interaction parameters
-            # NOTE: method 1
-            # ! Δg_ij, interaction energy parameter
-            dU_ij_src = datasource.get('dU_ij', None)
-            if dU_ij_src is None:
-                dU_ij_src = datasource.get('dU', None)
-
-            # NOTE: method 2
-            # ! constants a, b, c, and d
-            a_ij_src = datasource.get('a_ij', None)
-            if a_ij_src is None:
-                a_ij_src = datasource.get('a', None)
-            b_ij_src = datasource.get('b_ij', None)
-            if b_ij_src is None:
-                b_ij_src = datasource.get('b', None)
-            c_ij_src = datasource.get('c_ij', None)
-            if c_ij_src is None:
-                c_ij_src = datasource.get('c', None)
-            d_ij_src = datasource.get('d_ij', None)
-            if d_ij_src is None:
-                d_ij_src = datasource.get('d', None)
-
-            # NOTE: tau_ij, binary interaction parameter
-            tau_ij_src = datasource.get('tau_ij', None)
-            if tau_ij_src is None:
-                tau_ij_src = datasource.get('tau', None)
-
-            # SECTION: extract data
-            # NOTE: check method
-            tau_ij_cal_method = 0
-
-            # check if dU_ij, a_ij, b_ij, c_ij, d_ij are provided
-            # ! check if dU_ij is None
-            if (
-                tau_ij_src is not None and
-                tau_ij_src != 'None'
-            ):
-                # ! use tau_ij
-                tau_ij_cal_method = 0
-            elif dU_ij_src is None or dU_ij_src == 'None':
-                # check if a_ij, b_ij, c_ij are provided
-                if (
-                    a_ij_src is None or
-                    b_ij_src is None or
-                    c_ij_src is None or
-                    d_ij_src is None
-                ):
-                    raise ValueError(
-                        "No valid source provided for interaction energy parameter (ΔU_ij) or constants a, b, c, and d."
-                    )
-                # set method
-                tau_ij_cal_method = 2
-
-                # ! a_ij
-                if isinstance(a_ij_src, TableMatrixData):
-                    a_ij = a_ij_src.mat('a', self.components)
-                elif isinstance(a_ij_src, list):
-                    a_ij = np.array(a_ij_src)
-                elif isinstance(a_ij_src, np.ndarray):
-                    a_ij = a_ij_src
-                elif isinstance(a_ij_src, dict):
-                    a_ij = self.to_matrix_ij(
-                        a_ij_src,
-                        symbol_delimiter=symbol_delimiter
-                    )
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (a_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
-                    )
-
-                # ! b_ij
-                if isinstance(b_ij_src, TableMatrixData):
-                    b_ij = b_ij_src.mat('b', self.components)
-                elif isinstance(b_ij_src, list):
-                    b_ij = np.array(b_ij_src)
-                elif isinstance(b_ij_src, np.ndarray):
-                    b_ij = b_ij_src
-                elif isinstance(b_ij_src, dict):
-                    b_ij = self.to_matrix_ij(
-                        b_ij_src,
-                        symbol_delimiter=symbol_delimiter
-                    )
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (b_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
-                    )
-
-                # ! c_ij
-                if isinstance(c_ij_src, TableMatrixData):
-                    c_ij = c_ij_src.mat('c', self.components)
-                elif isinstance(c_ij_src, list):
-                    c_ij = np.array(c_ij_src)
-                elif isinstance(c_ij_src, np.ndarray):
-                    c_ij = c_ij_src
-                elif isinstance(c_ij_src, dict):
-                    c_ij = self.to_matrix_ij(
-                        c_ij_src,
-                        symbol_delimiter=symbol_delimiter
-                    )
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (c_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
-                    )
-
-                # ! d_ij
-                if isinstance(d_ij_src, TableMatrixData):
-                    d_ij = d_ij_src.mat('d', self.components)
-                elif isinstance(d_ij_src, list):
-                    d_ij = np.array(d_ij_src)
-                elif isinstance(d_ij_src, np.ndarray):
-                    d_ij = d_ij_src
-                elif isinstance(d_ij_src, dict):
-                    d_ij = self.to_matrix_ij(
-                        d_ij_src,
-                        symbol_delimiter=symbol_delimiter
-                    )
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (d_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
-                    )
-
-            elif dU_ij_src is not None and dU_ij_src != 'None':
-                # ! use dU_ij
-                if isinstance(dU_ij_src, TableMatrixData):
-                    dU_ij = dU_ij_src.mat('dU', self.components)
-                elif isinstance(dU_ij_src, list):
-                    dU_ij = np.array(dU_ij_src)
-                elif isinstance(dU_ij_src, np.ndarray):
-                    dU_ij = dU_ij_src
-                elif isinstance(dU_ij_src, dict):
-                    dU_ij = self.to_matrix_ij(
-                        dU_ij_src,
-                        symbol_delimiter=symbol_delimiter
-                    )
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (dU_ij). Must be TableMatrixData, dict, list of lists, or numpy array."
-                    )
-
-                # set method
-                tau_ij_cal_method = 1
-            else:
-                raise ValueError(
-                    "No valid source provided for interaction energy parameter (ΔU_ij) or constants A, B, C, and D."
-                )
-
-            # SECTION: calculate tau_ij
-            # NOTE: calculate the binary interaction parameter matrix (tau_ij)
-            # check
-            if tau_ij_src is None or tau_ij_src == 'None':
-                # ! tau_ij is None
-                if T <= 0:
-                    raise ValueError(
-                        "temperature must be provided and greater than 0 K when calculating tau_ij from dU_ij or a/b/c/d."
-                    )
-
-                # ? check method
-                if tau_ij_cal_method == 1:
-                    # check if dU_ij is None
-                    if dU_ij is None:
-                        raise ValueError(
-                            "dU_ij is not set. Cannot calculate tau_ij."
-                        )
-
-                    # convert values to float
-                    if isinstance(dU_ij, np.ndarray):
-                        dU_ij = dU_ij.astype(float)
-                    else:
-                        raise ValueError(
-                            "dU_ij must be numpy array.")
-
-                    tau_ij, _ = self.cal_tau_ij_M1(
-                        temperature=T,
-                        dU_ij=dU_ij
-                    )
-                elif tau_ij_cal_method == 2:
-                    # check if a_ij, b_ij, c_ij, d_ij are None
-                    if (
-                        a_ij is None or
-                        b_ij is None or
-                        c_ij is None or
-                        d_ij is None
-                    ):
-                        raise ValueError(
-                            "a_ij, b_ij, c_ij, d_ij cannot be None for calculating tau_ij"
-                        )
-
-                    # If a_ij, b_ij, c_ij, d_ij are numpy array with mixed value types, convert all values to float
-                    if isinstance(a_ij, np.ndarray):
-                        a_ij = a_ij.astype(float)
-                    else:
-                        raise ValueError(
-                            "a_ij must be a numpy array"
-                        )
-
-                    if isinstance(b_ij, np.ndarray):
-                        b_ij = b_ij.astype(float)
-                    else:
-                        raise ValueError(
-                            "b_ij must be a numpy array"
-                        )
-
-                    if isinstance(c_ij, np.ndarray):
-                        c_ij = c_ij.astype(float)
-                    else:
-                        raise ValueError(
-                            "c_ij must be a numpy array"
-                        )
-
-                    if isinstance(d_ij, np.ndarray):
-                        d_ij = d_ij.astype(float)
-                    else:
-                        raise ValueError(
-                            "d_ij must be a numpy array"
-                        )
-
-                    tau_ij, _ = self.cal_tau_ij_M2(
-                        temperature=T,
-                        a_ij=a_ij,
-                        b_ij=b_ij,
-                        c_ij=c_ij,
-                        d_ij=d_ij
-                    )
-                else:
-                    raise ValueError(
-                        "Invalid tau_ij_cal_method. Must be 1 or 2.")
-
-            else:
-                # ! check if tau_ij is provided
-                # check types
-                if isinstance(tau_ij_src, TableMatrixData):
-                    tau_ij = tau_ij_src.mat('tau', self.components)
-                elif isinstance(tau_ij_src, list):
-                    tau_ij = np.array(tau_ij_src)
-                elif isinstance(tau_ij_src, np.ndarray):
-                    tau_ij = tau_ij_src
-                elif isinstance(tau_ij_src, dict):
-                    tau_ij = self.to_matrix_ij(
-                        tau_ij_src,
-                        symbol_delimiter=symbol_delimiter
-                    )
-                else:
-                    raise ValueError(
-                        "Invalid source for interaction energy parameter (tau_ij). Must be TableMatrixData, dict, list of lists, or numpy array.")
-
-            # NOTE: nrtl inputs
-            inputs = {
-                "r_i": r_i,
-                "q_i": q_i,
-                "dU_ij": dU_ij,
-                "tau_ij": tau_ij,
-                "a_ij": a_ij,
-                "b_ij": b_ij,
-                "c_ij": c_ij,
-                "d_ij": d_ij,
-            }
-
-            # res
-            return inputs
-        except Exception as e:
-            raise Exception(
-                f"Failed to generate UNIQUAC activity inputs: {e}") from e
