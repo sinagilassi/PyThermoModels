@@ -1,5 +1,6 @@
 # import libs
 import logging
+import numpy as np
 from typing import Any, Dict, Literal, Optional, Tuple, cast, List
 import pycuc
 # locals
@@ -220,8 +221,151 @@ class NRTLParameterCore:
             'tau_ij_src': tau_ij_src
         }
 
+    # NOTE: extract parameter values
+
+    def extract_parameter_values(
+        self,
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+        mixture_ids: Optional[Dict[str, str]] = None,
+        **kwargs
+
+    ):
+        # SECTION: data source
+        # generate datasource
+        datasource: Dict[str, Any] = self.data_source_generator(
+            mixture_ids=mixture_ids,
+            **kwargs
+        )
+
+        # ! set initial values
+        a_ij = None
+        b_ij = None
+        c_ij = None
+        d_ij = None
+        dg_ij = None
+        alpha_ij = None
+        tau_ij = None
+
+        def _has_source(src) -> bool:
+            return src is not None and src != 'None'
+
+        # SECTION: extract parameter source
+        parameter_sources = self.extract_parameter_sources(datasource)
+        # >> unpack
+        dg_ij_src = parameter_sources['dg_ij_src']
+        a_ij_src = parameter_sources['a_ij_src']
+        b_ij_src = parameter_sources['b_ij_src']
+        c_ij_src = parameter_sources['c_ij_src']
+        d_ij_src = parameter_sources['d_ij_src']
+        alpha_ij_src = parameter_sources['alpha_ij_src']
+        tau_ij_src = parameter_sources['tau_ij_src']
+
+        # SECTION: extract data
+
+        # NOTE: >>> check if tau_ij is provided
+        if tau_ij_src is not None:
+            # ! use tau_ij
+
+            # extract tau_ij values
+            tau_ij = self.to_matrix_ij_or(
+                data=tau_ij_src,
+                property_name='tau',
+                symbol_delimiter=symbol_delimiter
+            )
+
+            # set tau_ij_cal_method to 0 (no calculation needed)
+            tau_ij_cal_method = 0
+
+        elif dg_ij_src is not None:  # >>> check if dg_ij is provided
+            # ! use dg_ij
+
+            # extract dg_ij values
+            dg_ij = self.to_matrix_ij_or(
+                data=dg_ij_src,
+                property_name='dg',
+                symbol_delimiter=symbol_delimiter
+            )
+
+            # set tau_ij_cal_method to 1
+            tau_ij_cal_method = 1
+
+        else:
+            # >>> check if a_ij, b_ij, c_ij, d_ij are provided
+
+            # ! extract a_ij values
+            if _has_source(a_ij_src):
+                a_ij = self.to_matrix_ij_or(
+                    data=a_ij_src,
+                    property_name='a',
+                    symbol_delimiter=symbol_delimiter
+                )
+
+            # ! extract b_ij values
+            if _has_source(b_ij_src):
+                b_ij = self.to_matrix_ij_or(
+                    data=b_ij_src,
+                    property_name='b',
+                    symbol_delimiter=symbol_delimiter
+                )
+
+            # ! extract c_ij values
+            if _has_source(c_ij_src):
+                c_ij = self.to_matrix_ij_or(
+                    data=c_ij_src,
+                    property_name='c',
+                    symbol_delimiter=symbol_delimiter
+                )
+
+            # ! extract d_ij values
+            if _has_source(d_ij_src):
+                d_ij = self.to_matrix_ij_or(
+                    data=d_ij_src,
+                    property_name='d',
+                    symbol_delimiter=symbol_delimiter
+                )
+
+            # set tau_ij_cal_method to 2
+            tau_ij_cal_method = 2
+
+        # SECTION: extract data
+        # NOTE: α_ij, non-randomness parameter
+        # check
+        if alpha_ij_src is not None:
+            # ! extract α_ij values
+            alpha_ij = self.to_matrix_ij_or(
+                data=alpha_ij_src,
+                property_name='alpha',
+                symbol_delimiter=symbol_delimiter
+            )
+        else:
+            # ! set alpha_ij to default value 0.3
+            alpha_ij_cte = 0.3 * \
+                (np.ones((self.comp_num, self.comp_num)) - np.eye(self.comp_num))
+
+            # ! convert alpha_ij_cte to matrix_ij
+            alpha_ij = self.to_matrix_ij_or(
+                data=alpha_ij_cte,
+                property_name='alpha',
+                symbol_delimiter=symbol_delimiter
+            )
+
+        # NOTE: results
+        return {
+            'tau_ij': tau_ij,
+            'dg_ij': dg_ij,
+            'a_ij': a_ij,
+            'b_ij': b_ij,
+            'c_ij': c_ij,
+            'd_ij': d_ij,
+            'alpha_ij': alpha_ij,
+            'tau_ij_cal_method': tau_ij_cal_method
+        }
+
     # SECTION: temperature validation
-    def _validate_temperature(
+
+    def validate_temperature(
             self,
             temperature: Optional[List[float | str]],
             unit: str = 'K'
