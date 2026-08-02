@@ -8,6 +8,8 @@ from pyThermoDB import (
     TableEquation,
     TableMatrixEquation
 )
+from pythermodb_settings.models import Component, ComponentKey
+from pythermodb_settings.utils import set_component_id
 # locals
 
 # NOTE: logger setup
@@ -217,6 +219,50 @@ class ComponentParameterMixin:
 
                     # to dict
                     key_ = f"{self.components[i]}{symbol_delimiter_set}{self.components[j]}"
+                    dict_ij[key_] = val
+
+            # res
+            return dict_ij
+        except Exception as e:
+            raise Exception(f"Error in extraction data: {str(e)}")
+
+    # NOTE: wrapper for to_dict_ij with external component sources
+    def to_dict_ij_ext(
+        self,
+        data: np.ndarray,
+        components: List[Component],
+        component_key: ComponentKey = "Name",
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|"
+    ):
+        try:
+            # iterate over components and set component id
+            component_list = [set_component_id(
+                comp, component_key) for comp in components]
+
+            # Get the number of components
+            comp_num = len(component_list)
+
+            # Initialize
+            dict_ij = {}
+
+            # check delimiter
+            if symbol_delimiter == "|":
+                symbol_delimiter_set = " | "
+            elif symbol_delimiter == "_":
+                symbol_delimiter_set = "_"
+            else:
+                raise ValueError("symbol_delimiter must be '|' or '_'")
+
+            # Set the interaction energy parameter matrix
+            for i in range(comp_num):
+                for j in range(comp_num):
+                    # val
+                    val = data[i, j]
+
+                    # to dict
+                    key_ = f"{component_list[i]}{symbol_delimiter_set}{component_list[j]}"
                     dict_ij[key_] = val
 
             # res
