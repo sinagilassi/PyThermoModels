@@ -2,7 +2,7 @@
 import time
 import logging
 from typing import Dict, Literal, List, Optional
-from pythermodb_settings.models import Component, Temperature
+from pythermodb_settings.models import Component, Temperature, ComponentKey
 from pythermodb_settings.utils import set_component_id, create_mixture_id, measure_time
 from pyThermoLinkDB.models import ModelSource
 # local
@@ -169,6 +169,7 @@ def calc_tau_ij_using_nrtl_model(
     ] = "|",
     message: Optional[str] = None,
     verbose: bool = False,
+    output_format: ComponentKey = "Name",
     **kwargs
 ):
     '''
@@ -214,6 +215,8 @@ def calc_tau_ij_using_nrtl_model(
                 - If None, a default message will be used.
         verbose : bool, optional
             If True, detailed logs will be printed, by default False.
+        output_format : Literal['Name', 'Formula'], optional
+            Format for output keys, by default 'Name'.
         **kwargs : dict
             Additional keyword arguments.
             - mode : Literal['silent', 'log', 'attach'], optional
@@ -317,8 +320,13 @@ def calc_tau_ij_using_nrtl_model(
                 )
 
                 # ! tau_ij
-                tau_ij = activity_models.to_dict_ij(
-                    data=res['tau_ij'],
+                # ? numpy array
+                tau_ij_array = res['tau_ij']
+                # ? dict with component keys
+                tau_ij_dict = activity_models.to_dict_ij_ext(
+                    data=tau_ij_array,
+                    components=components,
+                    component_key=output_format,  # ? result format
                     symbol_delimiter=delimiter,
                 )
 
@@ -331,10 +339,10 @@ def calc_tau_ij_using_nrtl_model(
                 # >>> log
                 if verbose:
                     logger.info(f"Tau calculation successful")
-                    logger.info(f"Result: {tau_ij}")
+                    logger.info(f"Result: {tau_ij_dict}")
 
                 # res
-                return tau_ij
+                return tau_ij_array, tau_ij_dict
 
             else:
                 raise ValueError(
