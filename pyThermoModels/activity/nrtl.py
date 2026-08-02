@@ -655,7 +655,7 @@ class NRTL:
                 )
             elif isinstance(tau_ij_data, list):  # ! list
                 # convert list to numpy array
-                tau_ij = np.array(tau_ij_data)
+                tau_ij = np.asarray(tau_ij_data, dtype=float)
                 # to dict
                 tau_ij_comp = self.to_dict_ij(
                     tau_ij,
@@ -699,7 +699,7 @@ class NRTL:
                 )
             elif isinstance(alpha_ij_data, list):  # ! list
                 # convert list to numpy array
-                alpha_ij = np.array(alpha_ij_data)
+                alpha_ij = np.asarray(alpha_ij_data, dtype=float)
                 # to dict
                 alpha_ij_comp = self.to_dict_ij(
                     alpha_ij,
@@ -978,6 +978,8 @@ class NRTL:
 
             # set
             xi = [mole_fraction[components[i]] for i in range(len(components))]
+            # >>> to np.array
+            xi = np.asarray(xi, dtype=float)
 
             # NOTE: G_ij
             # check
@@ -1018,13 +1020,14 @@ class NRTL:
                 numer = np.sum(tau_ij[:, i] * G_ij[:, i] * x)
 
                 # Add to excess Gibbs energy
-                gE_RT += xi[i] * numer / denom
+                gE_RT += x[i] * numer / denom
 
             # SECTION: set result format
             res = {
                 "property_name": "Excess Molar Gibbs Free Energy (G^E/RT)",
                 "components": components,
                 "mole_fraction": xi,
+                "mole_fraction_normalized": x.tolist(),
                 "value": float(gE_RT),
                 "unit": 1,
                 "symbol": "ExMoGiFrEn",
