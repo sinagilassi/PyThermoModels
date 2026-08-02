@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict, Literal, List
 from pythermodb_settings.models import Component, Temperature, Pressure
-from pythermodb_settings.utils import set_component_id
+from pythermodb_settings.utils import set_component_id, measure_time
 from pyThermoLinkDB.models import ModelSource
 # local
 from ..docs import ThermoModelCore
@@ -27,6 +27,7 @@ from ..models import (
 logger = logging.getLogger(__name__)
 
 
+@measure_time
 def check_component_eos_roots(
     component: Component,
     pressure: Pressure,
@@ -69,6 +70,8 @@ def check_component_eos_roots(
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
             - phase: str, phase type, options are `VAPOR`, `LIQUID`, `VAPOR-LIQUID`, `SUPERCRITICAL` (default: None)
+            - mode : Literal['silent', 'log', 'attach'], optional
+                    Mode for time measurement logging. Default is 'silent'.
 
     Returns
     -------
@@ -172,6 +175,7 @@ def check_component_eos_roots(
         raise
 
 
+@measure_time
 def check_multi_component_eos_roots(
     components: List[Component],
     pressure: Pressure,
@@ -229,6 +233,8 @@ def check_multi_component_eos_roots(
     **kwargs: Optional[Dict]
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
+            - mode : Literal['silent', 'log', 'attach'], optional
+                    Mode for time measurement logging. Default is 'silent'.
 
     Returns
     -------
@@ -348,6 +354,7 @@ def check_multi_component_eos_roots(
         raise
 
 
+@measure_time
 def calc_gas_fugacity(
     component: Component,
     pressure: Pressure,
@@ -409,6 +416,8 @@ def calc_gas_fugacity(
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
             - phase: str, phase type, options are `VAPOR`, `LIQUID`, `VAPOR-LIQUID`, `SUPERCRITICAL` (default: None)
+            - mode : Literal['silent', 'log', 'attach'], optional
+                    Mode for time measurement logging. Default is 'silent'.
 
     Returns
     -------
@@ -525,6 +534,7 @@ def calc_gas_fugacity(
         raise
 
 
+@measure_time
 def calc_liquid_fugacity(
     component: Component,
     pressure: Pressure,
@@ -593,6 +603,8 @@ def calc_liquid_fugacity(
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
             - phase: str, phase type, options are `VAPOR`, `LIQUID`, `VAPOR-LIQUID`, `SUPERCRITICAL` (default: None)
+            - mode : Literal['silent', 'log', 'attach'], optional
+                    Mode for time measurement logging. Default is 'silent'.
 
     Returns
     -------
@@ -708,6 +720,7 @@ def calc_liquid_fugacity(
         raise
 
 
+@measure_time
 def calc_mixture_fugacity(
     components: list[Component],
     pressure: Pressure,
@@ -774,6 +787,8 @@ def calc_mixture_fugacity(
     **kwargs: Optional[Dict]
         additional arguments
             - tolerance: float, tolerance for the calculation (default: 1e-1)
+            - mode : Literal['silent', 'log', 'attach'], optional
+                    Mode for time measurement logging. Default is 'silent'.
 
     Returns
     -------
