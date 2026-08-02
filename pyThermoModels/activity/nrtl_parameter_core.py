@@ -161,7 +161,8 @@ class NRTLParameterCore:
 
     def extract_parameter_sources(
             self,
-            datasource: Dict[str, Any]
+            datasource: Dict[str, Any],
+            include_alpha: bool = True
     ):
         # NOTE: method 1
         # ! Δg_ij, interaction energy parameter
@@ -198,10 +199,12 @@ class NRTLParameterCore:
         # NOTE: α_ij, non-randomness parameter
         # ! check if alpha_ij is provided
 
-        alpha_ij_src = self._extract_parameter_source(
-            ids=['alpha_ij', 'alpha'],
-            datasource=datasource
-        )
+        alpha_ij_src = None
+        if include_alpha:
+            alpha_ij_src = self._extract_parameter_source(
+                ids=['alpha_ij', 'alpha'],
+                datasource=datasource
+            )
 
         # NOTE: tau_ij, binary interaction parameter
         # ! check if tau_ij is provided
@@ -229,6 +232,7 @@ class NRTLParameterCore:
             "|", "_"
         ] = "|",
         mixture_ids: Optional[Dict[str, str]] = None,
+        include_alpha: bool = True,
         **kwargs
 
     ):
@@ -252,7 +256,10 @@ class NRTLParameterCore:
             return src is not None and src != 'None'
 
         # SECTION: extract parameter source
-        parameter_sources = self.extract_parameter_sources(datasource)
+        parameter_sources = self.extract_parameter_sources(
+            datasource=datasource,
+            include_alpha=include_alpha
+        )
         # >> unpack
         dg_ij_src = parameter_sources['dg_ij_src']
         a_ij_src = parameter_sources['a_ij_src']
@@ -332,14 +339,14 @@ class NRTLParameterCore:
         # SECTION: extract data
         # NOTE: α_ij, non-randomness parameter
         # check
-        if alpha_ij_src is not None:
+        if include_alpha and alpha_ij_src is not None:
             # ! extract α_ij values
             alpha_ij = self.to_matrix_ij_or(
                 data=alpha_ij_src,
                 property_name='alpha',
                 symbol_delimiter=symbol_delimiter
             )
-        else:
+        elif include_alpha:
             # ! set alpha_ij to default value 0.3
             alpha_ij_cte = 0.3 * \
                 (np.ones((self.comp_num, self.comp_num)) - np.eye(self.comp_num))
