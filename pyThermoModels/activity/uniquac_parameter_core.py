@@ -223,7 +223,8 @@ class UNIQUACParameterCore:
     def extract_parameter_sources(
         self,
         datasource: Dict[str, Any],
-        components_ids: Optional[Dict[str, List[str]]] = None
+        components_ids: Optional[Dict[str, List[str]]] = None,
+        include_pure_component_parameters: bool = True
     ) -> Dict[str, Any]:
         """
         Extract raw UNIQUAC parameter sources from a resolved datasource.
@@ -234,6 +235,8 @@ class UNIQUACParameterCore:
             Resolved UNIQUAC datasource.
         components_ids : Optional[Dict[str, List[str]]]
             Component identifiers used for r/q component-record fallback.
+        include_pure_component_parameters : bool
+            If True, extract `r_i` and `q_i` sources.
 
         Returns
         -------
@@ -268,16 +271,19 @@ class UNIQUACParameterCore:
         )
 
         # SECTION: pure-component parameter sources
-        r_i_src = self._extract_component_parameter_source(
-            ids=['r_i', 'r'],
-            datasource=datasource,
-            components_ids=components_ids
-        )
-        q_i_src = self._extract_component_parameter_source(
-            ids=['q_i', 'q'],
-            datasource=datasource,
-            components_ids=components_ids
-        )
+        r_i_src = None
+        q_i_src = None
+        if include_pure_component_parameters:
+            r_i_src = self._extract_component_parameter_source(
+                ids=['r_i', 'r'],
+                datasource=datasource,
+                components_ids=components_ids
+            )
+            q_i_src = self._extract_component_parameter_source(
+                ids=['q_i', 'q'],
+                datasource=datasource,
+                components_ids=components_ids
+            )
 
         return {
             'dU_ij_src': dU_ij_src,
@@ -330,6 +336,7 @@ class UNIQUACParameterCore:
         symbol_delimiter: Literal["|", "_"] = "|",
         mixture_ids: Optional[Dict[str, str]] = None,
         components_ids: Optional[Dict[str, List[str]]] = None,
+        include_pure_component_parameters: bool = True,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -343,6 +350,10 @@ class UNIQUACParameterCore:
             Mixture identifiers for datasource lookup.
         components_ids : Optional[Dict[str, List[str]]]
             Component identifiers for pure-component fallback extraction.
+        include_pure_component_parameters : bool
+            If True, extract `r_i` and `q_i`. Tau-only calculators set this to
+            False because pure-component UNIQUAC parameters are not needed to
+            calculate tau_ij.
         **kwargs : dict
             Optional values passed through to datasource generation.
 
@@ -359,7 +370,8 @@ class UNIQUACParameterCore:
 
         sources = self.extract_parameter_sources(
             datasource=datasource,
-            components_ids=components_ids
+            components_ids=components_ids,
+            include_pure_component_parameters=include_pure_component_parameters
         )
 
         tau_ij = None
@@ -422,8 +434,11 @@ class UNIQUACParameterCore:
             tau_ij_cal_method = 2
 
         # SECTION: pure-component parameter vectors
-        r_i = self._to_i_or_none(sources['r_i_src'], "r_i")
-        q_i = self._to_i_or_none(sources['q_i_src'], "q_i")
+        r_i = None
+        q_i = None
+        if include_pure_component_parameters:
+            r_i = self._to_i_or_none(sources['r_i_src'], "r_i")
+            q_i = self._to_i_or_none(sources['q_i_src'], "q_i")
 
         return {
             'tau_ij': tau_ij,
