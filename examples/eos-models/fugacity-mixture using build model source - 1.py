@@ -66,7 +66,8 @@ res_ = check_multi_component_eos_roots(
     pressure=pressure,
     temperature=temperature,
     model_source=model_source,
-    component_key='Name-State'  # ! component key (optional)
+    component_key='Name-State',  # ! component key (optional)
+    mode='log'
 )
 print(f"new method using build model source:")
 print(res_)
@@ -80,6 +81,7 @@ res = calc_mixture_fugacity(
     pressure=pressure,
     temperature=temperature,
     model_source=model_source,
-    component_key='Name-State'
+    component_key='Name-State',
+    mode='log'
 )
 print(res)
