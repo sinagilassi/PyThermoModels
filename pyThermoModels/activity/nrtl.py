@@ -278,6 +278,7 @@ class NRTL:
         except Exception as e:
             raise Exception("Parsing model inputs failed!, ", e)
 
+    # SECTION: Calculate Gij matrix
     def cal_G_ij(
         self,
         tau_ij: np.ndarray,
@@ -365,6 +366,136 @@ class NRTL:
         except Exception as e:
             raise Exception(f"Error in cal_Gij: {str(e)}")
 
+    # SECTION: Check & build inputs
+    def check_and_build_inputs(
+        self,
+        model_input: Dict,
+        required_keys: List[str] = ['tau_ij', 'alpha_ij'],
+        tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5'] = 'M1',
+        symbol_delimiter: Literal[
+            "|", "_"
+        ] = "|",
+        return_all: bool = True,
+        **kwargs
+    ) -> Dict:
+        """
+        Check and build the required input parameters for the NRTL model.
+
+        Parameters
+        ----------
+        model_input : dict
+            Dictionary of model input values where keys are parameter names and values are their respective values.
+                - `mole_fraction`: Dict[str, float]
+                    Dictionary of mole fractions where keys are component names and values are their respective mole fractions.
+                - `temperature`: List[str | float], Optional
+                    List of temperatures in any units as [300, 'K'], it is automatically converted to Kelvin.
+                - `tau_ij`: TableMatrixData | np.ndarray | Dict[str, float]
+                    Interaction parameters (tau_ij) between component i and j.
+                - `alpha_ij`: TableMatrixData | np.ndarray | Dict[str, float]
+                    Non-randomness parameters (alpha_ij) between component i and j.
+        tau_correlation : Literal['M1', 'M2', 'M3', 'M4', 'M5']
+            Correlation method for calculating tau_ij. Default is 'M1'.
+        symbol_delimiter : Literal["|", "_"]
+            Delimiter for the component id. Default is "|".
+        **kwargs : Optional
+            Additional keyword arguments for the calculation.
+
+        Returns
+        -------
+        model_input : dict
+            Updated dictionary of model input values with required parameters added if they were missing.
+        """
+        try:
+            # SECTION: check
+            if not isinstance(model_input, dict):
+                raise TypeError("model_input must be dict")
+
+            # ? check mole_fraction
+            if 'mole_fraction' not in model_input:
+                raise KeyError("mole_fraction is required in model_input")
+
+            # set
+            mole_fraction = model_input['mole_fraction']
+
+            # ? checking alpha_ij and tau_ij
+            # ! user should provide the required keys
+            missed_keys = [
+                key for key in required_keys if key not in model_input
+            ]
+
+            # check required keys
+            if len(missed_keys) > 0:
+                # NOTE: check temperature
+                if 'temperature' not in model_input:
+                    # error
+                    raise KeyError("temperature is required in model_input")
+
+                # check if temperature is list
+                if not isinstance(model_input['temperature'], list):
+                    # error
+                    raise TypeError("temperature must be list")
+
+                # check if temperature is empty
+                if len(model_input['temperature']) == 0:
+                    # error
+                    raise ValueError("temperature list is empty")
+
+                # check format as [300, 'K']
+                if not all(isinstance(temp, (int, float, str)) for temp in model_input['temperature']):
+                    # error
+                    raise TypeError("temperature list must be int or float")
+
+                # NOTE: call input generator
+                # ! check and calculate the required keys
+                # ! to eventually calculate tau_ij & alpha_ij
+                inputs_ = self.inputs_generator(
+                    temperature=model_input['temperature'],
+                    tau_correlation=tau_correlation,
+                    symbol_delimiter=symbol_delimiter,
+                    mixture_ids=self.mixture_ids,
+                    model_input=model_input,
+                    **kwargs
+                )
+
+                # looping through the missed keys
+                for key in missed_keys:
+                    # key value
+                    value_ = inputs_[key]
+
+                    # check
+                    if value_ is None:
+                        # error
+                        raise ValueError(
+                            f"{key} is required in model_input"
+                        )
+
+                    # update the model_input
+                    model_input[key] = value_
+
+            # SECTION: get values
+            tau_ij_data = model_input['tau_ij']
+            alpha_ij_data = model_input['alpha_ij']
+
+            res = {
+                'mole_fraction': mole_fraction,
+                'tau_ij': tau_ij_data,
+                'alpha_ij': alpha_ij_data
+            }
+
+            # check return_all
+            if return_all is False:
+                # remove mole_fraction
+                res.pop('mole_fraction', None)
+                # >> res
+                return res
+
+            # return all
+            return res
+
+        except Exception as e:
+            raise Exception(f"Error in check_and_build_inputs: {str(e)}")
+
+    # SECTION: Calculate activity coefficients
     @add_attributes(metadata=ACTIVITY_MODELS['NRTL'])
     def cal(
         self,
@@ -490,77 +621,18 @@ class NRTL:
         ```
         '''
         try:
-            # SECTION: check
-            if not isinstance(model_input, dict):
-                raise TypeError("model_input must be dict")
-
-            # SECTION: check keys
-            required_keys = ['tau_ij', 'alpha_ij']
-
-            # ? check mole_fraction
-            if 'mole_fraction' not in model_input:
-                raise KeyError("mole_fraction is required in model_input")
-
-            # set
-            mole_fraction = model_input['mole_fraction']
-
-            # ? checking alpha_ij and tau_ij
-            # ! user should provide the required keys
-            missed_keys = [
-                key for key in required_keys if key not in model_input
-            ]
-
-            # check required keys
-            if len(missed_keys) > 0:
-                # check temperature
-                if 'temperature' not in model_input:
-                    # error
-                    raise KeyError("temperature is required in model_input")
-
-                # check if temperature is list
-                if not isinstance(model_input['temperature'], list):
-                    # error
-                    raise TypeError("temperature must be list")
-
-                # check if temperature is empty
-                if len(model_input['temperature']) == 0:
-                    # error
-                    raise ValueError("temperature list is empty")
-
-                # check format as [300, 'K']
-                if not all(isinstance(temp, (int, float, str)) for temp in model_input['temperature']):
-                    # error
-                    raise TypeError("temperature list must be int or float")
-
-                # NOTE: call input generator
-                # ! check and calculate the required keys
-                # ! tau_ij, dg_ij, alpha_ij
-                inputs_ = self.inputs_generator(
-                    temperature=model_input['temperature'],
-                    tau_correlation=tau_correlation,
-                    symbol_delimiter=symbol_delimiter,
-                    mixture_ids=self.mixture_ids,
-                    model_input=model_input,
-                    **kwargs
-                )
-
-                # looping through the missed keys
-                for key in missed_keys:
-                    # key value
-                    value_ = inputs_[key]
-
-                    # check
-                    if value_ is None:
-                        # error
-                        raise ValueError(
-                            f"{key} is required in model_input")
-
-                    # update the model_input
-                    model_input[key] = value_
-
-            # SECTION: get values
-            tau_ij_data = model_input['tau_ij']
-            alpha_ij_data = model_input['alpha_ij']
+            # SECTION: check and build inputs
+            inputs_src = self.check_and_build_inputs(
+                model_input=model_input,
+                tau_correlation=tau_correlation,
+                symbol_delimiter=symbol_delimiter,
+                return_all=True,
+                **kwargs
+            )
+            # >> unpack
+            mole_fraction = inputs_src['mole_fraction']
+            tau_ij_data = inputs_src['tau_ij']
+            alpha_ij_data = inputs_src['alpha_ij']
 
             # SECTION: calculate activity coefficients
             return self.__calculate_activity_coefficients(
