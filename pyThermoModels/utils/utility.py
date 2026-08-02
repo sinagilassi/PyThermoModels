@@ -2,8 +2,8 @@
 # ------------------
 
 # import packages/modules
+from typing import Literal, TypeAlias
 import numpy as np
-from typing import Literal
 # internal
 from ..configs import ROUND_FUN_ACCURACY
 from ..configs import (
@@ -119,3 +119,53 @@ def eos_model_name(
         return model_name_set
     except Exception as e:
         raise Exception('Setting eos model failed!, ', e)
+
+
+# SECTION: Tau Correlation and Method Mapping
+TauCorrelation: TypeAlias = Literal[
+    "gibbs_energy",
+    "extended_temperature",
+    "inverse_temperature",
+    "inverse_temperature_squared",
+    "inverse_log_temperature",
+]
+
+TauMethod: TypeAlias = Literal["M1", "M2", "M3", "M4", "M5"]
+
+
+def map_tau_correlation_to_method(
+    tau_correlation: TauCorrelation,
+) -> TauMethod:
+    """
+    Map a descriptive tau-correlation name to its corresponding method code.
+
+    Parameters
+    ----------
+    tau_correlation : TauCorrelation
+        Descriptive name of the tau correlation.
+
+    Returns
+    -------
+    TauMethod
+        Corresponding method code from M1 to M5.
+
+    Raises
+    ------
+    ValueError
+        If an unsupported correlation name is provided.
+    """
+    correlation_map: dict[TauCorrelation, TauMethod] = {
+        "gibbs_energy": "M1",
+        "extended_temperature": "M2",
+        "inverse_temperature": "M3",
+        "inverse_temperature_squared": "M4",
+        "inverse_log_temperature": "M5",
+    }
+
+    try:
+        return correlation_map[tau_correlation]
+    except KeyError as exc:
+        raise ValueError(
+            f"Unsupported tau correlation: {tau_correlation!r}. "
+            f"Expected one of: {', '.join(correlation_map)}."
+        ) from exc
