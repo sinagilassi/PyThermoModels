@@ -1,13 +1,18 @@
 # import libs
-import time
 import logging
 from typing import Dict, Literal, List, Optional
+
 from pythermodb_settings.models import Component, Temperature, ComponentKey
-from pythermodb_settings.utils import set_component_id, create_mixture_id, measure_time
+from pythermodb_settings.utils import (
+    create_mixture_id,
+    measure_time,
+    set_component_id,
+)
 from pyThermoLinkDB.models import ModelSource
+
 # local
-from ..docs import ThermoModelCore
 from ..activity import NRTL, UNIQUAC
+from ..docs import ThermoModelCore
 from ..utils import set_feed_specification
 from ..utils.utility import TauCorrelation, map_tau_correlation_to_method
 
@@ -21,8 +26,25 @@ def _validate_inputs(
     components: List[Component],
     temperature: Temperature,
     model_source: ModelSource,
-):
-    # ! components
+) -> None:
+    """
+    Validate shared activity-parameter calculator inputs.
+
+    Parameters
+    ----------
+    components : List[Component]
+        Components included in the liquid-mixture activity model.
+    temperature : Temperature
+        Operating temperature used for temperature-dependent tau correlations.
+    model_source : ModelSource
+        Model source containing datasource and equationsource dictionaries.
+
+    Raises
+    ------
+    ValueError
+        If any required input has an unsupported type or empty value.
+    """
+    # SECTION: components
     if (
         not isinstance(components, list) or
         not all(isinstance(c, Component) for c in components)
@@ -33,13 +55,13 @@ def _validate_inputs(
     if len(components) == 0:
         raise ValueError("Components list is empty.")
 
-    # ! temperature
+    # SECTION: temperature
     if not isinstance(temperature, Temperature):
         raise ValueError(
             "Invalid temperature input. Must be a Temperature object."
         )
 
-    # ! model source
+    # SECTION: model source
     if not isinstance(model_source, ModelSource):
         raise ValueError(
             "Invalid model_source input. Must be a ModelSource object."
@@ -47,8 +69,6 @@ def _validate_inputs(
 
 
 # NOTE: Component input configuration
-
-
 def _set_component_input_configuration(
     components: List[Component],
     component_key: Literal[
@@ -62,87 +82,102 @@ def _set_component_input_configuration(
         "|",
     ],
     verbose: bool = False,
-):
+) -> Dict:
+    """
+    Build component, mixture, and feed identifiers for activity calculations.
+
+    Parameters
+    ----------
+    components : List[Component]
+        Components included in the activity model.
+    component_key : Literal["Name-State", "Formula-State"]
+        Component identifier style used for datasource lookup.
+    mixture_key : Literal["Name", "Formula"]
+        Mixture identifier style used for datasource lookup.
+    separator_symbol : str
+        Separator between component identity and state.
+    delimiter : Literal["|"]
+        Delimiter used between components in mixture identifiers.
+    verbose : bool
+        If True, log input-preparation progress.
+
+    Returns
+    -------
+    Dict
+        Component ids, mixture ids, and default feed specification.
+    """
     try:
-        # NOTE: component configuration
-        # >> component ids
+        # SECTION: component ids
         # ! default using component key
         components_ids = [
-            set_component_id(c, component_key, separator_symbol) for c in components
+            set_component_id(c, component_key, separator_symbol)
+            for c in components
         ]
 
-        # >> name-state
+        # NOTE: keep alternate component ids for model-specific fallbacks
         components_names_state = [
-            set_component_id(c, 'Name-State', separator_symbol) for c in components
+            set_component_id(c, 'Name-State', separator_symbol)
+            for c in components
         ]
-
-        # >> formula-state
         components_formulas_state = [
-            set_component_id(c, 'Formula-State', separator_symbol) for c in components
+            set_component_id(c, 'Formula-State', separator_symbol)
+            for c in components
         ]
-
-        # >> component names
         components_names = [
-            set_component_id(c, 'Name', separator_symbol) for c in components
+            set_component_id(c, 'Name', separator_symbol)
+            for c in components
         ]
-
-        # >> component formulas
         components_formulas = [
-            set_component_id(c, 'Formula', separator_symbol) for c in components
+            set_component_id(c, 'Formula', separator_symbol)
+            for c in components
         ]
 
-        # set component ids
         components_ids_dict = {
             "ids": components_ids,
             "Name-State": components_names_state,
             "Formula-State": components_formulas_state,
             "Name": components_names,
-            "Formula": components_formulas
+            "Formula": components_formulas,
         }
 
-        # NOTE: mixture id
+        # SECTION: mixture ids
         # ! default using mixture key (sorted alphabetically)
         mixture_id = create_mixture_id(
             components=components,
             mixture_key=mixture_key,
-            delimiter=delimiter
+            delimiter=delimiter,
         )
-        # ! by name
         mixture_name = create_mixture_id(
             components=components,
             mixture_key='Name',
-            delimiter=delimiter
+            delimiter=delimiter,
         )
-        # ! by formula
         mixture_formula = create_mixture_id(
             components=components,
             mixture_key='Formula',
-            delimiter=delimiter
+            delimiter=delimiter,
         )
 
-        # set mixture id
         mixture_ids_dict = {
             "Name": mixture_name,
-            "Formula": mixture_formula
+            "Formula": mixture_formula,
         }
 
-        # NOTE: mole fraction
+        # SECTION: mole fraction placeholder
         feed_spec: Dict[str, float] = set_feed_specification(
             components=components,
-            component_key="Name"
+            component_key="Name",
         )
 
-        # >>> log
         if verbose:
             logger.info("Input preparation successful")
 
-        # res
         return {
             "mole_fraction": feed_spec,
             "mixture_id": mixture_id,
             "components_ids": components_ids,
             "components_ids_dict": components_ids_dict,
-            "mixture_ids_dict": mixture_ids_dict
+            "mixture_ids_dict": mixture_ids_dict,
         }
 
     except Exception as e:
@@ -150,8 +185,244 @@ def _set_component_input_configuration(
         raise
 
 
+# SECTION: Model-specific tau configuration
+def _activity_tau_configuration(
+    model_name: Literal['NRTL', 'UNIQUAC'],
+    tau_correlation: Optional[TauCorrelation],
+) -> Dict:
+    """
+    Return required input keys and internal tau correlation for a model.
+
+    Parameters
+    ----------
+    model_name : Literal["NRTL", "UNIQUAC"]
+        Activity model used to generate tau parameters.
+    tau_correlation : Optional[TauCorrelation]
+        Public descriptive tau-correlation name. If None, the selected model
+        chooses its own default.
+
+    Returns
+    -------
+    Dict
+        Required input keys, model class, and correlation value expected by the
+        selected model instance.
+    """
+    # SECTION: NRTL configuration
+    if model_name == 'NRTL':
+        # NOTE: default NRTL tau calculation uses Gibbs-energy data
+        tau_correlation = (
+            "gibbs_energy" if tau_correlation is None else tau_correlation
+        )
+        return {
+            "model_type": NRTL,
+            "required_keys": ['tau_ij', 'alpha_ij'],
+            # NOTE: NRTL still expects raw M1-M5 method ids internally
+            "tau_correlation": map_tau_correlation_to_method(tau_correlation),
+        }
+
+    # SECTION: UNIQUAC configuration
+    if model_name == 'UNIQUAC':
+        # NOTE: default UNIQUAC tau calculation uses extended-temperature data
+        tau_correlation = (
+            "extended_temperature"
+            if tau_correlation is None
+            else tau_correlation
+        )
+        return {
+            "model_type": UNIQUAC,
+            "required_keys": ['tau_ij', 'r_i', 'q_i'],
+            # NOTE: UNIQUAC maps descriptive names inside its parameter builder
+            "tau_correlation": tau_correlation,
+        }
+
+    raise ValueError(
+        f"Unsupported activity model '{model_name}'. "
+        "Supported models are 'NRTL' and 'UNIQUAC'."
+    )
+
+
 # SECTION: Binary interaction parameter (tau) calculators
 @measure_time
+def calc_tau_ij(
+    components: List[Component],
+    temperature: Temperature,
+    model_source: ModelSource,
+    model_name: Literal['NRTL', 'UNIQUAC'],
+    tau_correlation: Optional[TauCorrelation] = None,
+    component_key: Literal[
+        "Name-State", "Formula-State"
+    ] = "Name-State",
+    mixture_key: Literal[
+        "Name", "Formula"
+    ] = "Name",
+    separator_symbol: str = '-',
+    delimiter: Literal[
+        "|",
+    ] = "|",
+    message: Optional[str] = None,
+    verbose: bool = False,
+    output_format: ComponentKey = "Name",
+    **kwargs
+):
+    """
+    Calculate tau_ij for NRTL or UNIQUAC using a model source.
+
+    Parameters
+    ----------
+    components : List[Component]
+        Components included in the activity model.
+    temperature : Temperature
+        Operating temperature used for tau generation.
+    model_source : ModelSource
+        Source containing activity-model datasource and equationsource.
+    model_name : Literal["NRTL", "UNIQUAC"]
+        Activity model used to calculate tau_ij.
+    tau_correlation : Optional[TauCorrelation]
+        Public descriptive tau-correlation name. If None, NRTL defaults to
+        `gibbs_energy` and UNIQUAC defaults to `extended_temperature`.
+    component_key : Literal["Name-State", "Formula-State"]
+        Component identifier style used for datasource lookup.
+    mixture_key : Literal["Name", "Formula"]
+        Mixture identifier style used for datasource lookup.
+    separator_symbol : str
+        Separator between component identity and state.
+    delimiter : Literal["|"]
+        Delimiter used for component-pair keys.
+    message : Optional[str]
+        Optional logging message.
+    verbose : bool
+        If True, log detailed progress.
+    output_format : ComponentKey
+        Component identifier style used for output dictionary keys.
+    **kwargs : dict
+        Additional keyword arguments forwarded to model initialization and
+        parameter generation.
+
+    Returns
+    -------
+    Tuple[np.ndarray, Dict[str, float]]
+        Tau matrix ordered by model components and output dictionary keyed by
+        requested component format.
+
+    Notes
+    -----
+    NRTL requires `alpha_ij` in addition to generated/provided `tau_ij`.
+    UNIQUAC requires pure-component `r_i` and `q_i` in addition to
+    generated/provided `tau_ij`.
+    """
+    try:
+        # SECTION: validate shared inputs
+        _validate_inputs(
+            components=components,
+            temperature=temperature,
+            model_source=model_source,
+        )
+
+        # NOTE: model-specific required keys and correlation mapping
+        tau_config = _activity_tau_configuration(
+            model_name=model_name,
+            tau_correlation=tau_correlation,
+        )
+
+        if message is None:
+            message = f"Calculating tau_ij using {model_name} model"
+
+        if verbose:
+            logger.info(message)
+            logger.info(
+                f"Components: {[c.name for c in components]}, "
+                f"temperature: {temperature.value} {temperature.unit}"
+            )
+
+        # SECTION: set input configuration
+        component_input_config = _set_component_input_configuration(
+            components=components,
+            component_key=component_key,
+            mixture_key=mixture_key,
+            separator_symbol=separator_symbol,
+            delimiter=delimiter,
+            verbose=verbose,
+        )
+        mole_fraction = component_input_config["mole_fraction"]
+        mixture_id = component_input_config["mixture_id"]
+        components_ids = component_input_config["components_ids"]
+        components_ids_dict = component_input_config["components_ids_dict"]
+        mixture_ids_dict = component_input_config["mixture_ids_dict"]
+
+        # SECTION: model input and model source
+        model_input = {
+            "mole_fraction": mole_fraction,
+            "temperature": [temperature.value, temperature.unit],
+            "mixture_id": mixture_id,
+            "components_ids": components_ids,
+            "components_ids_dict": components_ids_dict,
+            "mixture_ids_dict": mixture_ids_dict,
+        }
+
+        model_source_dict = {
+            "datasource": model_source.data_source,
+            "equationsource": model_source.equation_source,
+        }
+
+        # SECTION: initialize selected activity model
+        try:
+            ThermoModelCore_ = ThermoModelCore()
+            activity_model = ThermoModelCore_.select_activities(
+                components=components,
+                model_name=model_name,
+                model_source=model_source_dict,
+                mixture_ids=mixture_ids_dict,
+                components_ids=components_ids_dict,
+                **kwargs
+            )
+
+            if verbose:
+                logger.info(f"{model_name} model initialization successful")
+                logger.info(f"Activity model: {activity_model}")
+        except Exception as e:
+            logger.error(f"Initialization failed!, {e}")
+            raise
+
+        # SECTION: calculate tau_ij
+        model_type = tau_config["model_type"]
+        if not isinstance(activity_model, model_type):
+            raise TypeError(
+                f"Activity model is not an instance of {model_name}. "
+                f"Found: {type(activity_model)}"
+            )
+
+        # NOTE: set ids explicitly for datasource fallback behavior
+        activity_model.mixture_ids = mixture_ids_dict
+        activity_model.components_ids = components_ids_dict
+
+        res = activity_model.check_and_build_inputs(
+            model_input=model_input,
+            required_keys=tau_config["required_keys"],
+            tau_correlation=tau_config["tau_correlation"],
+            symbol_delimiter=delimiter,
+            return_all=False,
+            **kwargs
+        )
+
+        tau_ij_array = res['tau_ij']
+        tau_ij_dict = activity_model.to_dict_ij_ext(
+            data=tau_ij_array,
+            components=components,
+            component_key=output_format,
+            symbol_delimiter=delimiter,
+        )
+
+        if verbose:
+            logger.info("Tau calculation successful")
+            logger.info(f"Result: {tau_ij_dict}")
+
+        return tau_ij_array, tau_ij_dict
+
+    except Exception as e:
+        logger.error(f"Tau calculation failed!, {e}")
+        raise
+
+
 def calc_tau_ij_using_nrtl_model(
     components: List[Component],
     temperature: Temperature,
@@ -172,186 +443,75 @@ def calc_tau_ij_using_nrtl_model(
     output_format: ComponentKey = "Name",
     **kwargs
 ):
-    '''
-        Calculate binary interaction parameters (tau_ij) used with NRTL model for a given mixture of components at a specified temperature using the provided model source.
+    """
+    Calculate NRTL tau_ij from a model source.
 
-        Parameters
-        ----------
-        components : List[Component]
-            List of Component objects.
-        pressure : Pressure
-            Pressure object containing pressure value and unit.
-        temperature : Temperature
-            Temperature object containing temperature value and unit.
-        model_source : ModelSource
-            datasource and equationsource needed for activity model calculation.
-                - datasource: dict, datasource for the component (`generated by PyThermoDB`)
-                - equationsource: dict, equationsource for the component (`generated by PyThermoDB`)
-        model_name : Literal['NRTL', 'UNIQUAC']
-            Name of the activity model to use. Options are 'NRTL' or 'UNIQUAC'.
-        tau_correlation : Literal['gibbs_energy', 'extended_temperature', 'inverse_temperature', 'inverse_temperature_squared', 'inverse_log_temperature'], optional
-            Correlation method for calculating tau_ij, by default 'M1'.
-                - 'gibbs_energy': Calculate tau_ij using dg_ij.
-                - 'extended_temperature': Calculate tau_ij from constants a, b, c, d based on the selected correlation.
-                - 'inverse_temperature': Calculate tau_ij from constants a, b based on the selected correlation.
-                - 'inverse_temperature_squared': Calculate tau_ij from constants a, b, c based on the selected correlation.
-                - 'inverse_log_temperature': Calculate tau_ij from constants a, b, c based on the selected correlation.
-        component_key : Literal['Name-State', 'Formula-State'], optional
-            Key to identify components, by default 'Name-State'.
-                - 'Name-State': Component name with state (e.g., 'ethanol-l') is used.
-                - 'Formula-State': Component formula with state (e.g., 'C2H5OH-l') is used.
-        mixture_key : Literal['Name', 'Formula'], optional
-            Key to identify mixture, by default 'Name'.
-                - 'Name': Component names (e.g., 'ethanol | butyl-methyl-ether') are used.
-                - 'Formula': Component formulas (e.g., 'C2H5OH | C5H12O') are used.
-        separator_symbol : str, optional
-            Symbol to separate component name and state, by default '-'.
-                - e.g., 'ethanol-l' or 'C2H5OH-l'
-        delimiter : Literal['|'], optional
-            Delimiter to separate components in mixture, by default '|'.
-                - e.g., 'ethanol | butyl-methyl-ether' or 'C2H5OH | C5H12O'
-        message : Optional[str], optional
-            Message for logging, by default None.
-                - If None, a default message will be used.
-        verbose : bool, optional
-            If True, detailed logs will be printed, by default False.
-        output_format : Literal['Name', 'Formula'], optional
-            Format for output keys, by default 'Name'.
-        **kwargs : dict
-            Additional keyword arguments.
-            - mode : Literal['silent', 'log', 'attach'], optional
-                Mode for time measurement logging. Default is 'silent'.
-        '''
-    try:
-        # >> log
-        if verbose:
-            logger.info(
-                f"Calculating tau_ij for components: {[c.name for c in components]} at temperature: {temperature.value} {temperature.unit}"
-            )
+    Notes
+    -----
+    NRTL input generation requires `alpha_ij` and either direct `tau_ij`,
+    `dg_ij`, or coefficient matrices compatible with `tau_correlation`.
+    """
+    # NOTE: thin compatibility wrapper around the shared dispatcher
+    return calc_tau_ij(
+        components=components,
+        temperature=temperature,
+        model_source=model_source,
+        model_name='NRTL',
+        tau_correlation=tau_correlation,
+        component_key=component_key,
+        mixture_key=mixture_key,
+        separator_symbol=separator_symbol,
+        delimiter=delimiter,
+        message=message,
+        verbose=verbose,
+        output_format=output_format,
+        **kwargs
+    )
 
-        # SECTION: validate inputs
-        _validate_inputs(
-            components=components,
-            temperature=temperature,
-            model_source=model_source
-        )
 
-        # NOTE: message config
-        if message is None:
-            message = f"Calculating activity coefficient using NRTL model"
+def calc_tau_ij_using_uniquac_model(
+    components: List[Component],
+    temperature: Temperature,
+    model_source: ModelSource,
+    tau_correlation: TauCorrelation = "extended_temperature",
+    component_key: Literal[
+        "Name-State", "Formula-State"
+    ] = "Name-State",
+    mixture_key: Literal[
+        "Name", "Formula"
+    ] = "Name",
+    separator_symbol: str = '-',
+    delimiter: Literal[
+        "|",
+    ] = "|",
+    message: Optional[str] = None,
+    verbose: bool = False,
+    output_format: ComponentKey = "Name",
+    **kwargs
+):
+    """
+    Calculate UNIQUAC tau_ij from a model source.
 
-        # SECTION: set input configuration
-        component_input_config = _set_component_input_configuration(
-            components=components,
-            component_key=component_key,
-            mixture_key=mixture_key,
-            separator_symbol=separator_symbol,
-            delimiter=delimiter,
-            verbose=verbose
-        )
-        # >> unpack
-        mole_fraction = component_input_config["mole_fraction"]
-        mixture_id = component_input_config["mixture_id"]
-        components_ids = component_input_config["components_ids"]
-        components_ids_dict = component_input_config["components_ids_dict"]
-        mixture_ids_dict = component_input_config["mixture_ids_dict"]
-
-        # NOTE: model inputs
-        model_input = {
-            "mole_fraction": mole_fraction,
-            "temperature": [temperature.value, temperature.unit],
-            "mixture_id": mixture_id,
-            "components_ids": components_ids,
-            "components_ids_dict": components_ids_dict,
-            "mixture_ids_dict": mixture_ids_dict
-        }
-
-        # NOTE: model source
-        model_source_dict = {
-            "datasource": model_source.data_source,
-            "equationsource": model_source.equation_source
-        }
-
-        # SECTION: initialize activity model
-        try:
-            # NOTE: thermo manager
-            ThermoModelCore_ = ThermoModelCore()
-            # NOTE: initialize activity model
-            activity_models = ThermoModelCore_.select_activities(
-                components=components,
-                model_name='NRTL',
-                model_source=model_source_dict,
-                mixture_ids=mixture_ids_dict,
-                components_ids=components_ids_dict,
-                **kwargs
-            )
-
-            # >>> log
-            if verbose:
-                logger.info(f"NRTL model initialization successful")
-                logger.info(f"Activity model: {activity_models}")
-        except Exception as e:
-            logger.error(f"Initialization failed!, {e}")
-            raise
-
-        # SECTION: calculate activity coefficient
-        # NOTE: map tau_correlation to method
-        tau_correlation_selected = map_tau_correlation_to_method(
-            tau_correlation
-        )
-
-        try:
-            # NOTE: check nrtl
-            if isinstance(activity_models, NRTL):
-                # NOTE: set ids
-                # ! mixture
-                activity_models.mixture_ids = mixture_ids_dict
-                # ! components
-                activity_models.components_ids = components_ids_dict
-
-                # NOTE: calculate activity coefficient
-                res = activity_models.check_and_build_inputs(
-                    model_input=model_input,
-                    required_keys=['tau_ij', 'alpha_ij'],
-                    tau_correlation=tau_correlation_selected,
-                    symbol_delimiter=delimiter,
-                    return_all=False,
-                    **kwargs
-                )
-
-                # ! tau_ij
-                # ? numpy array
-                tau_ij_array = res['tau_ij']
-                # ? dict with component keys
-                tau_ij_dict = activity_models.to_dict_ij_ext(
-                    data=tau_ij_array,
-                    components=components,
-                    component_key=output_format,  # ? result format
-                    symbol_delimiter=delimiter,
-                )
-
-                # ! alpha_ij
-                # alpha_ij = activity_models.to_dict_ij(
-                #     data=res['alpha_ij'],
-                #     symbol_delimiter=delimiter,
-                # )
-
-                # >>> log
-                if verbose:
-                    logger.info(f"Tau calculation successful")
-                    logger.info(f"Result: {tau_ij_dict}")
-
-                # res
-                return tau_ij_array, tau_ij_dict
-
-            else:
-                raise ValueError(
-                    f"Activity model is not an instance of NRTL. Found: {type(activity_models)}"
-                )
-
-        except Exception as e:
-            logger.error(f"Tau calculation failed!, {e}")
-            raise
-
-    except Exception as e:
-        logger.error(f"Error in logging: {e}")
+    Notes
+    -----
+    UNIQUAC input generation requires `r_i` and `q_i` and either direct
+    `tau_ij`, `dU_ij`, or coefficient matrices compatible with
+    `tau_correlation`. The default UNIQUAC correlation is
+    `extended_temperature`.
+    """
+    # NOTE: thin model-specific wrapper around the shared dispatcher
+    return calc_tau_ij(
+        components=components,
+        temperature=temperature,
+        model_source=model_source,
+        model_name='UNIQUAC',
+        tau_correlation=tau_correlation,
+        component_key=component_key,
+        mixture_key=mixture_key,
+        separator_symbol=separator_symbol,
+        delimiter=delimiter,
+        message=message,
+        verbose=verbose,
+        output_format=output_format,
+        **kwargs
+    )
