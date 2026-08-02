@@ -131,7 +131,8 @@ res = calc_tau_ij_using_nrtl_model(
     temperature=temperature,
     model_source=model_source,
     tau_correlation="gibbs_energy",
-    verbose=True,
+    verbose=False,
+    output_format="Name-State",
     mode='log'
 )
 # >>>>
