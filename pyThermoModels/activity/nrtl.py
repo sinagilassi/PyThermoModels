@@ -116,6 +116,7 @@ class NRTL:
         self._mixture_id = ""
         self._components_ids = {}
 
+        # NOTE: component configurations
         # components
         self.components = [component.strip() for component in components]
 
@@ -147,6 +148,7 @@ class NRTL:
         self.to_ij = self.component_parameter_mixin.to_ij
         self.to_dict_ij = self.component_parameter_mixin.to_dict_ij
         self.to_matrix_ij = self.component_parameter_mixin.to_matrix_ij
+        self.to_dict_ij_ext = self.component_parameter_mixin.to_dict_ij_ext
 
     def __repr__(self) -> str:
         model_ = """
