@@ -9,7 +9,7 @@ from pyThermoLinkDB.models import ModelSource
 from ..docs import ThermoModelCore
 from ..activity import NRTL, UNIQUAC
 from ..utils import set_feed_specification
-from ..utils.utility import TauCorrelation, map_tau_correlation_to_method
+from ..utils.utility import TauCorrelation
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -325,12 +325,6 @@ def calc_activity_coefficient(
             logger.error(f"Initialization failed!, {e}")
             raise
 
-        # SECTION: calculate activity coefficient
-        # NOTE: map tau_correlation to method
-        tau_correlation_selected = map_tau_correlation_to_method(
-            tau_correlation
-        )
-
         try:
             # NOTE: check nrtl
             if isinstance(activity_models, NRTL):
@@ -343,7 +337,7 @@ def calc_activity_coefficient(
                 # NOTE: calculate activity coefficient
                 res, others = activity_models.cal(
                     model_input=model_input,
-                    tau_correlation=tau_correlation_selected,
+                    tau_correlation=tau_correlation,
                     message=message,
                     **kwargs
                 )
