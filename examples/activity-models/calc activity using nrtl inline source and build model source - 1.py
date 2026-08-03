@@ -36,13 +36,14 @@ REFERENCES:
           MATRIX-SYMBOL:
             - alpha constant: alpha
             - binary interaction parameter: dg
+            - tau parameter: tau
           STRUCTURE:
-            COLUMNS: [No.,Mixture,Name,Formula,State,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
-            SYMBOL: [None,None,None,None,None,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
-            UNIT: [None,None,None,None,None,1,1,1,1]
+            COLUMNS: [No.,Mixture,Name,Formula,State,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2,tau_i_1,tau_i_2]
+            SYMBOL: [None,None,None,None,None,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2,tau_i_1,tau_i_2]
+            UNIT: [None,None,None,None,None,1,1,1,1,1,1]
           VALUES:
-            - [1,ethanol|butyl-methyl-ether,ethanol,C2H5OH,l,0,0.680715,0,3268.884433]
-            - [2,ethanol|butyl-methyl-ether,butyl-methyl-ether,C5H12O,l,0.680715,0,1768.662389,0]
+            - [1,ethanol|butyl-methyl-ether,ethanol,C2H5OH,l,0,0.680715,0,3268.884433,0.0,1.21670526]
+            - [2,ethanol|butyl-methyl-ether,butyl-methyl-ether,C5H12O,l,0.680715,0,1768.662389,0,0.65831047,0.0]
 """
 # =======================================
 # ☑️ DIRECTORY SETUP
