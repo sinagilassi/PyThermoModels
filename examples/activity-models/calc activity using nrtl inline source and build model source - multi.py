@@ -138,7 +138,8 @@ res_, others_, G_ex = calc_activity_coefficient(
     temperature=temperature,
     model_source=model_source,
     model_name='NRTL',
-    verbose=True,
+    verbose=False,
+    mode='log'
 )
 
 # print the results
