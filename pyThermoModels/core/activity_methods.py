@@ -24,7 +24,7 @@ def calc_activity_coefficient(
     temperature: Temperature,
     model_source: ModelSource,
     model_name: Literal['NRTL', 'UNIQUAC'],
-    tau_correlation: TauCorrelation = "gibbs_energy",
+    tau_correlation: Optional[TauCorrelation] = None,
     component_key: Literal[
         "Name-State", "Formula-State"
     ] = "Name-State",
@@ -57,7 +57,8 @@ def calc_activity_coefficient(
     model_name : Literal['NRTL', 'UNIQUAC']
         Name of the activity model to use. Options are 'NRTL' or 'UNIQUAC'.
     tau_correlation : Literal['gibbs_energy', 'extended_temperature', 'inverse_temperature', 'inverse_temperature_squared', 'inverse_log_temperature'], optional
-        Correlation method for calculating tau_ij, by default 'M1'.
+        Correlation method for calculating tau_ij. If omitted, NRTL defaults
+        to `gibbs_energy` and UNIQUAC defaults to `extended_temperature`.
             - 'gibbs_energy': Calculate tau_ij using dg_ij.
             - 'extended_temperature': Calculate tau_ij from constants a, b, c, d based on the selected correlation.
             - 'inverse_temperature': Calculate tau_ij from constants a, b based on the selected correlation.
@@ -324,6 +325,13 @@ def calc_activity_coefficient(
         except Exception as e:
             logger.error(f"Initialization failed!, {e}")
             raise
+
+        if tau_correlation is None:
+            tau_correlation = (
+                "extended_temperature"
+                if model_name == 'UNIQUAC'
+                else "gibbs_energy"
+            )
 
         try:
             # NOTE: check nrtl
