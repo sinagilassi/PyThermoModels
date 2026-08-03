@@ -2,6 +2,7 @@ from pyThermoModels.core.activity_parameter_calculators import (
     _activity_tau_configuration,
 )
 from pyThermoModels.activity.nrtl_parameter_builder import NRTLParameterBuilder
+from pyThermoModels.activity.uniquac_parameter_builder import UNIQUACParameterBuilder
 from pyThermoModels.utils.utility import (
     map_tau_correlation_to_method,
     map_uniquac_tau_correlation_to_method,
@@ -60,6 +61,80 @@ def test_nrtl_parameter_builder_maps_descriptive_name_internally():
 
     assert inputs["tau_ij"][0, 0] == 0
     assert np.isclose(inputs["tau_ij"][0, 1], 0.2 + 30.0 / 300.0)
+
+
+def test_uniquac_parameter_builder_uses_default_extended_temperature_method():
+    builder = UNIQUACParameterBuilder(
+        components=["A", "B"],
+        comp_idx={"A": 0, "B": 1},
+        datasource={},
+        equationsource={},
+    )
+
+    inputs = builder.inputs_generator(
+        temperature=[300.0, "K"],
+        include_pure_component_parameters=False,
+        model_input={
+            "a_ij": [[0.0, 0.2], [0.4, 0.0]],
+            "b_ij": [[0.0, 30.0], [60.0, 0.0]],
+            "c_ij": [[0.0, 0.01], [0.02, 0.0]],
+            "d_ij": [[0.0, 0.001], [0.002, 0.0]],
+        },
+    )
+
+    expected = np.exp(
+        0.2 + 30.0 / 300.0 + 0.01 * np.log(300.0) + 0.001 * 300.0
+    )
+    assert inputs["tau_ij"][0, 0] == 1.0
+    assert np.isclose(inputs["tau_ij"][0, 1], expected)
+
+
+def test_uniquac_parameter_builder_maps_descriptive_name_internally():
+    builder = UNIQUACParameterBuilder(
+        components=["A", "B"],
+        comp_idx={"A": 0, "B": 1},
+        datasource={},
+        equationsource={},
+    )
+
+    inputs = builder.inputs_generator(
+        temperature=[300.0, "K"],
+        tau_correlation="inverse_temperature",
+        include_pure_component_parameters=False,
+        model_input={
+            "a_ij": [[0.0, 0.2], [0.4, 0.0]],
+            "b_ij": [[0.0, 30.0], [60.0, 0.0]],
+        },
+    )
+
+    assert inputs["tau_ij"][0, 0] == 1.0
+    assert np.isclose(inputs["tau_ij"][0, 1], np.exp(0.2 + 30.0 / 300.0))
+
+
+def test_uniquac_parameter_builder_reports_mismatched_gibbs_energy_source():
+    builder = UNIQUACParameterBuilder(
+        components=["A", "B"],
+        comp_idx={"A": 0, "B": 1},
+        datasource={},
+        equationsource={},
+    )
+
+    try:
+        builder.inputs_generator(
+            temperature=[300.0, "K"],
+            tau_correlation="gibbs_energy",
+            include_pure_component_parameters=False,
+            model_input={
+                "a_ij": [[0.0, 0.2], [0.4, 0.0]],
+                "b_ij": [[0.0, 30.0], [60.0, 0.0]],
+                "c_ij": [[0.0, 0.01], [0.02, 0.0]],
+                "d_ij": [[0.0, 0.001], [0.002, 0.0]],
+            },
+        )
+    except Exception as exc:
+        assert "requires dU_ij for UNIQUAC" in str(exc)
+    else:
+        raise AssertionError("Expected gibbs_energy with coefficient matrices to fail")
 
 
 def test_uniquac_tau_correlation_rejects_raw_method_id():
