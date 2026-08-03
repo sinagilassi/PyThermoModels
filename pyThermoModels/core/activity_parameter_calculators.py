@@ -14,7 +14,7 @@ from pyThermoLinkDB.models import ModelSource
 from ..activity import NRTL, UNIQUAC
 from ..docs import ThermoModelCore
 from ..utils import set_feed_specification
-from ..utils.utility import TauCorrelation, map_tau_correlation_to_method, map_uniquac_tau_correlation_to_method
+from ..utils.utility import TauCorrelation
 
 # NOTE: setup logger
 logger = logging.getLogger(__name__)
@@ -215,8 +215,8 @@ def _activity_tau_configuration(
         )
         return {
             "model_type": NRTL,
-            # NOTE: NRTL still expects raw M1-M5 method ids internally
-            "tau_correlation": map_tau_correlation_to_method(tau_correlation),
+            # NOTE: model builders map descriptive names to internal method ids
+            "tau_correlation": tau_correlation,
             "generator_kwargs": {
                 "include_alpha": False,
             },
@@ -232,8 +232,8 @@ def _activity_tau_configuration(
         )
         return {
             "model_type": UNIQUAC,
-            # NOTE: UNIQUAC maps descriptive names inside its parameter builder
-            "tau_correlation": map_uniquac_tau_correlation_to_method(tau_correlation),
+            # NOTE: model builders map descriptive names to internal method ids
+            "tau_correlation": tau_correlation,
             "generator_kwargs": {
                 "include_pure_component_parameters": False,
             },
