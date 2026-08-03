@@ -10,6 +10,7 @@ from pyThermoDB import (
     TableMatrixEquation
 )
 # locals
+from ..utils.utility import TauCorrelation, map_tau_correlation_to_method
 from .nrtl_parameter_core import NRTLParameterCore
 from .nrtl_local_composition import NRTLLocalComposition
 from .component_parameter_mixin import ComponentParameterMixin
@@ -71,9 +72,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
         temperature: Optional[
             List[float | str]
         ] = None,
-        tau_correlation: Literal[
-            'M1', 'M2', 'M3', 'M4', 'M5'
-        ] = 'M1',
+        tau_correlation: TauCorrelation = "gibbs_energy",
         symbol_delimiter: Literal[
             "|", "_"
         ] = "|",
@@ -88,8 +87,9 @@ class NRTLParameterBuilder(NRTLParameterCore):
         ----------
         temperature : List[float | str], optional
             Temperature in any units as: [300, 'K'], it is automatically converted to Kelvin.
-        tau_correlation : Literal['M1', 'M2', 'M3', 'M4', 'M5'], optional
-            Correlation method for calculating tau_ij. Default is 'M1'.
+        tau_correlation : TauCorrelation, optional
+            Descriptive tau-correlation name. Default is `gibbs_energy`,
+            which maps to NRTL method M1.
         symbol_delimiter : Literal["|", "_"]
             Delimiter for component-pair dictionary keys. Default is "|".
         kwargs : dict
@@ -98,6 +98,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
                 Interaction energy parameters for the components.
         '''
         try:
+            tau_method = map_tau_correlation_to_method(tau_correlation)
 
             # NOTE: utils
             def _require_matrix(matrix, name):
@@ -141,7 +142,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
                 # NOTE: check method
                 if (
                     tau_ij_cal_method == 1 and
-                    tau_correlation == 'M1'
+                    tau_method == 'M1'
                 ):
                     # ! >>> method 1: calculate tau_ij from dg_ij
                     # Check if dg_ij is None and convert values to float if needed
@@ -163,7 +164,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
                         'M3': {'a_ij': a_ij, 'b_ij': b_ij},
                         'M4': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij},
                         'M5': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij},
-                    }[tau_correlation]
+                    }[tau_method]
 
                     missing_arrays = [
                         name for name, value in required_arrays.items()
@@ -176,7 +177,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
                         )
 
                     # NOTE: calculate tau_ij based on the selected correlation
-                    if tau_correlation == 'M3':
+                    if tau_method == 'M3':
                         # ! M3
                         a_ij_m3 = _require_matrix(a_ij, "a_ij")
                         b_ij_m3 = _require_matrix(b_ij, "b_ij")
@@ -188,7 +189,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
                             b_ij=b_ij_m3,
                             symbol_delimiter=symbol_delimiter
                         )
-                    elif tau_correlation == 'M4':
+                    elif tau_method == 'M4':
                         # ! M4
                         a_ij_m4 = _require_matrix(a_ij, "a_ij")
                         b_ij_m4 = _require_matrix(b_ij, "b_ij")
@@ -202,7 +203,7 @@ class NRTLParameterBuilder(NRTLParameterCore):
                             c_ij=c_ij_m4,
                             symbol_delimiter=symbol_delimiter
                         )
-                    elif tau_correlation == 'M5':
+                    elif tau_method == 'M5':
                         # ! M5
                         a_ij_m5 = _require_matrix(a_ij, "a_ij")
                         b_ij_m5 = _require_matrix(b_ij, "b_ij")
