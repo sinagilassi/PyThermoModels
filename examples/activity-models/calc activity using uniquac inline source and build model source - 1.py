@@ -45,10 +45,10 @@ REFERENCES:
             - b constant: b
             - c constant: c
             - d constant: d
-            - alpha constant: alpha
+            - interaction energy parameter: dU
           STRUCTURE:
-            COLUMNS: [No.,Mixture,Name,Formula,State,a_i_1,a_i_2,b_i_1,b_i_2,c_i_1,c_i_2,d_i_1,d_i_2,alpha_i_1,alpha_i_2]
-            SYMBOL: [None,None,None,None,None,a_i_1,a_i_2,b_i_1,b_i_2,c_i_1,c_i_2,d_i_1,d_i_2,alpha_i_1,alpha_i_2]
+            COLUMNS: [No.,Mixture,Name,Formula,State,a_i_1,a_i_2,b_i_1,b_i_2,c_i_1,c_i_2,d_i_1,d_i_2,dU_i_1,dU_i_2]
+            SYMBOL: [None,None,None,None,None,a_i_1,a_i_2,b_i_1,b_i_2,c_i_1,c_i_2,d_i_1,d_i_2,dU_i_1,dU_i_2]
             UNIT: [None,None,None,None,None,1,1,1,1,1,1,1,1,1,1]
           VALUES:
             - [1,methanol|ethanol,methanol,CH3OH,l,0,0.300492719,0,1.564200272,0,35.05450323,0,0,0,4.481683583]
