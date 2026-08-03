@@ -153,12 +153,21 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
 
             # SECTION: build tau_ij when it is not supplied directly
             if tau_ij is None:
-                T_K = self.validate_temperature(temperature=temperature, unit='K')
+                # temperature set
+                T_K = self.validate_temperature(
+                    temperature=temperature,
+                    unit='K'
+                )
+
+                # ! map tau_correlation to method
                 tau_method = map_uniquac_tau_correlation_to_method(
                     tau_correlation
                 )
 
-                if tau_ij_cal_method == 1 and tau_method == 'M1':
+                if (
+                    tau_ij_cal_method == 1 and
+                    tau_method == 'M1'
+                ):
                     # NOTE: gibbs_energy maps to dU-based UNIQUAC M1
                     dU_ij = _require_matrix(dU_ij, "dU_ij")
                     tau_ij, _ = self.cal_tau_ij_M1(
@@ -167,48 +176,95 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
                         symbol_delimiter=symbol_delimiter
                     )
                 elif tau_ij_cal_method == 2:
-                    # NOTE: coefficient-based UNIQUAC correlations use ln(tau)
-                    if tau_method == 'M2':
-                        tau_ij, _ = self.cal_tau_ij_M2(
-                            temperature=T_K,
-                            a_ij=_require_matrix(a_ij, "a_ij"),
-                            b_ij=_require_matrix(b_ij, "b_ij"),
-                            c_ij=_require_matrix(c_ij, "c_ij"),
-                            d_ij=_require_matrix(d_ij, "d_ij"),
-                            symbol_delimiter=symbol_delimiter
+                    # ! >>> method 2: calculate tau_ij from constants a, b, c, d based on the selected correlation
+                    if tau_method == 'M1':
+                        raise ValueError(
+                            f"tau_correlation '{tau_correlation}' requires "
+                            "dU_ij for UNIQUAC, but coefficient matrices were provided."
                         )
-                    elif tau_method == 'M4':
+
+                    required_arrays = {
+                        'M2': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij, 'd_ij': d_ij},
+                        'M4': {'a_ij': a_ij, 'b_ij': b_ij},
+                        'M5': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij},
+                        'M6': {'a_ij': a_ij, 'b_ij': b_ij, 'c_ij': c_ij},
+                    }[tau_method]
+
+                    missing_arrays = [
+                        name for name, value in required_arrays.items()
+                        if value is None
+                    ]
+
+                    if missing_arrays:
+                        raise ValueError(
+                            f"Missing required coefficient matrix/matrices for tau_correlation '{tau_correlation}': {', '.join(missing_arrays)}."
+                        )
+
+                    # NOTE: calculate tau_ij based on the selected correlation
+                    if tau_method == 'M4':
+                        # ! M4
+                        a_ij_m4 = _require_matrix(a_ij, "a_ij")
+                        b_ij_m4 = _require_matrix(b_ij, "b_ij")
+
+                        # >> calculate tau_ij
                         tau_ij, _ = self.cal_tau_ij_M4(
                             temperature=T_K,
-                            a_ij=_require_matrix(a_ij, "a_ij"),
-                            b_ij=_require_matrix(b_ij, "b_ij"),
+                            a_ij=a_ij_m4,
+                            b_ij=b_ij_m4,
                             symbol_delimiter=symbol_delimiter
                         )
                     elif tau_method == 'M5':
+                        # ! M5
+                        a_ij_m5 = _require_matrix(a_ij, "a_ij")
+                        b_ij_m5 = _require_matrix(b_ij, "b_ij")
+                        c_ij_m5 = _require_matrix(c_ij, "c_ij")
+
+                        # >> calculate tau_ij
                         tau_ij, _ = self.cal_tau_ij_M5(
                             temperature=T_K,
-                            a_ij=_require_matrix(a_ij, "a_ij"),
-                            b_ij=_require_matrix(b_ij, "b_ij"),
-                            c_ij=_require_matrix(c_ij, "c_ij"),
+                            a_ij=a_ij_m5,
+                            b_ij=b_ij_m5,
+                            c_ij=c_ij_m5,
                             symbol_delimiter=symbol_delimiter
                         )
                     elif tau_method == 'M6':
+                        # ! M6
+                        a_ij_m6 = _require_matrix(a_ij, "a_ij")
+                        b_ij_m6 = _require_matrix(b_ij, "b_ij")
+                        c_ij_m6 = _require_matrix(c_ij, "c_ij")
+
+                        # >> calculate tau_ij
                         tau_ij, _ = self.cal_tau_ij_M6(
                             temperature=T_K,
-                            a_ij=_require_matrix(a_ij, "a_ij"),
-                            b_ij=_require_matrix(b_ij, "b_ij"),
-                            c_ij=_require_matrix(c_ij, "c_ij"),
+                            a_ij=a_ij_m6,
+                            b_ij=b_ij_m6,
+                            c_ij=c_ij_m6,
                             symbol_delimiter=symbol_delimiter
                         )
                     else:
-                        raise ValueError(
-                            f"tau_correlation {tau_correlation!r} requires "
-                            "dU_ij for UNIQUAC."
+                        # ! default case: M2
+                        a_ij_m2 = _require_matrix(a_ij, "a_ij")
+                        b_ij_m2 = _require_matrix(b_ij, "b_ij")
+                        c_ij_m2 = _require_matrix(c_ij, "c_ij")
+                        d_ij_m2 = _require_matrix(d_ij, "d_ij")
+
+                        # >> calculate tau_ij
+                        tau_ij, _ = self.cal_tau_ij_M2(
+                            temperature=T_K,
+                            a_ij=a_ij_m2,
+                            b_ij=b_ij_m2,
+                            c_ij=c_ij_m2,
+                            d_ij=d_ij_m2,
+                            symbol_delimiter=symbol_delimiter
                         )
                 else:
+                    if tau_ij_cal_method == 1:
+                        raise ValueError(
+                            f"tau_correlation {tau_correlation!r} requires "
+                            "coefficient matrices for UNIQUAC, but dU_ij was provided."
+                        )
                     raise ValueError(
-                        "tau_ij_cal_method not supported for selected "
-                        "UNIQUAC tau_correlation."
+                        "tau_ij_cal_method not supported!"
                     )
             else:
                 # NOTE: normalize directly supplied tau to an ordered matrix
