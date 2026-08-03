@@ -85,7 +85,8 @@ class UNIQUACLocalComposition(LocalCompositionBase):
         SECTION: equation
         tau_ij = exp(-dU_ij / (R*T))
 
-        NOTE: tau_ij must be strictly positive in UNIQUAC.
+        NOTE: tau_ij must be strictly positive in UNIQUAC, and self
+        interactions evaluate to exp(0) = 1.
         """
         try:
             # SECTION: validation
@@ -103,10 +104,10 @@ class UNIQUACLocalComposition(LocalCompositionBase):
                     key = self._pair_key(i, j, symbol_delimiter)
                     row, col = self._component_position(i, j)
 
-                    # NOTE: self-interaction terms are defined as zero
+                    # NOTE: UNIQUAC self-interaction tau terms are unity
                     if i == j:
-                        tau_ij[row, col] = 0
-                        tau_ij_comp[key] = 0
+                        tau_ij[row, col] = 1.0
+                        tau_ij_comp[key] = 1.0
                         continue
 
                     # NOTE: UNIQUAC tau is an exponential weighting factor
@@ -138,7 +139,7 @@ class UNIQUACLocalComposition(LocalCompositionBase):
         tau_ij = exp(ln(tau_ij))
 
         NOTE: the full ln(tau_ij) expression must be evaluated before
-        exponentiation.
+        exponentiation. Self interactions evaluate to exp(0) = 1.
         """
         try:
             # SECTION: validation
@@ -155,10 +156,10 @@ class UNIQUACLocalComposition(LocalCompositionBase):
                     key = self._pair_key(i, j, symbol_delimiter)
                     row, col = self._component_position(i, j)
 
-                    # NOTE: self-interaction terms are defined as zero
+                    # NOTE: UNIQUAC self-interaction tau terms are unity
                     if i == j:
-                        tau_ij[row, col] = 0
-                        tau_ij_comp[key] = 0
+                        tau_ij[row, col] = 1.0
+                        tau_ij_comp[key] = 1.0
                         continue
 
                     # NOTE: UNIQUAC M2 evaluates ln(tau_ij), then exponentiates
@@ -212,10 +213,10 @@ class UNIQUACLocalComposition(LocalCompositionBase):
                     key = self._pair_key(i, j, symbol_delimiter)
                     row, col = self._component_position(i, j)
 
-                    # NOTE: self-interaction terms are defined as zero
+                    # NOTE: UNIQUAC self-interaction tau terms are unity
                     if i == j:
-                        tau_ij[row, col] = 0
-                        tau_ij_comp[key] = 0
+                        tau_ij[row, col] = 1.0
+                        tau_ij_comp[key] = 1.0
                         continue
 
                     value = self._ij_value(a_ij, "a", i, j, key)
@@ -259,10 +260,10 @@ class UNIQUACLocalComposition(LocalCompositionBase):
                     key = self._pair_key(i, j, symbol_delimiter)
                     row, col = self._component_position(i, j)
 
-                    # NOTE: self-interaction terms are defined as zero
+                    # NOTE: UNIQUAC self-interaction tau terms are unity
                     if i == j:
-                        tau_ij[row, col] = 0
-                        tau_ij_comp[key] = 0
+                        tau_ij[row, col] = 1.0
+                        tau_ij_comp[key] = 1.0
                         continue
 
                     ln_tau = (
@@ -311,10 +312,10 @@ class UNIQUACLocalComposition(LocalCompositionBase):
                     key = self._pair_key(i, j, symbol_delimiter)
                     row, col = self._component_position(i, j)
 
-                    # NOTE: self-interaction terms are defined as zero
+                    # NOTE: UNIQUAC self-interaction tau terms are unity
                     if i == j:
-                        tau_ij[row, col] = 0
-                        tau_ij_comp[key] = 0
+                        tau_ij[row, col] = 1.0
+                        tau_ij_comp[key] = 1.0
                         continue
 
                     ln_tau = (
@@ -364,10 +365,10 @@ class UNIQUACLocalComposition(LocalCompositionBase):
                     key = self._pair_key(i, j, symbol_delimiter)
                     row, col = self._component_position(i, j)
 
-                    # NOTE: self-interaction terms are defined as zero
+                    # NOTE: UNIQUAC self-interaction tau terms are unity
                     if i == j:
-                        tau_ij[row, col] = 0
-                        tau_ij_comp[key] = 0
+                        tau_ij[row, col] = 1.0
+                        tau_ij_comp[key] = 1.0
                         continue
 
                     ln_tau = (
