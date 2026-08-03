@@ -13,6 +13,7 @@ from pythermodb_settings.utils import create_mixture_id
 # local
 from ..utils import add_attributes
 from ..plugin import ACTIVITY_MODELS
+from ..utils.utility import TauCorrelation
 from .nrtl_parameter_builder import NRTLParameterBuilder
 from .component_parameter_mixin import ComponentParameterMixin
 
@@ -373,7 +374,7 @@ class NRTL:
         self,
         model_input: Dict,
         required_keys: List[str] = ['tau_ij', 'alpha_ij'],
-        tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5'] = 'M1',
+        tau_correlation: TauCorrelation = "gibbs_energy",
         symbol_delimiter: Literal[
             "|", "_"
         ] = "|",
@@ -395,8 +396,8 @@ class NRTL:
                     Interaction parameters (tau_ij) between component i and j.
                 - `alpha_ij`: TableMatrixData | np.ndarray | Dict[str, float]
                     Non-randomness parameters (alpha_ij) between component i and j.
-        tau_correlation : Literal['M1', 'M2', 'M3', 'M4', 'M5']
-            Correlation method for calculating tau_ij. Default is 'M1'.
+        tau_correlation : TauCorrelation
+            Descriptive tau-correlation name. Default is `gibbs_energy`.
         symbol_delimiter : Literal["|", "_"]
             Delimiter for the component id. Default is "|".
         **kwargs : Optional
@@ -505,7 +506,7 @@ class NRTL:
         calculation_mode: Literal[
             'V1', 'V2'
         ] = 'V1',
-        tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5'] = 'M1',
+        tau_correlation: TauCorrelation = "gibbs_energy",
         symbol_delimiter: Literal[
             "|", "_"
         ] = "|",
@@ -529,8 +530,8 @@ class NRTL:
                     Non-randomness parameters (alpha_ij) between component i and j.
         calculation_mode: Literal['V1', 'V2']
             Mode of calculation. If 'V1', use the first version of the NRTL model. If 'V2', use the second version.
-        tau_correlation: Literal['M1', 'M2', 'M3', 'M4', 'M5']
-            Correlation method for calculating tau_ij. Default is 'M1'.
+        tau_correlation: TauCorrelation
+            Descriptive tau-correlation name. Default is `gibbs_energy`.
         symbol_delimiter: Literal["|", "_"]
             Delimiter for the component id. Default is "|".
         message: Optional[str]
