@@ -3,9 +3,7 @@ import os
 from typing import Any, Dict, List, Optional, Tuple
 from rich import print
 import pyThermoModels as ptm
-from pyThermoModels import NRTL
 import pyThermoDB as ptdb
-from pyThermoDB.core import TableMatrixData
 import pyThermoLinkDB as ptdblink
 from pyThermoLinkDB import build_model_source, build_mixture_model_source
 from pyThermoModels.core import calc_tau_ij_using_uniquac_model
@@ -26,23 +24,22 @@ print(ptdblink.__version__)
 # ====================================
 REFERENCE_CONTENT = """
 REFERENCES:
-    NRTL:
+    UNIQUAC:
       DATABOOK-ID: 1
       TABLES:
-        Non-randomness parameters of the NRTL equation:
+        Interaction energy parameters of the UNIQUAC equation:
           TABLE-ID: 1
           DESCRIPTION:
-            This table provides the NRTL non-randomness parameters for the NRTL equation.
+            This table provides the UNIQUAC interaction energy parameters for calculating tau_ij with the gibbs_energy correlation.
           MATRIX-SYMBOL:
-            - alpha constant: alpha
-            - binary interaction parameter: dg
+            - interaction energy parameter: dU
           STRUCTURE:
-            COLUMNS: [No.,Mixture,Name,Formula,State,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
-            SYMBOL: [None,None,None,None,None,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
-            UNIT: [None,None,None,None,None,1,1,1,1]
+            COLUMNS: [No.,Mixture,Name,Formula,State,dU_i_1,dU_i_2]
+            SYMBOL: [None,None,None,None,None,dU_i_1,dU_i_2]
+            UNIT: [None,None,None,None,None,J/mol,J/mol]
           VALUES:
-            - [1,ethanol|butyl-methyl-ether,ethanol,C2H5OH,l,0,0.680715,0,3268.884433]
-            - [2,ethanol|butyl-methyl-ether,butyl-methyl-ether,C5H12O,l,0.680715,0,1768.662389,0]
+            - [1,ethanol|butyl-methyl-ether,ethanol,C2H5OH,l,0,3268.884433]
+            - [2,ethanol|butyl-methyl-ether,butyl-methyl-ether,C5H12O,l,1768.662389,0]
 """
 # =======================================
 # ☑️ DIRECTORY SETUP
@@ -125,7 +122,7 @@ pressure = Pressure(value=30, unit='bar')
 # =======================================
 # SECTION: CALCULATION
 # =======================================
-# NOTE: calculate tau_ij using NRTL model
+# NOTE: calculate tau_ij using UNIQUAC model
 res = calc_tau_ij_using_uniquac_model(
     components=[ethanol, butyl_methyl_ether],
     temperature=temperature,
