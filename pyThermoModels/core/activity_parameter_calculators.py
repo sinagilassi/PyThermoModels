@@ -14,7 +14,7 @@ from pyThermoLinkDB.models import ModelSource
 from ..activity import NRTL, UNIQUAC
 from ..docs import ThermoModelCore
 from ..utils import set_feed_specification
-from ..utils.utility import TauCorrelation, map_tau_correlation_to_method
+from ..utils.utility import TauCorrelation, map_tau_correlation_to_method, map_uniquac_tau_correlation_to_method
 
 # NOTE: setup logger
 logger = logging.getLogger(__name__)
@@ -233,7 +233,7 @@ def _activity_tau_configuration(
         return {
             "model_type": UNIQUAC,
             # NOTE: UNIQUAC maps descriptive names inside its parameter builder
-            "tau_correlation": tau_correlation,
+            "tau_correlation": map_uniquac_tau_correlation_to_method(tau_correlation),
             "generator_kwargs": {
                 "include_pure_component_parameters": False,
             },
@@ -301,6 +301,8 @@ def calc_tau_ij(
     **kwargs : dict
         Additional keyword arguments forwarded to model initialization and
         parameter generation.
+        - mode : Literal['silent', 'log', 'attach'], optional
+            Mode for time measurement logging. Default is 'silent'.
 
     Returns
     -------
@@ -428,7 +430,10 @@ def calc_tau_ij(
         logger.error(f"Tau calculation failed!, {e}")
         raise
 
+# ! NRTL tau_ij calculator
 
+
+@measure_time
 def calc_tau_ij_using_nrtl_model(
     components: List[Component],
     temperature: Temperature,
@@ -450,7 +455,49 @@ def calc_tau_ij_using_nrtl_model(
     **kwargs
 ):
     """
-    Calculate NRTL tau_ij from a model source.
+    Calculate NRTL binary interaction parameters (`tau_ij`).
+
+    Parameters
+    ----------
+    components : List[Component]
+        Components included in the liquid-mixture activity model.
+    temperature : Temperature
+        Operating temperature used to evaluate the NRTL tau correlation.
+    model_source : ModelSource
+        Model source containing the activity-model datasource and
+        equationsource dictionaries.
+    tau_correlation : TauCorrelation
+        Correlation used to generate `tau_ij`. Defaults to `gibbs_energy`. The tau correlation can be one of the following:
+            - `gibbs_energy`
+            - `extended_temperature`
+            - `inverse_temperature`
+            - `inverse_temperature_squared`
+            - `inverse_log_temperature`
+    component_key : Literal["Name-State", "Formula-State"]
+        Component identifier style used for datasource lookup.
+    mixture_key : Literal["Name", "Formula"]
+        Mixture identifier style used for datasource lookup.
+    separator_symbol : str
+        Separator between component identity and state.
+    delimiter : Literal["|"]
+        Delimiter used between component ids in binary interaction keys.
+    message : Optional[str]
+        Optional logging message.
+    verbose : bool
+        If True, log detailed calculation progress.
+    output_format : ComponentKey
+        Component identifier style used for output dictionary keys.
+    **kwargs : dict
+        Additional keyword arguments forwarded to model initialization and
+        parameter generation.
+        - mode : Literal['silent', 'log', 'attach'], optional
+            Mode for time measurement logging. Default is 'silent'.
+
+    Returns
+    -------
+    Tuple[np.ndarray, Dict[str, float]]
+        Tau matrix ordered by model components and output dictionary keyed by
+        the requested component format.
 
     Notes
     -----
@@ -475,6 +522,8 @@ def calc_tau_ij_using_nrtl_model(
         **kwargs
     )
 
+# ! UNIQUAC tau_ij calculator
+
 
 def calc_tau_ij_using_uniquac_model(
     components: List[Component],
@@ -497,7 +546,49 @@ def calc_tau_ij_using_uniquac_model(
     **kwargs
 ):
     """
-    Calculate UNIQUAC tau_ij from a model source.
+    Calculate UNIQUAC binary interaction parameters (`tau_ij`).
+
+    Parameters
+    ----------
+    components : List[Component]
+        Components included in the liquid-mixture activity model.
+    temperature : Temperature
+        Operating temperature used to evaluate the UNIQUAC tau correlation.
+    model_source : ModelSource
+        Model source containing the activity-model datasource and
+        equationsource dictionaries.
+    tau_correlation : TauCorrelation
+        Correlation used to generate `tau_ij`. Defaults to `extended_temperature`. The tau correlation can be one of the following:
+            - `gibbs_energy`
+            - `extended_temperature`
+            - `inverse_temperature`
+            - `inverse_temperature_squared`
+            - `inverse_log_temperature`
+    component_key : Literal["Name-State", "Formula-State"]
+        Component identifier style used for datasource lookup.
+    mixture_key : Literal["Name", "Formula"]
+        Mixture identifier style used for datasource lookup.
+    separator_symbol : str
+        Separator between component identity and state.
+    delimiter : Literal["|"]
+        Delimiter used between component ids in binary interaction keys.
+    message : Optional[str]
+        Optional logging message.
+    verbose : bool
+        If True, log detailed calculation progress.
+    output_format : ComponentKey
+        Component identifier style used for output dictionary keys.
+    **kwargs : dict
+        Additional keyword arguments forwarded to model initialization and
+        parameter generation.
+        - mode : Literal['silent', 'log', 'attach'], optional
+            Mode for time measurement logging. Default is 'silent'.
+
+    Returns
+    -------
+    Tuple[np.ndarray, Dict[str, float]]
+        Tau matrix ordered by model components and output dictionary keyed by
+        the requested component format.
 
     Notes
     -----
