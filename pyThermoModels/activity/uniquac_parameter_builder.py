@@ -138,6 +138,7 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
                 components_ids=components_ids,
                 symbol_delimiter=symbol_delimiter,
                 include_pure_component_parameters=include_pure_component_parameters,
+                tau_correlation=tau_correlation,
                 **kwargs
             )
 
@@ -164,7 +165,11 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
                     tau_correlation
                 )
 
-                if (
+                if tau_method == 'M0':
+                    raise ValueError(
+                        "tau_correlation 'direct_tau' requires tau_ij for UNIQUAC, but no tau table was provided."
+                    )
+                elif (
                     tau_ij_cal_method == 1 and
                     tau_method == 'M1'
                 ):
