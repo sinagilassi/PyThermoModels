@@ -1,21 +1,29 @@
 # Activity Coefficient Calculation Guide for Agents
 
-This guide summarizes how to calculate liquid-mixture activity coefficients in
-`PyThermoModels` using the inline-reference and build-model-source workflow
+This guide summarizes how to calculate liquid-mixture activity coefficients and
+binary interaction parameters (`tau_ij`) in `PyThermoModels` using the
+inline-reference and build-model-source workflow
 shown in:
 
 - `examples/activity-models/calc activity using nrtl inline source and build model source - 1.py`
 - `examples/activity-models/calc activity using uniquac inline source and build model source - 1.py`
 - `examples/activity-models/calc activity using nrtl inline source and build model source - multi.py`
 - `examples/activity-models/calc activity using uniquac inline source and build model source - multi.py`
+- `examples/activity-models/calc tau_ij using nrtl inline source and build model source - 1.py`
+- `examples/activity-models/calc tau_ij using uniquac inline source and build model source - 1.py`
+- `examples/activity-models/calc tau_ij using nrtl inline source and build model source - multi.py`
+- `examples/activity-models/calc activity using uniquac inline source and build model source - multi - 2.py`
 
-Prefer the newer core helper when writing agent-generated code:
+Prefer these core helpers when writing agent-generated code:
 
 - `calc_activity_coefficient`
+- `calc_tau_ij_using_nrtl_model`
+- `calc_tau_ij_using_uniquac_model`
 
 The examples use `PyThermoDB` to build ThermoDB objects directly from inline
 reference content, `PyThermoLinkDB` to build a `ModelSource`, and
-`PyThermoModels` to calculate activity coefficients and excess Gibbs energy.
+`PyThermoModels` to calculate activity coefficients, `tau_ij`, and excess
+Gibbs energy.
 
 ## Required Imports
 
@@ -40,13 +48,18 @@ from pyThermoLinkDB.models import (
     ModelSource,
 )
 from pythermodb_settings.models import Component, Pressure, Temperature
-from pyThermoModels.core import calc_activity_coefficient
+from pyThermoModels.core import (
+    calc_activity_coefficient,
+    calc_tau_ij_using_nrtl_model,
+    calc_tau_ij_using_uniquac_model,
+)
 ```
 
 Use the component-source imports only when the selected activity model needs
 pure-component data in addition to mixture interaction data. In the shown
-examples, NRTL uses only a mixture source, while UNIQUAC uses both mixture and
-component sources.
+examples, NRTL uses only a mixture source, UNIQUAC activity calculations use
+both mixture and component sources, and UNIQUAC tau-only calculations use only
+the mixture source.
 
 ## Shared Setup
 
@@ -81,7 +94,8 @@ The mole fractions should sum to 1.0. The core helper internally prepares:
 - mole-fraction feed data keyed by component name
 - pressure and temperature as `[value, unit]`
 
-For the multi-component NRTL and UNIQUAC examples, the component list is:
+For the multi-component NRTL example and the original multi-component UNIQUAC
+example, the component list is:
 
 ```python
 methanol = Component(
@@ -108,15 +122,31 @@ butyl_methyl_ether = Component(
 multi_component_mixture = [methanol, ethanol, butyl_methyl_ether]
 ```
 
+The requested UNIQUAC `multi - 2.py` example uses `dimethyl-carbonate` instead
+of `butyl-methyl-ether`:
+
+```python
+dimethyl_carbonate = Component(
+    name="dimethyl-carbonate",
+    formula="C3H6O3",
+    state="l",
+    mole_fraction=0.25,
+)
+
+multi_component_mixture = [methanol, ethanol, dimethyl_carbonate]
+```
+
 ## Required Thermodynamic Inputs
 
 Before preparing `ModelSource`, make sure the source ThermoDB data can provide
 the model-specific inputs.
 
-| Model | Required mixture data | Required component data |
+| Model/workflow | Required mixture data | Required component data |
 | --- | --- | --- |
-| `NRTL` | `alpha` and one of `tau`, `dg`, or all of `a`, `b`, `c`, `d` | none in the shown build-source example |
-| `UNIQUAC` | one of direct `tau`, `dU`, or all of `a`, `b`, `c`, `d` | `r` and `q` for each component |
+| `NRTL` activity | `alpha` plus one tau route: direct `tau`, `dg`, or coefficient matrices required by `tau_correlation` | none |
+| `NRTL` tau-only | one tau route: direct `tau`, `dg`, or coefficient matrices required by `tau_correlation` | none |
+| `UNIQUAC` activity | one tau route: direct `tau`, `dU`, or coefficient matrices required by `tau_correlation` | `r` and `q` for each component |
+| `UNIQUAC` tau-only | one tau route: direct `tau`, `dU`, or coefficient matrices required by `tau_correlation` | none |
 
 For NRTL:
 
@@ -125,6 +155,7 @@ For NRTL:
 - `a`, `b`, `c`, `d`: coefficient matrices used to calculate `tau` when
   `dg` is not provided
 - `tau`: direct binary interaction parameter matrix
+- Full NRTL activity needs `alpha`; NRTL tau-only does not need `alpha`.
 
 For UNIQUAC:
 
@@ -133,6 +164,8 @@ For UNIQUAC:
 - optional `tau`: direct binary interaction parameter matrix
 - `r`: UNIQUAC volume parameter for each pure component
 - `q`: UNIQUAC surface-area parameter for each pure component
+- Full UNIQUAC activity needs `r` and `q`; UNIQUAC tau-only does not need
+  `r` or `q`.
 
 The inline references must use model-source symbols that the activity models can
 resolve, such as `alpha`, `dg`, `dU`, `a`, `b`, `c`, `d`, `tau`, `r`, and `q`.
@@ -140,6 +173,117 @@ resolve, such as `alpha`, `dg`, `dU`, `a`, `b`, `c`, `d`, `tau`, `r`, and `q`.
 For NRTL build-model-source workflows, the source should include `alpha` plus
 one interaction route: direct `tau`, `dg`, or all four coefficient matrices
 `a`, `b`, `c`, `d`.
+
+For NRTL tau-only build-model-source workflows, the source does not need
+`alpha`; it only needs a valid tau route. The shown NRTL tau-only examples use
+`dg` with `tau_correlation="gibbs_energy"`.
+
+## Tau Route Equations and Required Symbols
+
+Use this table to choose the source symbols for `tau_ij` generation. `T` is the
+temperature in Kelvin and `R = 8.314`.
+
+| Model | `tau_correlation` | Required mixture symbols | Equation |
+| --- | --- | --- | --- |
+| `NRTL` | `direct_tau` | `tau` or `tau_ij` | `tau_ij = tau_ij` |
+| `NRTL` | `gibbs_energy` | `dg` or `dg_ij` | `tau_ij = dg_ij / (R*T)` |
+| `NRTL` | `extended_temperature` | `a`, `b`, `c`, `d` | `tau_ij = a_ij + b_ij/T + c_ij*ln(T) + d_ij*T` |
+| `NRTL` | `inverse_temperature` | `a`, `b` | `tau_ij = a_ij + b_ij/T` |
+| `NRTL` | `inverse_temperature_squared` | `a`, `b`, `c` | `tau_ij = a_ij + b_ij/T + c_ij/T^2` |
+| `NRTL` | `inverse_log_temperature` | `a`, `b`, `c` | `tau_ij = a_ij + b_ij/T + c_ij*ln(T)` |
+| `UNIQUAC` | `direct_tau` | `tau` or `tau_ij` | `tau_ij = tau_ij` |
+| `UNIQUAC` | `gibbs_energy` | `dU` or `dU_ij` | `tau_ij = exp(-dU_ij/(R*T))` |
+| `UNIQUAC` | `extended_temperature` | `a`, `b`, `c`, `d` | `ln(tau_ij) = a_ij + b_ij/T + c_ij*ln(T) + d_ij*T`; `tau_ij = exp(ln(tau_ij))` |
+| `UNIQUAC` | `inverse_temperature` | `a`, `b` | `ln(tau_ij) = a_ij + b_ij/T`; `tau_ij = exp(ln(tau_ij))` |
+| `UNIQUAC` | `inverse_temperature_squared` | `a`, `b`, `c` | `ln(tau_ij) = a_ij + b_ij/T + c_ij/T^2`; `tau_ij = exp(ln(tau_ij))` |
+| `UNIQUAC` | `inverse_log_temperature` | `a`, `b`, `c` | `ln(tau_ij) = a_ij + b_ij/T + c_ij*ln(T)`; `tau_ij = exp(ln(tau_ij))` |
+
+Self-interaction terms differ by model:
+
+- NRTL generated `tau_ii` terms are `0`.
+- UNIQUAC generated `tau_ii` terms are `1`.
+
+The parameter builders also expose energy-correlation helpers:
+
+- NRTL `dg_ij = a_ij + b_ij*T + c_ij*T^2`.
+- UNIQUAC `dU_ij = a_ij + b_ij*T + c_ij*T^2`.
+
+Those helpers are separate from the public `tau_correlation` routes above. In
+the build-model-source examples, the source usually provides `dg` or `dU`
+directly instead of calculating them from `a`, `b`, and `c`.
+
+## Two-Column Inline Matrix Pattern
+
+In the inline ThermoDB references, each binary-pair row stores one component
+row and two matrix columns for each interaction symbol. The suffixes `_i_1` and
+`_i_2` mean "interaction from the current row component `i` to pair component
+1 or 2".
+
+For a binary pair `ethanol|butyl-methyl-ether`, an NRTL tau-only source using
+`dg` can use only these interaction columns:
+
+```yaml
+MATRIX-SYMBOL:
+  - binary interaction parameter: dg
+STRUCTURE:
+  COLUMNS: [No.,Mixture,Name,Formula,State,dg_i_1,dg_i_2]
+  SYMBOL: [None,None,None,None,None,dg_i_1,dg_i_2]
+```
+
+For full NRTL activity, add the two `alpha` columns:
+
+```yaml
+MATRIX-SYMBOL:
+  - alpha constant: alpha
+  - binary interaction parameter: dg
+STRUCTURE:
+  COLUMNS: [No.,Mixture,Name,Formula,State,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
+  SYMBOL: [None,None,None,None,None,alpha_i_1,alpha_i_2,dg_i_1,dg_i_2]
+```
+
+For any coefficient route, include the required two-column pair for every
+required symbol:
+
+- `extended_temperature`: `a_i_1`, `a_i_2`, `b_i_1`, `b_i_2`, `c_i_1`,
+  `c_i_2`, `d_i_1`, `d_i_2`
+- `inverse_temperature`: `a_i_1`, `a_i_2`, `b_i_1`, `b_i_2`
+- `inverse_temperature_squared`: `a_i_1`, `a_i_2`, `b_i_1`, `b_i_2`,
+  `c_i_1`, `c_i_2`
+- `inverse_log_temperature`: `a_i_1`, `a_i_2`, `b_i_1`, `b_i_2`, `c_i_1`,
+  `c_i_2`
+
+The same two-column matrix pattern applies to UNIQUAC `dU`, `tau`, and
+coefficient symbols. UNIQUAC activity still needs separate component/general
+data rows for `r` and `q`; UNIQUAC tau-only does not.
+
+## Tau Correlation Names
+
+Use public descriptive `tau_correlation` values, not raw internal method ids.
+The supported names are:
+
+- `direct_tau`: use a supplied `tau`/`tau_ij` table directly.
+- `gibbs_energy`: calculate from NRTL `dg` or UNIQUAC `dU`.
+- `extended_temperature`: calculate from `a`, `b`, `c`, and `d`.
+- `inverse_temperature`: calculate from `a` and `b`.
+- `inverse_temperature_squared`: calculate from `a`, `b`, and `c`.
+- `inverse_log_temperature`: calculate from `a`, `b`, and `c`.
+
+For NRTL, these map internally to `M0` through `M5`. For UNIQUAC, the same
+public names are used, but coefficient correlations map to UNIQUAC-specific
+internal method ids. Do not pass raw `M0`, `M1`, etc.
+
+Defaults differ by helper:
+
+- `calc_activity_coefficient`: if `tau_correlation` is omitted, the helper
+  inspects the source and prefers direct `tau`, then energy data, then
+  coefficient data.
+- `calc_tau_ij_using_nrtl_model`: default `tau_correlation="gibbs_energy"`.
+- `calc_tau_ij_using_uniquac_model`: default
+  `tau_correlation="extended_temperature"`.
+
+When the source has UNIQUAC `dU` energy data, pass
+`tau_correlation="gibbs_energy"` explicitly, as shown in
+`calc tau_ij using uniquac inline source and build model source - 1.py`.
 
 ## Multi-Component Inline References
 
@@ -264,8 +408,11 @@ multi-component scripts.
 `build_components_model_source(...)`
 
 - `components_thermodb`: list of component ThermoDB wrappers, one for each
-  component that must provide pure-component data. For UNIQUAC ternary examples,
-  pass `[methanol_thermodb, ethanol_thermodb, butyl_methyl_ether_thermodb]`.
+  component that must provide pure-component data. For the original UNIQUAC
+  ternary example, pass
+  `[methanol_thermodb, ethanol_thermodb, butyl_methyl_ether_thermodb]`. For
+  the `multi - 2.py` example, pass
+  `[methanol_thermodb, ethanol_thermodb, dimethyl_carbonate_thermodb]`.
 - `rules`: optional mapping that can control source/property selection when the
   builder supports it. The activity multi examples omit it, so the builder uses
   its default matching behavior.
@@ -273,23 +420,35 @@ multi-component scripts.
 
 `build_model_source(...)`
 
-- `source`: list containing all model-source objects. For NRTL multi-component
-  examples, pass `[mixture_model_source]`. For UNIQUAC multi-component examples,
-  pass all component model sources plus the mixture model source.
+- `source`: list containing all model-source objects. For NRTL and tau-only
+  examples, pass `[mixture_model_source]`. For UNIQUAC activity examples, pass
+  all component model sources plus the mixture model source.
 - Return value: `ModelSource`, which is the object passed to
   `calc_activity_coefficient`.
 
 `calc_activity_coefficient(...)`
 
+- Argument order:
+  `components`, `pressure`, `temperature`, `model_source`, `model_name`,
+  `tau_correlation`, `tau_source_priority`, `component_key`, `mixture_key`,
+  `separator_symbol`, `delimiter`, `message`, `verbose`, `**kwargs`.
 - `components`: list of `Component` objects in the target mixture. Keep the
   order consistent with how matrices should be interpreted.
 - `pressure`: `Pressure` object. Activity models may not always use pressure
   directly, but the core helper requires it.
 - `temperature`: `Temperature` object. Required when `tau_ij` must be calculated
-  from `dg`, `dU`, or `a`/`b`/`c`/`d`.
+  from `dg`, `dU`, or coefficient matrices.
 - `model_source`: `ModelSource` built from the thermodb/model-source workflow.
-- `model_name`: activity model name. Use `"NRTL"` for the NRTL multi example and
-  `"UNIQUAC"` for the UNIQUAC multi example.
+- `model_name`: activity model name. Use `"NRTL"` for the NRTL examples and
+  `"UNIQUAC"` for the UNIQUAC examples.
+- `tau_correlation`: optional public tau-correlation name. Use `"direct_tau"`
+  for source `tau`, `"gibbs_energy"` for NRTL `dg` or UNIQUAC `dU`, or one of
+  the coefficient correlations for coefficient sources. If omitted, the helper
+  selects a default from available source data.
+- `tau_source_priority`: optional ordered source preference used only when
+  `tau_correlation` is omitted. Default is
+  `("tau", "energy", "coefficients")`; `dg` and `dU` are accepted aliases for
+  `energy`.
 - `component_key`: optional component id mode. Default is `"Name-State"`, which
   creates ids such as `methanol-l`. Use `"Formula-State"` only when the source
   should be resolved by formula-state ids such as `CH3OH-l`.
@@ -310,6 +469,50 @@ multi-component scripts.
 - Return value: `(res, others, G_ex)`, where `res` contains activity
   coefficients, `others` contains model intermediates, and `G_ex` contains
   excess Gibbs energy.
+
+`calc_tau_ij_using_nrtl_model(...)`
+
+- Argument order:
+  `components`, `temperature`, `model_source`, `tau_correlation`,
+  `component_key`, `mixture_key`, `separator_symbol`, `delimiter`, `message`,
+  `verbose`, `output_format`, `**kwargs`.
+- `components`: list of `Component` objects in the target mixture.
+- `temperature`: `Temperature` object used to evaluate calculated tau routes.
+- `model_source`: `ModelSource` built from the mixture ThermoDB source.
+- `tau_correlation`: default is `"gibbs_energy"`. Use `"gibbs_energy"` when
+  the NRTL source contains `dg`, `"direct_tau"` when it contains `tau`, and a
+  coefficient correlation when it contains compatible coefficient matrices.
+- `component_key`, `mixture_key`, `separator_symbol`, and `delimiter`: same
+  lookup controls as `calc_activity_coefficient`.
+- `message`: optional custom log message.
+- `verbose`: optional boolean for diagnostic output.
+- `output_format`: component-key style for the returned dictionary. The
+  examples use `"Name-State"`; the helper default is `"Name"`.
+- `**kwargs`: optional lower-level options. The examples pass `mode="log"`.
+- Return value: `(tau_ij_array, tau_ij_dict)`.
+
+`calc_tau_ij_using_uniquac_model(...)`
+
+- Argument order:
+  `components`, `temperature`, `model_source`, `tau_correlation`,
+  `component_key`, `mixture_key`, `separator_symbol`, `delimiter`, `message`,
+  `verbose`, `output_format`, `**kwargs`.
+- `components`: list of `Component` objects in the target mixture.
+- `temperature`: `Temperature` object used to evaluate calculated tau routes.
+- `model_source`: `ModelSource` built from the mixture ThermoDB source. The
+  tau-only helper does not require UNIQUAC component sources for `r` and `q`.
+- `tau_correlation`: default is `"extended_temperature"`. Pass
+  `"gibbs_energy"` when the UNIQUAC source contains `dU`, `"direct_tau"` when
+  it contains `tau`, and a coefficient correlation when it contains compatible
+  coefficient matrices.
+- `component_key`, `mixture_key`, `separator_symbol`, and `delimiter`: same
+  lookup controls as `calc_activity_coefficient`.
+- `message`: optional custom log message.
+- `verbose`: optional boolean for diagnostic output.
+- `output_format`: component-key style for the returned dictionary. The
+  examples use `"Name-State"`; the helper default is `"Name"`.
+- `**kwargs`: optional lower-level options. The examples pass `mode="log"`.
+- Return value: `(tau_ij_array, tau_ij_dict)`.
 
 ## NRTL: Build Model Source
 
@@ -402,6 +605,25 @@ Expected output:
 - `others`: intermediate NRTL values, including `tau_ij`, `alpha_ij`, `G_ij`,
   and component-keyed dictionaries
 - `G_ex`: excess Gibbs energy result
+
+To calculate only NRTL `tau_ij` from the same build-source pattern:
+
+```python
+tau_ij, tau_ij_comp = calc_tau_ij_using_nrtl_model(
+    components=multi_component_mixture,
+    temperature=temperature,
+    model_source=model_source,
+    tau_correlation="gibbs_energy",
+    verbose=False,
+    output_format="Name-State",
+    mode="log",
+)
+```
+
+For the NRTL tau examples, `tau_correlation="gibbs_energy"` matches the inline
+`dg` source. The tau-only helper returns only the tau matrix and a
+component-pair dictionary; it does not return `alpha_ij`, activity
+coefficients, or excess Gibbs energy.
 
 ## UNIQUAC: Build Model Source
 
@@ -534,6 +756,27 @@ Expected output:
   component-keyed dictionaries
 - `G_ex`: excess Gibbs energy result
 
+To calculate only UNIQUAC `tau_ij` from a mixture source containing `dU`:
+
+```python
+tau_ij, tau_ij_comp = calc_tau_ij_using_uniquac_model(
+    components=binary_mixture,
+    temperature=temperature,
+    model_source=model_source,
+    tau_correlation="gibbs_energy",
+    verbose=False,
+    output_format="Name-State",
+    mode="log",
+)
+```
+
+For UNIQUAC tau-only workflows, component ThermoDB/model-source objects are not
+needed unless the next step is an activity coefficient calculation. If the
+source uses the coefficient route rather than `dU`, either omit
+`tau_correlation` to use the UNIQUAC tau-only default
+`"extended_temperature"` or pass the intended coefficient correlation
+explicitly.
+
 ## Component and Mixture Keys
 
 `calc_activity_coefficient` creates several IDs internally:
@@ -619,6 +862,8 @@ should be calculated instead.
 
 For the build-model-source examples requested here, prefer
 `calc_activity_coefficient` because it reads the parameters from `ModelSource`.
+For tau-only build-model-source examples, prefer
+`calc_tau_ij_using_nrtl_model` or `calc_tau_ij_using_uniquac_model`.
 
 ## Common Agent Checklist
 
@@ -627,16 +872,22 @@ For the build-model-source examples requested here, prefer
 3. Define `Temperature` and `Pressure` with explicit units.
 4. For NRTL build-source workflows, include mixture interaction data with
    `alpha` and one of `tau`, `dg`, or all of `a`, `b`, `c`, `d`.
-5. For UNIQUAC, include mixture interaction data with one of `tau`, `dU`, or
-   all of `a`, `b`, `c`, `d`, plus component data for `r` and `q`.
+5. For UNIQUAC activity coefficients, include mixture interaction data with one
+   of `tau`, `dU`, or all of `a`, `b`, `c`, `d`, plus component data for `r`
+   and `q`. For UNIQUAC tau-only workflows, the mixture interaction data is
+   enough.
 6. Build a `MixtureThermoDB` with `build_mixture_thermodb_from_reference`.
-7. For UNIQUAC, also build each component ThermoDB with
+7. For UNIQUAC activity coefficients, also build each component ThermoDB with
    `build_component_thermodb_from_reference`.
 8. Convert ThermoDB objects to model-source objects with
    `build_mixture_model_source` and `build_components_model_source`.
 9. Combine all source objects with `build_model_source`.
-10. Call `calc_activity_coefficient(..., model_name="NRTL")` or
+10. For full activity coefficients, call
+    `calc_activity_coefficient(..., model_name="NRTL")` or
     `calc_activity_coefficient(..., model_name="UNIQUAC")`.
+11. For tau-only workflows, call `calc_tau_ij_using_nrtl_model(...)` or
+    `calc_tau_ij_using_uniquac_model(...)` with a `tau_correlation` that
+    matches the source route.
 
 ## Common Failure Points
 
@@ -654,6 +905,11 @@ For the build-model-source examples requested here, prefer
   `tau`, `dU`, or the full `a`, `b`, `c`, `d` coefficient set.
 - Placeholder UNIQUAC `tau`: use `None`, omit the key, or set `"None"` only
   when `dU` or all four coefficients are available and temperature is provided.
+- Wrong `tau_correlation`: use `"gibbs_energy"` for NRTL `dg` and UNIQUAC
+  `dU`; use `"direct_tau"` only for direct `tau`; use coefficient correlations
+  only when the required coefficient matrices are present.
+- Raw method ids: pass public names such as `"gibbs_energy"`, not internal
+  values such as `"M1"`.
 - Mixture key mismatch: the generated mixture id must match the source key, for
   example `ethanol|methanol` versus `methanol|ethanol`.
 - Component order mismatch: matrices are interpreted in the component order used
@@ -668,5 +924,7 @@ For the build-model-source examples requested here, prefer
 - Use `UNIQUAC` when the source contains UNIQUAC `r` and `q` plus one of
   `tau`, `dU`, or all of `a`, `b`, `c`, `d`.
 - Use `calc_activity_coefficient` for build-model-source workflows.
+- Use `calc_tau_ij_using_nrtl_model` or `calc_tau_ij_using_uniquac_model` when
+  only `tau_ij` is needed from a build-model-source workflow.
 - Use direct model-specific helpers only when the matrices are already prepared
   and no `ModelSource` is needed.
