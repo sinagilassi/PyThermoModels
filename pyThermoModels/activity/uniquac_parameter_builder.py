@@ -277,15 +277,19 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
 
             # SECTION: package model inputs
             inputs = {
-                "dU_ij": dU_ij,
                 "tau_ij": tau_ij,
-                "a_ij": a_ij,
-                "b_ij": b_ij,
-                "c_ij": c_ij,
-                "d_ij": d_ij,
             }
 
             if include_pure_component_parameters:
+                # >> check that r_i and q_i are provided
+                if r_i is None or q_i is None:
+                    raise ValueError(
+                        "Pure-component parameters r_i and q_i are required "
+                        "for UNIQUAC activity calculations, but one or both "
+                        "are None."
+                    )
+
+                # set
                 inputs["r_i"] = r_i
                 inputs["q_i"] = q_i
 
