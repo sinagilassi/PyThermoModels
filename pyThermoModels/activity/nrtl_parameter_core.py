@@ -270,9 +270,27 @@ class NRTLParameterCore:
         tau_ij_src = parameter_sources['tau_ij_src']
 
         # SECTION: extract data
+        tau_correlation = kwargs.get('tau_correlation', None)
+        coefficient_correlations = {
+            'extended_temperature',
+            'inverse_temperature',
+            'inverse_temperature_squared',
+            'inverse_log_temperature',
+        }
+        if tau_correlation == 'direct_tau':
+            tau_source_strategy = 'tau'
+        elif tau_correlation == 'gibbs_energy':
+            tau_source_strategy = 'energy'
+        elif tau_correlation in coefficient_correlations:
+            tau_source_strategy = 'coefficients'
+        else:
+            tau_source_strategy = 'auto'
 
         # NOTE: >>> check if tau_ij is provided
-        if tau_ij_src is not None:
+        if (
+            tau_source_strategy in ('auto', 'tau') and
+            _has_source(tau_ij_src)
+        ):
             # ! use tau_ij
 
             # extract tau_ij values
@@ -285,7 +303,10 @@ class NRTLParameterCore:
             # set tau_ij_cal_method to 0 (no calculation needed)
             tau_ij_cal_method = 0
 
-        elif dg_ij_src is not None:  # >>> check if dg_ij is provided
+        elif (
+            tau_source_strategy in ('auto', 'energy') and
+            _has_source(dg_ij_src)
+        ):  # >>> check if dg_ij is provided
             # ! use dg_ij
 
             # extract dg_ij values
@@ -334,7 +355,10 @@ class NRTLParameterCore:
                 )
 
             # set tau_ij_cal_method to 2
-            tau_ij_cal_method = 2
+            tau_ij_cal_method = {
+                'tau': 0,
+                'energy': 1,
+            }.get(tau_source_strategy, 2)
 
         # SECTION: extract data
         # NOTE: α_ij, non-randomness parameter
