@@ -112,17 +112,12 @@ class NRTLParameterBuilder(NRTLParameterCore):
                     symbol_delimiter=symbol_delimiter
                 )
 
-            # SECTION: temperature validation
-            T_K = self.validate_temperature(
-                temperature=temperature,
-                unit='K',
-            )
-
             # SECTION: extract parameters
             parameters = self.extract_parameter_values(
                 mixture_ids=mixture_ids,
                 symbol_delimiter=symbol_delimiter,
                 include_alpha=include_alpha,
+                tau_correlation=tau_correlation,
                 **kwargs
             )
             # >>> unpack parameters
@@ -139,8 +134,18 @@ class NRTLParameterBuilder(NRTLParameterCore):
             # SECTION: calculate the binary interaction parameter matrix (tau_ij)
             # check
             if tau_ij is None:
+                # SECTION: temperature validation
+                T_K = self.validate_temperature(
+                    temperature=temperature,
+                    unit='K',
+                )
+
                 # NOTE: check method
-                if (
+                if tau_method == 'M0':
+                    raise ValueError(
+                        "tau_correlation 'direct_tau' requires tau_ij for NRTL, but no tau table was provided."
+                    )
+                elif (
                     tau_ij_cal_method == 1 and
                     tau_method == 'M1'
                 ):
