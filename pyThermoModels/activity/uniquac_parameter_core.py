@@ -389,7 +389,26 @@ class UNIQUACParameterCore:
         d_ij_src = sources['d_ij_src']
 
         # SECTION: choose tau source strategy
-        if self._has_source(tau_ij_src):
+        tau_correlation = kwargs.get('tau_correlation', None)
+        coefficient_correlations = {
+            'extended_temperature',
+            'inverse_temperature',
+            'inverse_temperature_squared',
+            'inverse_log_temperature',
+        }
+        if tau_correlation == 'direct_tau':
+            tau_source_strategy = 'tau'
+        elif tau_correlation == 'gibbs_energy':
+            tau_source_strategy = 'energy'
+        elif tau_correlation in coefficient_correlations:
+            tau_source_strategy = 'coefficients'
+        else:
+            tau_source_strategy = 'auto'
+
+        if (
+            tau_source_strategy in ('auto', 'tau') and
+            self._has_source(tau_ij_src)
+        ):
             # NOTE: tau is already provided, so no temperature correlation is needed
             tau_ij = self.to_matrix_ij_or(
                 data=tau_ij_src,
@@ -397,7 +416,10 @@ class UNIQUACParameterCore:
                 symbol_delimiter=symbol_delimiter
             )
             tau_ij_cal_method = 0
-        elif self._has_source(dU_ij_src):
+        elif (
+            tau_source_strategy in ('auto', 'energy') and
+            self._has_source(dU_ij_src)
+        ):
             # NOTE: dU requires the UNIQUAC Gibbs-energy correlation
             dU_ij = self.to_matrix_ij_or(
                 data=dU_ij_src,
@@ -432,6 +454,11 @@ class UNIQUACParameterCore:
                     symbol_delimiter=symbol_delimiter
                 )
             tau_ij_cal_method = 2
+
+        if tau_ij is None and dU_ij is None and tau_source_strategy == 'tau':
+            tau_ij_cal_method = 0
+        elif tau_ij is None and dU_ij is None and tau_source_strategy == 'energy':
+            tau_ij_cal_method = 1
 
         # SECTION: pure-component parameter vectors
         r_i = None
