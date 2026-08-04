@@ -58,13 +58,6 @@ class NRTLParameterBuilder(NRTLParameterCore):
     def __repr__(self) -> str:
         return f"NRTLParameterBuilder(components={self.components}, comp_idx={self.comp_idx})"
 
-    # SECTION: Manage parameters
-
-    def manage_parameters(
-            self,
-    ):
-        pass
-
     # SECTION: inputs generator
 
     def inputs_generator(
