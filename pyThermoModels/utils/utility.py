@@ -123,6 +123,7 @@ def eos_model_name(
 
 # SECTION: Tau Correlation and Method Mapping
 TauCorrelation: TypeAlias = Literal[
+    "direct_tau",
     "gibbs_energy",
     "extended_temperature",
     "inverse_temperature",
@@ -130,8 +131,8 @@ TauCorrelation: TypeAlias = Literal[
     "inverse_log_temperature",
 ]
 
-TauMethod: TypeAlias = Literal["M1", "M2", "M3", "M4", "M5"]
-UNIQUACTauMethod: TypeAlias = Literal["M1", "M2", "M4", "M5", "M6"]
+TauMethod: TypeAlias = Literal["M0", "M1", "M2", "M3", "M4", "M5"]
+UNIQUACTauMethod: TypeAlias = Literal["M0", "M1", "M2", "M4", "M5", "M6"]
 
 
 def map_tau_correlation_to_method(
@@ -156,6 +157,7 @@ def map_tau_correlation_to_method(
         If an unsupported correlation name is provided.
     """
     correlation_map: dict[TauCorrelation, TauMethod] = {
+        "direct_tau": "M0",
         "gibbs_energy": "M1",
         "extended_temperature": "M2",
         "inverse_temperature": "M3",
@@ -197,6 +199,7 @@ def map_uniquac_tau_correlation_to_method(
     """
     # SECTION: UNIQUAC-specific public-name to method mapping
     correlation_map: dict[TauCorrelation, UNIQUACTauMethod] = {
+        "direct_tau": "M0",
         "gibbs_energy": "M1",
         "extended_temperature": "M2",
         "inverse_temperature": "M4",
