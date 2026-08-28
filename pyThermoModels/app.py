@@ -3,6 +3,7 @@ from typing import Dict, Optional, Literal, List, Any
 # local
 from .activity import (
     ActivityCore,
+    ENRTL,
     NRTL,
     UNIQUAC,
     UNIFAC
@@ -56,7 +57,7 @@ def eos(**kwargs):
 @add_attributes(metadata=ACTIVITY_MODELS)
 def activity(
         components: List[str],
-        model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC'],
+        model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL'],
         model_source: Optional[Dict[str, Any]] = None,
         **kwargs
 ) -> ActivityCore:
@@ -68,10 +69,11 @@ def activity(
     components: list
         List of component names to be used in the activity model, such as ['ethanol', 'butyl-methyl-ether'].
     model_name: str
-        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC').
+        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL').
             1. `NRTL`: Non-Random Two-Liquid Model
             2. `UNIQUAC`: Universal Quasi-Chemical Model
             3. `UNIFAC`: Universal Functional Activity Coefficient Model
+            4. `ENRTL`: Electrolyte Non-Random Two-Liquid Model
     model_source: dict, optional
         Dictionary containing the source of the activity model data.
         If None, default values will be used.
@@ -104,10 +106,10 @@ def activity(
 @add_attributes(metadata=ACTIVITY_MODELS)
 def activities(
         components: List[str],
-        model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC'],
+        model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL'],
         model_source: Optional[Dict[str, Any]] = None,
         **kwargs
-) -> NRTL | UNIQUAC | UNIFAC:
+) -> NRTL | UNIQUAC | UNIFAC | ENRTL:
     '''
     Initialize activity calculation library
 
@@ -116,10 +118,11 @@ def activities(
     components: list
         List of component names to be used in the activity model, such as ['ethanol', 'butyl-methyl-ether'].
     model_name: str
-        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC').
+        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL').
             1. `NRTL`: Non-Random Two-Liquid Model
             2. `UNIQUAC`: Universal Quasi-Chemical Model
             3. `UNIFAC`: Universal Functional Activity Coefficient Model
+            4. `ENRTL`: Electrolyte Non-Random Two-Liquid Model
     model_source: dict, optional
         Dictionary containing the source of the activity model data.
         If None, default values will be used.
@@ -132,7 +135,7 @@ def activities(
 
     Returns
     -------
-    NRTL | UNIQUAC | UNIFAC: object
+        NRTL | UNIQUAC | UNIFAC | ENRTL: object
         Instance of the selected activity model class.
     '''
     try:

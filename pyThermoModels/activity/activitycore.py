@@ -1,10 +1,11 @@
 # import packages/modules
-from typing import Union, Optional, Dict, List
+from typing import Any, Union, Optional, Dict, List
 from math import log
 # local
 from .nrtl import NRTL
 from .uniquac import UNIQUAC
 from .unifac import UNIFAC
+from .enrtl import ENRTL
 
 
 class ActivityCore:
@@ -15,6 +16,7 @@ class ActivityCore:
     __nrtl: Optional[NRTL] = None
     __uniquac: Optional[UNIQUAC] = None
     __unifac: Optional[UNIFAC] = None
+    __enrtl: Optional[ENRTL] = None
 
     # NOTE: mixture id
     _mixture_id: Optional[str] = None
@@ -23,7 +25,7 @@ class ActivityCore:
         self,
         datasource: dict,
         equationsource: dict,
-        components: List[str],
+        components: List[Any],
         **kwargs
     ):
         '''
@@ -52,26 +54,39 @@ class ActivityCore:
         self._mixture_id: Optional[str] = kwargs.get('mixture_id', None)
 
         # SECTION: init activity models
-        # ! nrtl
-        self.__nrtl = NRTL(
+        components_are_strings = all(
+            isinstance(component, str)
+            for component in self.components
+        )
+
+        if components_are_strings:
+            # ! nrtl
+            self.__nrtl = NRTL(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                mixture_id=self._mixture_id,
+            )
+            # ! uniquac
+            self.__uniquac = UNIQUAC(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                mixture_id=self._mixture_id,
+            )
+            # ! unifac
+            self.__unifac = UNIFAC(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                **kwargs
+            )
+        # ! enrtl
+        self.__enrtl = ENRTL(
             components=self.components,
             datasource=self.datasource,
             equationsource=self.equationsource,
             mixture_id=self._mixture_id,
-        )
-        # ! uniquac
-        self.__uniquac = UNIQUAC(
-            components=self.components,
-            datasource=self.datasource,
-            equationsource=self.equationsource,
-            mixture_id=self._mixture_id,
-        )
-        # ! unifac
-        self.__unifac = UNIFAC(
-            components=self.components,
-            datasource=self.datasource,
-            equationsource=self.equationsource,
-            **kwargs
         )
 
     @property
@@ -151,7 +166,24 @@ class ActivityCore:
         except Exception as e:
             raise Exception(f"Error in UNIFAC: {e}") from e
 
-    def select(self, model_name: str) -> Union[NRTL, UNIQUAC, UNIFAC]:
+    @property
+    def enrtl(self):
+        '''
+        Initialize the ENRTL activity model.
+
+        Returns
+        -------
+        ENRTL
+            Instance of the ENRTL activity model class.
+        '''
+        try:
+            if self.__enrtl is None:
+                raise ValueError("ENRTL model not initialized.")
+            return self.__enrtl
+        except Exception as e:
+            raise Exception(f"Error in ENRTL: {e}") from e
+
+    def select(self, model_name: str) -> Union[NRTL, UNIQUAC, UNIFAC, ENRTL]:
         '''
         Select the activity model based on the model name.
 
@@ -180,6 +212,12 @@ class ActivityCore:
                 )
             elif model_name == 'UNIFAC':
                 return UNIFAC(
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
+            elif model_name == 'ENRTL':
+                return ENRTL(
                     self.components,
                     self.datasource,
                     self.equationsource

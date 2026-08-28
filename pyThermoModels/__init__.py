@@ -5,6 +5,7 @@ from .configs import (
 )
 from .activity import (
     ActivityCore,
+    ENRTL,
     NRTL,
     UNIQUAC,
     UNIFAC
@@ -29,6 +30,7 @@ __all__ = [
     'activities',
     # activity models
     'NRTL',
+    'ENRTL',
     'UNIQUAC',
     'UNIFAC',
     'ActivityCore'

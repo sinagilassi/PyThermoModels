@@ -74,5 +74,22 @@ ACTIVITY_MODELS = {
         },
         'DEPENDENT_EQUATIONS': {},
         'DESCRIPTION': "The binary-interaction-parameters (tau) can be calculated with two different methods: 1) using dU 2) using a,b,c, and d parameters."
+    },
+    "ENRTL": {
+        'DEPENDENT_DATA': {
+            'non_randomness_parameter': {'unit': 'None', 'symbol': 'alpha'},
+            'binary_interaction_parameters': {'unit': 'None', 'symbol': 'tau'},
+            'interaction_energy_parameters': {'unit': 'J/mol', 'symbol': 'dg'},
+            'ion_size': {'unit': 'documented by long-range basis', 'symbol': 'a_i'},
+            'pitzer_debye_huckel_A_phi': {'unit': 'basis-dependent', 'symbol': 'A_phi'},
+            'pitzer_debye_huckel_b': {'unit': 'basis-dependent', 'symbol': 'b'},
+        },
+        'DEPENDENT_EQUATIONS': {},
+        'DESCRIPTION': (
+            "Electrolyte NRTL activity model for true-species electrolyte "
+            "states. The first formulation identifier is chen_evans_1986; "
+            "charge is consumed from component metadata and speciation is "
+            "kept outside ENRTL."
+        )
     }
 }

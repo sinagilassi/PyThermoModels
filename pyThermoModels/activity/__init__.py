@@ -1,5 +1,6 @@
 from .activitycore import ActivityCore
 from .nrtl import NRTL
+from .enrtl import ENRTL
 from .uniquac import UNIQUAC
 from .main import (
     calc_dg_ij_using_nrtl_model,
@@ -13,6 +14,7 @@ from .unifac import UNIFAC
 __all__ = [
     'ActivityCore',
     'NRTL',
+    'ENRTL',
     'UNIQUAC',
     'UNIFAC',
     'calc_dg_ij_using_nrtl_model',
