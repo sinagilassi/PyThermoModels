@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 import numpy as np
 import pycuc
 from pyThermoDB import TableMatrixData
-
+# ! locals
 from ...plugin import ACTIVITY_MODELS
 from ...utils import add_attributes
 from ...utils.utility import TauCorrelation
@@ -33,7 +33,8 @@ class ENRTL(ENRTLCore):
         **kwargs: Any,
     ) -> None:
         if formulation != "chen_evans_1986":
-            raise ValueError("ENRTL v1 supports only formulation 'chen_evans_1986'")
+            raise ValueError(
+                "ENRTL v1 supports only formulation 'chen_evans_1986'")
 
         datasource = {} if datasource is None else datasource
         equationsource = {} if equationsource is None else equationsource
@@ -142,7 +143,8 @@ class ENRTL(ENRTLCore):
         )
         gamma = np.exp(ln_gamma_total)
         if not np.all(np.isfinite(gamma)) or np.any(gamma <= 0):
-            raise ValueError("ENRTL activity coefficients must be finite and positive")
+            raise ValueError(
+                "ENRTL activity coefficients must be finite and positive")
 
         gamma_list = [float(value) for value in gamma]
         gamma_comp = {
@@ -239,12 +241,17 @@ class ENRTL(ENRTLCore):
         }
 
         mole_fraction = model_input.get("mole_fraction")
+        # >> check
+        if mole_fraction is None:
+            raise ValueError("model_input must contain 'mole_fraction'")
+
         x = self._composition_to_array(mole_fraction, "mole_fraction")
         if abs(float(np.sum(x)) - 1.0) > self.COMPOSITION_ATOL:
             raise ValueError("ENRTL mole fractions must sum to 1.0")
         self.check_electroneutrality(composition=x, charges=charges)
 
-        temperature = self._validate_temperature(model_input.get("temperature"))
+        temperature = self._validate_temperature(
+            model_input.get("temperature"))
 
         tau_ij, alpha_ij = self._build_tau_alpha(
             model_input=model_input,
@@ -253,7 +260,8 @@ class ENRTL(ENRTLCore):
             **kwargs,
         )
 
-        long_range = self.enrtl_parameter_builder.resolve_long_range(model_input)
+        long_range = self.enrtl_parameter_builder.resolve_long_range(
+            model_input)
         basis: ActivityBasis = long_range["basis"]
         ionic_strength_composition = self._ionic_strength_composition(
             model_input=model_input,
@@ -264,7 +272,8 @@ class ENRTL(ENRTLCore):
         if local_composition is None:
             local_composition = {}
         if not isinstance(local_composition, dict):
-            raise TypeError("model_input['local_composition'] must be a dictionary")
+            raise TypeError(
+                "model_input['local_composition'] must be a dictionary")
 
         return {
             "mole_fraction": mole_fraction,
@@ -334,7 +343,8 @@ class ENRTL(ENRTLCore):
         **kwargs: Any,
     ) -> Tuple[np.ndarray, np.ndarray]:
         if "tau_ij" in model_input:
-            tau_ij = self._matrix_to_array(model_input["tau_ij"], "tau_ij", symbol_delimiter)
+            tau_ij = self._matrix_to_array(
+                model_input["tau_ij"], "tau_ij", symbol_delimiter)
         else:
             generated = self.inputs_generator(
                 temperature=model_input.get("temperature"),
@@ -381,7 +391,8 @@ class ENRTL(ENRTLCore):
             )
 
         if matrix.shape != (self.comp_num, self.comp_num):
-            raise ValueError(f"{property_name} must have shape ({self.comp_num}, {self.comp_num})")
+            raise ValueError(
+                f"{property_name} must have shape ({self.comp_num}, {self.comp_num})")
         if not np.all(np.isfinite(matrix)):
             raise ValueError(f"{property_name} contains non-finite values")
         return matrix
@@ -392,9 +403,11 @@ class ENRTL(ENRTLCore):
         name: str,
     ) -> np.ndarray:
         if isinstance(composition, dict):
-            missing = [component for component in self.components if component not in composition]
+            missing = [
+                component for component in self.components if component not in composition]
             if missing:
-                raise KeyError(f"Missing {name} value for component(s): {', '.join(missing)}")
+                raise KeyError(
+                    f"Missing {name} value for component(s): {', '.join(missing)}")
             values = [composition[component] for component in self.components]
             array = np.asarray(values, dtype=float)
         elif isinstance(composition, list):
@@ -429,7 +442,8 @@ class ENRTL(ENRTLCore):
             )
 
         if basis not in model_input:
-            raise KeyError(f"model_input['{basis}'] is required for ionic strength")
+            raise KeyError(
+                f"model_input['{basis}'] is required for ionic strength")
 
         return self._composition_to_array(model_input[basis], basis)
 
@@ -437,7 +451,8 @@ class ENRTL(ENRTLCore):
         if temperature is None:
             raise KeyError("temperature is required in model_input")
         if not isinstance(temperature, list) or len(temperature) != 2:
-            raise TypeError("temperature must be a list formatted as [value, unit]")
+            raise TypeError(
+                "temperature must be a list formatted as [value, unit]")
 
         value = float(temperature[0])
         unit = str(temperature[1])
@@ -445,4 +460,3 @@ class ENRTL(ENRTLCore):
         if temperature_k is None or temperature_k <= 0:
             raise ValueError("temperature must be greater than 0 K")
         return float(temperature_k)
-
