@@ -281,9 +281,21 @@ def calc_tau_ij_with_dg_ij_using_nrtl_model(
         )
 
         # NOTE: calculate tau_ij
-        tau_ij, tau_ij_comp = nrtl.cal_tau_ij_M1(
-            temperature=temperature_value_K,
-            dg_ij=dg_ij,
+        inputs = nrtl.check_and_build_inputs(
+            model_input={
+                "mole_fraction": {component_id: 0.0 for component_id in components_ids},
+                "temperature": [temperature_value_K, "K"],
+                "dg_ij": dg_ij,
+            },
+            required_keys=["tau_ij"],
+            tau_correlation="gibbs_energy",
+            symbol_delimiter=mixture_delimiter,
+            return_all=False,
+            include_alpha=False,
+        )
+        tau_ij = inputs["tau_ij"]
+        tau_ij_comp = nrtl.to_dict_ij(
+            tau_ij,
             symbol_delimiter=mixture_delimiter,
         )
 
@@ -613,9 +625,21 @@ def calc_tau_ij_with_dU_ij_using_uniquac_model(
         )
 
         # NOTE: calculate tau_ij
-        tau_ij, tau_ij_comp = uniquac.cal_tau_ij_M1(
-            temperature=temperature_value_K,
-            dU_ij=dU_ij,
+        inputs = uniquac.check_and_build_inputs(
+            model_input={
+                "mole_fraction": {component_id: 0.0 for component_id in components_ids},
+                "temperature": [temperature_value_K, "K"],
+                "dU_ij": dU_ij,
+            },
+            required_keys=["tau_ij"],
+            tau_correlation="gibbs_energy",
+            symbol_delimiter=mixture_delimiter,
+            return_all=False,
+            include_pure_component_parameters=False,
+        )
+        tau_ij = inputs["tau_ij"]
+        tau_ij_comp = uniquac.to_dict_ij(
+            tau_ij,
             symbol_delimiter=mixture_delimiter,
         )
 
@@ -793,12 +817,24 @@ def calc_tau_ij(
             )
 
             # NOTE: calculate tau_ij
-            tau_ij, tau_ij_comp = nrtl.cal_tau_ij_M2(
-                temperature=temperature_value_K,
-                a_ij=a_ij,
-                b_ij=b_ij,
-                c_ij=c_ij,
-                d_ij=d_ij,
+            inputs = nrtl.check_and_build_inputs(
+                model_input={
+                    "mole_fraction": {component_id: 0.0 for component_id in components_ids},
+                    "temperature": [temperature_value_K, "K"],
+                    "a_ij": a_ij,
+                    "b_ij": b_ij,
+                    "c_ij": c_ij,
+                    "d_ij": d_ij,
+                },
+                required_keys=["tau_ij"],
+                tau_correlation="extended_temperature",
+                symbol_delimiter=mixture_delimiter,
+                return_all=False,
+                include_alpha=False,
+            )
+            tau_ij = inputs["tau_ij"]
+            tau_ij_comp = nrtl.to_dict_ij(
+                tau_ij,
                 symbol_delimiter=mixture_delimiter,
             )
 
@@ -809,12 +845,24 @@ def calc_tau_ij(
             )
 
             # NOTE: calculate tau_ij
-            tau_ij, tau_ij_comp = uniquac.cal_tau_ij_M2(
-                temperature=temperature_value_K,
-                a_ij=a_ij,
-                b_ij=b_ij,
-                c_ij=c_ij,
-                d_ij=d_ij,
+            inputs = uniquac.check_and_build_inputs(
+                model_input={
+                    "mole_fraction": {component_id: 0.0 for component_id in components_ids},
+                    "temperature": [temperature_value_K, "K"],
+                    "a_ij": a_ij,
+                    "b_ij": b_ij,
+                    "c_ij": c_ij,
+                    "d_ij": d_ij,
+                },
+                required_keys=["tau_ij"],
+                tau_correlation="extended_temperature",
+                symbol_delimiter=mixture_delimiter,
+                return_all=False,
+                include_pure_component_parameters=False,
+            )
+            tau_ij = inputs["tau_ij"]
+            tau_ij_comp = uniquac.to_dict_ij(
+                tau_ij,
                 symbol_delimiter=mixture_delimiter,
             )
 
