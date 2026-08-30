@@ -17,7 +17,8 @@ class ENRTLComponentAdapter:
 
         self.original_components = components
         self.components = components
-        self.component_keys = [self._component_key(component) for component in components]
+        self.component_keys = [self._component_key(
+            component) for component in components]
         self.charges = self._build_charges(
             charge_overrides=charge_overrides,
             require_charges=require_charges,
@@ -77,7 +78,12 @@ class ENRTLComponentAdapter:
                         f"({metadata_charge})."
                     )
 
-            charges.append(metadata_charge if metadata_charge is not None else int(override_charge))
+            resolved_charge = metadata_charge if metadata_charge is not None else override_charge
+            if resolved_charge is None:
+                raise ValueError(
+                    f"Missing charge metadata for ENRTL component '{key}'.")
+
+            charges.append(int(resolved_charge))
 
         return np.asarray(charges, dtype=int)
 
