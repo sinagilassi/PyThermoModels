@@ -160,6 +160,14 @@ class UNIQUAC:
         )
         # ! set input generator
         self.inputs_generator = self.uniquac_parameter_builder.inputs_generator
+        # ! expose local-composition parameter helpers for compatibility
+        self.cal_dU_ij_M1 = self.uniquac_parameter_builder.cal_dU_ij_M1
+        self.cal_tau_ij_M1 = self.uniquac_parameter_builder.cal_tau_ij_M1
+        self.cal_tau_ij_M2 = self.uniquac_parameter_builder.cal_tau_ij_M2
+        self.cal_tau_ij_M3 = self.uniquac_parameter_builder.cal_tau_ij_M3
+        self.cal_tau_ij_M4 = self.uniquac_parameter_builder.cal_tau_ij_M4
+        self.cal_tau_ij_M5 = self.uniquac_parameter_builder.cal_tau_ij_M5
+        self.cal_tau_ij_M6 = self.uniquac_parameter_builder.cal_tau_ij_M6
 
         # SECTION: component parameter mixin
         self.component_parameter_mixin = ComponentParameterMixin(
@@ -186,8 +194,8 @@ class UNIQUAC:
         - q_i (surface area parameter): represents the surface area of a molecule in the mixture.
 
         **Binary Interaction Parameters**
-        - Δu_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
-        - τ_ij (binary interaction parameter): represents the interaction energy between two molecules of different components [dimensionless].
+        - Î”u_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
+        - Ï„_ij (binary interaction parameter): represents the interaction energy between two molecules of different components [dimensionless].
 
         Universal gas constant (R) is defined as 8.314 J/mol/K.
 
@@ -524,13 +532,15 @@ class UNIQUAC:
                         raise ValueError(f"{key} is required in model_input")
                     model_input[key] = value_
 
-            # SECTION: package validated inputs
+            # SECTION: package requested validated inputs
             res = {
                 'mole_fraction': mole_fraction,
-                'tau_ij': model_input['tau_ij'],
-                'r_i': model_input['r_i'],
-                'q_i': model_input['q_i'],
             }
+
+            for key in required_keys:
+                if key not in model_input:
+                    raise ValueError(f"{key} is required in model_input")
+                res[key] = model_input[key]
 
             if return_all is False:
                 # NOTE: utility callers can request only parameter matrices
@@ -1190,4 +1200,3 @@ class UNIQUAC:
                 raise ValueError("res_format must be 'dict', 'json' or 'str'")
         except Exception as e:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
-
