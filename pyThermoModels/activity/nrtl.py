@@ -27,9 +27,9 @@ class NRTL:
     particularly in the context of phase equilibria and activity coefficients.
 
     The NRTL model relies on several key parameters to describe the interactions between components in a mixture. These parameters are:
-    - Δg_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
-    - α_ij (non-randomness parameter): represents the non-randomness of the mixture [dimensionless].
-    - τ_ij (binary interaction parameter): represents the interaction energy between two molecules of different components [dimensionless].
+    - Î”g_ij (interaction energy parameter): represents the interaction energy between two molecules [J/mol].
+    - Î±_ij (non-randomness parameter): represents the non-randomness of the mixture [dimensionless].
+    - Ï„_ij (binary interaction parameter): represents the interaction energy between two molecules of different components [dimensionless].
 
     Universal gas constant (R) is defined as 8.314 J/mol/K.
     """
@@ -139,6 +139,13 @@ class NRTL:
         )
         # ! set input generator
         self.inputs_generator = self.nrtl_parameter_builder.inputs_generator
+        # ! expose local-composition parameter helpers for compatibility
+        self.cal_dg_ij_M1 = self.nrtl_parameter_builder.cal_dg_ij_M1
+        self.cal_tau_ij_M1 = self.nrtl_parameter_builder.cal_tau_ij_M1
+        self.cal_tau_ij_M2 = self.nrtl_parameter_builder.cal_tau_ij_M2
+        self.cal_tau_ij_M3 = self.nrtl_parameter_builder.cal_tau_ij_M3
+        self.cal_tau_ij_M4 = self.nrtl_parameter_builder.cal_tau_ij_M4
+        self.cal_tau_ij_M5 = self.nrtl_parameter_builder.cal_tau_ij_M5
 
         # SECTION: component parameter mixin
         self.component_parameter_mixin = ComponentParameterMixin(
@@ -475,15 +482,15 @@ class NRTL:
                     # update the model_input
                     model_input[key] = value_
 
-            # SECTION: get values
-            tau_ij_data = model_input['tau_ij']
-            alpha_ij_data = model_input['alpha_ij']
-
+            # SECTION: get requested values
             res = {
                 'mole_fraction': mole_fraction,
-                'tau_ij': tau_ij_data,
-                'alpha_ij': alpha_ij_data
             }
+
+            for key in required_keys:
+                if key not in model_input:
+                    raise ValueError(f"{key} is required in model_input")
+                res[key] = model_input[key]
 
             # check return_all
             if return_all is False:
