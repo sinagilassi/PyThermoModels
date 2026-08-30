@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Literal, Optional
-
+# ! locals
 from ...utils.utility import TauCorrelation
 from .parameter_core import ENRTLParameterCore
 from ..nrtl.parameter_builder import NRTLParameterBuilder
@@ -63,4 +63,3 @@ class ENRTLParameterBuilder(ENRTLParameterCore):
             "b": long_range.get("b"),
             "ion_size": long_range.get("ion_size"),
         }
-
