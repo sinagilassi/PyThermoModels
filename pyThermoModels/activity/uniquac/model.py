@@ -15,11 +15,11 @@ from pyThermoDB import (
     TableMatrixData,
 )
 # local
-from ..plugin import ACTIVITY_MODELS
-from ..utils import add_attributes
-from ..utils.utility import TauCorrelation
-from .uniquac_parameter_builder import UNIQUACParameterBuilder
-from .component_parameter_mixin import ComponentParameterMixin
+from ...plugin import ACTIVITY_MODELS
+from ...utils import add_attributes
+from ...utils.utility import TauCorrelation
+from .parameter_builder import UNIQUACParameterBuilder
+from ..component_parameter_mixin import ComponentParameterMixin
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -1200,3 +1200,4 @@ class UNIQUAC:
                 raise ValueError("res_format must be 'dict', 'json' or 'str'")
         except Exception as e:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
+

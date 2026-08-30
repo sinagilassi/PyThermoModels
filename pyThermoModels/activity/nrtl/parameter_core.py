@@ -4,7 +4,7 @@ import numpy as np
 from typing import Any, Dict, Literal, Optional, Tuple, cast, List
 import pycuc
 # locals
-from .component_parameter_mixin import ComponentParameterMixin
+from ..component_parameter_mixin import ComponentParameterMixin
 
 # NOTE: setup logger
 logger = logging.getLogger(__name__)
@@ -431,3 +431,4 @@ class NRTLParameterCore:
             )
 
         return T
+

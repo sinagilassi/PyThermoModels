@@ -5,15 +5,15 @@ import numpy as np
 import pycuc
 from pyThermoDB import TableMatrixData
 
-from ..plugin import ACTIVITY_MODELS
-from ..utils import add_attributes
-from ..utils.utility import TauCorrelation
-from .component_parameter_mixin import ComponentParameterMixin
-from .enrtl_component_adapter import ENRTLComponentAdapter
-from .enrtl_core import ActivityBasis, CompositionRepresentation, ENRTLCore
-from .enrtl_local_composition import ENRTLFormulation, ENRTLLocalComposition
-from .enrtl_long_range import ENRTLLongRange
-from .enrtl_parameter_builder import ENRTLParameterBuilder
+from ...plugin import ACTIVITY_MODELS
+from ...utils import add_attributes
+from ...utils.utility import TauCorrelation
+from ..component_parameter_mixin import ComponentParameterMixin
+from .component_adapter import ENRTLComponentAdapter
+from .core import ActivityBasis, CompositionRepresentation, ENRTLCore
+from .local_composition import ENRTLFormulation, ENRTLLocalComposition
+from .long_range import ENRTLLongRange
+from .parameter_builder import ENRTLParameterBuilder
 
 
 class ENRTL(ENRTLCore):
@@ -445,3 +445,4 @@ class ENRTL(ENRTLCore):
         if temperature_k is None or temperature_k <= 0:
             raise ValueError("temperature must be greater than 0 K")
         return float(temperature_k)
+

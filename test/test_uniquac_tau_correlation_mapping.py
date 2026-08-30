@@ -4,8 +4,8 @@ from pyThermoModels.core.activity_parameter_calculators import (
 from pyThermoModels.core.activity_methods import (
     _activity_tau_correlation_default,
 )
-from pyThermoModels.activity.nrtl_parameter_builder import NRTLParameterBuilder
-from pyThermoModels.activity.uniquac_parameter_builder import UNIQUACParameterBuilder
+from pyThermoModels.activity.nrtl.parameter_builder import NRTLParameterBuilder
+from pyThermoModels.activity.uniquac.parameter_builder import UNIQUACParameterBuilder
 from pyThermoModels.utils.utility import (
     map_tau_correlation_to_method,
     map_uniquac_tau_correlation_to_method,

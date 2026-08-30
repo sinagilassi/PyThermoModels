@@ -11,11 +11,11 @@ from pyThermoDB import (
 )
 from pythermodb_settings.utils import create_mixture_id
 # local
-from ..utils import add_attributes
-from ..plugin import ACTIVITY_MODELS
-from ..utils.utility import TauCorrelation
-from .nrtl_parameter_builder import NRTLParameterBuilder
-from .component_parameter_mixin import ComponentParameterMixin
+from ...utils import add_attributes
+from ...plugin import ACTIVITY_MODELS
+from ...utils.utility import TauCorrelation
+from .parameter_builder import NRTLParameterBuilder
+from ..component_parameter_mixin import ComponentParameterMixin
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -1130,3 +1130,4 @@ class NRTL:
                 raise ValueError("res_format must be 'dict', 'json' or 'str'")
         except Exception as e:
             raise Exception(f"Error in excess_gibbs_free_energy: {str(e)}")
+

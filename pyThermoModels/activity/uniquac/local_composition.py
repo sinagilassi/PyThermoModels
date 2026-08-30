@@ -4,7 +4,7 @@ from typing import Dict, Literal, Tuple
 
 import numpy as np
 
-from .local_composition_base import IJData, LocalCompositionBase
+from ..local_composition_base import IJData, LocalCompositionBase
 
 
 class UNIQUACLocalComposition(LocalCompositionBase):
@@ -385,3 +385,4 @@ class UNIQUACLocalComposition(LocalCompositionBase):
             return tau_ij, tau_ij_comp
         except Exception as e:
             raise Exception(f"Error in cal_tau_ij_M6: {str(e)}")
+

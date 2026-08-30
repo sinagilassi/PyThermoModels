@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyThermoModels.activity.enrtl_core import ENRTLCore
+from pyThermoModels.activity.enrtl.core import ENRTLCore
 
 
 def test_enrtl_electroneutrality_accepts_balanced_true_species():

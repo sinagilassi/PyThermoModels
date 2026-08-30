@@ -3,6 +3,7 @@
         "activitycore",
         "amix",
         "bmix",
+        "ENRTL",
         "eoscore",
         "eosmanager",
         "eosmodels",

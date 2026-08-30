@@ -1,6 +1,6 @@
 import pytest
 
-from pyThermoModels.activity.enrtl_long_range import ENRTLLongRange
+from pyThermoModels.activity.enrtl.long_range import ENRTLLongRange
 
 
 def test_pitzer_debye_huckel_infinite_dilution_limit():

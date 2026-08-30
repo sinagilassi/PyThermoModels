@@ -4,7 +4,7 @@ from typing import Dict, List, Any, Optional, Tuple
 import pycuc
 # local
 from .unifac1 import UNIFAC1
-from ..utils import sanitize_mole_fractions
+from ...utils import sanitize_mole_fractions
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -660,3 +660,4 @@ class UNIFAC():
                 '43': 252.7, '44': 220.3, '45': -5.869, '46': 390.9, '47': 553.3, '48': 187.0, '49': 216.1, '50': 92.99
             },
         }
+

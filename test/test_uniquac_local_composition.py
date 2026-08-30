@@ -3,8 +3,8 @@ import math
 import numpy as np
 
 from pyThermoModels.activity.uniquac import UNIQUAC
-from pyThermoModels.activity.uniquac_local_composition import UNIQUACLocalComposition
-from pyThermoModels.activity.nrtl_local_composition import NRTLLocalComposition
+from pyThermoModels.activity.uniquac.local_composition import UNIQUACLocalComposition
+from pyThermoModels.activity.nrtl.local_composition import NRTLLocalComposition
 
 
 def test_uniquac_local_composition_tau_methods_are_exponential():

@@ -6,7 +6,7 @@ import numpy as np
 import pycuc
 
 # locals
-from .component_parameter_mixin import ComponentParameterMixin
+from ..component_parameter_mixin import ComponentParameterMixin
 
 # NOTE: setup logger
 logger = logging.getLogger(__name__)
@@ -521,3 +521,4 @@ class UNIQUACParameterCore:
             )
 
         return T
+

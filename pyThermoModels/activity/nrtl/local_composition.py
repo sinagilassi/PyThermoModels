@@ -4,7 +4,7 @@ from typing import Dict, Literal, Tuple
 import numpy as np
 from pyThermoDB import TableMatrixData
 # locals
-from .local_composition_base import IJData, LocalCompositionBase
+from ..local_composition_base import IJData, LocalCompositionBase
 
 
 class NRTLLocalComposition(LocalCompositionBase):
@@ -432,3 +432,4 @@ class NRTLLocalComposition(LocalCompositionBase):
                     f"Unsupported tau_correlation method: {tau_correlation}")
         except Exception as e:
             raise Exception(f"Error in cal_tau_ij: {str(e)}")
+

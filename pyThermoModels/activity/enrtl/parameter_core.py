@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from .nrtl_parameter_core import NRTLParameterCore
+from ..nrtl.parameter_core import NRTLParameterCore
 
 
 class ENRTLParameterCore(NRTLParameterCore):
@@ -50,3 +50,4 @@ class ENRTLParameterCore(NRTLParameterCore):
             raise ValueError("ENRTL datasource cannot be empty")
 
         return datasource
+

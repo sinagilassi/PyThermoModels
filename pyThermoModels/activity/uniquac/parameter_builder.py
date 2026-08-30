@@ -3,12 +3,12 @@ import logging
 from typing import Dict, List, Literal, Optional
 
 # locals
-from ..utils.utility import (
+from ...utils.utility import (
     TauCorrelation,
     map_uniquac_tau_correlation_to_method,
 )
-from .uniquac_local_composition import UNIQUACLocalComposition
-from .uniquac_parameter_core import UNIQUACParameterCore
+from .local_composition import UNIQUACLocalComposition
+from .parameter_core import UNIQUACParameterCore
 
 # NOTE: setup logger
 logger = logging.getLogger(__name__)
@@ -298,3 +298,4 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
             raise Exception(
                 f"Failed to generate UNIQUAC activity inputs: {e}"
             ) from e
+

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyThermoModels.activity.enrtl_local_composition import ENRTLLocalComposition
+from pyThermoModels.activity.enrtl.local_composition import ENRTLLocalComposition
 
 
 def test_neutral_nrtl_limit_returns_expected_binary_ln_gamma():

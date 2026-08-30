@@ -10,10 +10,10 @@ from pyThermoDB import (
     TableMatrixEquation
 )
 # locals
-from ..utils.utility import TauCorrelation, map_tau_correlation_to_method
-from .nrtl_parameter_core import NRTLParameterCore
-from .nrtl_local_composition import NRTLLocalComposition
-from .component_parameter_mixin import ComponentParameterMixin
+from ...utils.utility import TauCorrelation, map_tau_correlation_to_method
+from .parameter_core import NRTLParameterCore
+from .local_composition import NRTLLocalComposition
+from ..component_parameter_mixin import ComponentParameterMixin
 
 
 # NOTE: set up logger for this module
@@ -254,3 +254,4 @@ class NRTLParameterBuilder(NRTLParameterCore):
         except Exception as e:
             raise Exception(
                 f"Failed to generate NRTL activity inputs: {e}") from e
+

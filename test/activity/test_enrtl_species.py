@@ -1,6 +1,6 @@
 import pytest
 
-from pyThermoModels.activity.enrtl_component_adapter import ENRTLComponentAdapter
+from pyThermoModels.activity.enrtl.component_adapter import ENRTLComponentAdapter
 
 
 class FakeComponent:
