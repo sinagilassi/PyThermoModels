@@ -2,6 +2,7 @@
 from typing import Dict, Literal, Optional, Tuple
 
 import numpy as np
+from .parameter_core import ENRTLInteractionParameters
 
 # NOTE: supported ENRTL local-composition literature formulations
 ENRTLFormulation = Literal["chen_evans_1986"]
@@ -49,6 +50,7 @@ class ENRTLLocalComposition:
         self.comp_idx = comp_idx
         self.comp_num = len(components)
         self.formulation = formulation
+        self._last_diagnostics: Dict[str, object] = {}
 
     # ! Calculate local-composition contribution (ln(gamma_i^LC))
     def cal_ln_gamma_lc(
@@ -89,9 +91,6 @@ class ENRTLLocalComposition:
         ------
         ValueError
             If input shapes/values are invalid or `mode` is unsupported.
-        NotImplementedError
-            If `mode="chen_evans_1986"` and any species is charged, since the
-            ionic Chen-Evans equations are not yet implemented here.
         """
         # SECTION: validate inputs
         self._validate_vectors(mole_fraction, charges)
@@ -110,13 +109,19 @@ class ENRTLLocalComposition:
             raise ValueError(
                 f"Unsupported ENRTL local-composition mode: {mode}")
 
-        # NOTE: fail loudly instead of silently reusing ordinary NRTL for ions
+        parameters = ENRTLInteractionParameters.from_tau_alpha(
+            component_keys=self.components,
+            charges=charges,
+            tau_ij=tau_ij,
+            alpha_ij=alpha_ij,
+        )
+
+        # SECTION: ionic Chen-Evans local-composition path
         if np.any(charges != 0):
-            raise NotImplementedError(
-                "Chen-Evans 1986 electrolyte local-composition equations require "
-                "the full electrolyte-specific parameter structure and equation "
-                "implementation. This path intentionally fails instead of using "
-                "ordinary NRTL for ionic species."
+            return self._cal_ln_gamma_chen_evans_1986(
+                mole_fraction=mole_fraction,
+                charges=charges,
+                parameters=parameters,
             )
 
         # SECTION: all-neutral mixture -> reduces to the ordinary NRTL limit
@@ -126,6 +131,189 @@ class ENRTLLocalComposition:
             tau_ij=tau_ij,
             alpha_ij=alpha_ij,
         )
+
+    def _cal_ln_gamma_chen_evans_1986(
+        self,
+        mole_fraction: np.ndarray,
+        charges: np.ndarray,
+        parameters: ENRTLInteractionParameters,
+    ) -> np.ndarray:
+        """Calculate ionic Chen-Evans short-range activity coefficients.
+
+        Chen and Evans (1986), short-range/local-composition electrolyte NRTL
+        excess-Gibbs formulation. The implementation evaluates the
+        local-composition excess Gibbs energy kernel and obtains
+        `ln(gamma_i^LC)` from the thermodynamic derivative
+        `d(n g^E_LC/RT) / d n_i`.
+
+        Index convention
+        ----------------
+        `tau[j, i]` is the interaction parameter for local/neighbor species
+        `j` around central species `i`; `G[j, i] = exp(-alpha[j, i] tau[j, i])`.
+
+        Composition convention
+        ----------------------
+        The Chen-Evans charge-weighted local composition is represented as
+        `X_i = x_i` for molecular species and `X_i = |z_i| x_i` for ions.
+        Like-ion local compositions are excluded through
+        `parameters.interaction_mask`.
+        """
+        cation_idx = np.flatnonzero(charges > 0)
+        anion_idx = np.flatnonzero(charges < 0)
+        if cation_idx.size == 0 or anion_idx.size == 0:
+            raise ValueError(
+                "Chen-Evans 1986 ionic local-composition calculations require "
+                "at least one cation and one anion."
+            )
+
+        g_value, kernel_diagnostics = self._chen_evans_excess_gibbs_kernel(
+            mole_fraction=mole_fraction,
+            charges=charges,
+            parameters=parameters,
+        )
+        ln_gamma = self._partial_molar_ln_gamma_from_kernel(
+            mole_fraction=mole_fraction,
+            charges=charges,
+            parameters=parameters,
+        )
+        if not np.all(np.isfinite(ln_gamma)):
+            raise ValueError("Chen-Evans ln_gamma_local_composition contains non-finite values")
+
+        self._last_diagnostics = {
+            "formulation": self.formulation,
+            "gE_local_composition_RT": g_value,
+            "component_roles": {
+                item.key: item.role for item in parameters.components
+            },
+            "interaction_type": parameters.interaction_type,
+            "interaction_mask": parameters.interaction_mask,
+            **kernel_diagnostics,
+        }
+        return ln_gamma
+
+    def _partial_molar_ln_gamma_from_kernel(
+        self,
+        mole_fraction: np.ndarray,
+        charges: np.ndarray,
+        parameters: ENRTLInteractionParameters,
+    ) -> np.ndarray:
+        """Differentiate `n g^E_LC/RT` with respect to component mole numbers."""
+        n0 = np.asarray(mole_fraction, dtype=float)
+        ln_gamma = np.zeros(self.comp_num, dtype=float)
+
+        def total_excess(moles: np.ndarray) -> float:
+            total = float(np.sum(moles))
+            if total <= 0.0:
+                raise ValueError("total mole number must be positive")
+            x = moles / total
+            value, _ = self._chen_evans_excess_gibbs_kernel(
+                mole_fraction=x,
+                charges=charges,
+                parameters=parameters,
+            )
+            return total * value
+
+        for i in range(self.comp_num):
+            step = 1e-6 * max(1.0, abs(float(n0[i])))
+            plus = n0.copy()
+            plus[i] += step
+            if n0[i] > step:
+                minus = n0.copy()
+                minus[i] -= step
+                ln_gamma[i] = (total_excess(plus) - total_excess(minus)) / (2.0 * step)
+            else:
+                ln_gamma[i] = (total_excess(plus) - total_excess(n0)) / step
+
+        return ln_gamma
+
+    def _chen_evans_excess_gibbs_kernel(
+        self,
+        mole_fraction: np.ndarray,
+        charges: np.ndarray,
+        parameters: ENRTLInteractionParameters,
+    ) -> Tuple[float, Dict[str, object]]:
+        """Evaluate the Chen-Evans 1986 local-composition `g^E_LC/RT` kernel.
+
+        The kernel uses three local cell families: molecular centers, cationic
+        centers with local anions/molecules, and anionic centers with local
+        cations/molecules. This encodes the Chen-Evans local electroneutrality
+        and like-ion repulsion postulates at the local-composition level.
+        """
+        x_eff = self._effective_mole_fraction(mole_fraction, charges)
+        G_ij = self.cal_G_ij(tau_ij=parameters.tau, alpha_ij=parameters.alpha)
+
+        molecule_idx = np.flatnonzero(charges == 0)
+        cation_idx = np.flatnonzero(charges > 0)
+        anion_idx = np.flatnonzero(charges < 0)
+        cation_charge_sum = float(np.sum(x_eff[cation_idx]))
+        anion_charge_sum = float(np.sum(x_eff[anion_idx]))
+        if cation_charge_sum <= 0.0 or anion_charge_sum <= 0.0:
+            raise ValueError("charged Chen-Evans systems require positive cation and anion charge fractions")
+
+        value = 0.0
+        local_fractions = np.zeros((self.comp_num, self.comp_num), dtype=float)
+
+        for center in molecule_idx:
+            neighbors = np.arange(self.comp_num)
+            term, fractions = self._local_cell_term(center, neighbors, x_eff, G_ij, parameters)
+            value += x_eff[center] * term
+            local_fractions[:, center] = fractions
+
+        for center in cation_idx:
+            neighbors = np.concatenate((molecule_idx, anion_idx))
+            term, fractions = self._local_cell_term(center, neighbors, x_eff, G_ij, parameters)
+            value += x_eff[center] * term
+            local_fractions[:, center] = fractions
+
+        for center in anion_idx:
+            neighbors = np.concatenate((molecule_idx, cation_idx))
+            term, fractions = self._local_cell_term(center, neighbors, x_eff, G_ij, parameters)
+            value += x_eff[center] * term
+            local_fractions[:, center] = fractions
+
+        local_charge_residual = local_fractions.T @ charges
+        return float(value), {
+            "effective_mole_fraction": x_eff,
+            "local_composition_fraction": local_fractions,
+            "local_electroneutrality_residual": local_charge_residual,
+        }
+
+    def _local_cell_term(
+        self,
+        center: int,
+        neighbors: np.ndarray,
+        x_eff: np.ndarray,
+        G_ij: np.ndarray,
+        parameters: ENRTLInteractionParameters,
+    ) -> Tuple[float, np.ndarray]:
+        """Return the local NRTL energy term around one Chen-Evans cell center."""
+        weights = np.zeros(self.comp_num, dtype=float)
+        for neighbor in neighbors:
+            if parameters.interaction_mask[neighbor, center]:
+                weights[neighbor] = x_eff[neighbor] * G_ij[neighbor, center]
+
+        denominator = float(np.sum(weights))
+        if denominator <= 0.0 or not np.isfinite(denominator):
+            raise ValueError(
+                "Chen-Evans local-composition denominator is zero for "
+                f"central species '{self.components[center]}'."
+            )
+
+        fractions = weights / denominator
+        term = float(np.sum(fractions * parameters.tau[:, center]))
+        return term, fractions
+
+    def _effective_mole_fraction(
+        self,
+        mole_fraction: np.ndarray,
+        charges: np.ndarray,
+    ) -> np.ndarray:
+        """Build Chen-Evans charge-weighted local-composition fractions."""
+        charge_weight = np.where(charges == 0, 1.0, np.abs(charges).astype(float))
+        x_eff = mole_fraction * charge_weight
+        if not np.all(np.isfinite(x_eff)) or np.any(x_eff < 0.0):
+            raise ValueError("effective mole fractions must be finite and non-negative")
+        return x_eff
 
     # ! Ordinary NRTL local-composition limit for neutral mixtures
     def cal_ln_gamma_neutral_nrtl_limit(
@@ -252,6 +440,11 @@ class ENRTLLocalComposition:
             for i in range(self.comp_num)
             for j in range(self.comp_num)
         }
+
+    @property
+    def last_diagnostics(self) -> Dict[str, object]:
+        """Return diagnostics from the most recent ionic local-composition call."""
+        return self._last_diagnostics
 
     # ! Validate vectors and matrices for local-composition calculations
     def _validate_vectors(self, mole_fraction: np.ndarray, charges: np.ndarray) -> None:
