@@ -39,13 +39,20 @@ class ENRTLComponentAdapter:
 
         self.original_components = components
         self.components = components
-        self.component_keys = [self._component_key(
-            component) for component in components]
+
+        # component keys
+        self.component_keys = [
+            self._component_key(
+                component
+            ) for component in components
+        ]
+        # charges
         self.charges = self._build_charges(
             charge_overrides=charge_overrides,
             require_charges=require_charges,
         )
 
+    # ! component key resolution
     def _component_key(self, component: Any) -> str:
         """
         Resolve the canonical, charge-preserving key for a single component.
@@ -68,6 +75,7 @@ class ENRTLComponentAdapter:
 
         return key
 
+    # ! component charge resolution
     def _component_charge(self, component: Any, key: str) -> Optional[int]:
         """
         Resolve a component's net charge from structured metadata.
@@ -84,6 +92,7 @@ class ENRTLComponentAdapter:
 
         return None
 
+    # ! build charge vector
     def _build_charges(
         self,
         charge_overrides: Optional[Dict[str, int]] = None,
@@ -161,6 +170,7 @@ class ENRTLComponentAdapter:
             for i in range(len(self.component_keys))
         }
 
+    # ! species support validation
     def validate_species_support(self) -> None:
         """
         Enforce the ENRTL v1 species support policy.
