@@ -1,13 +1,15 @@
 # import libs
 import time
 import logging
-from typing import Dict, Literal, List, Optional, Sequence, TypeAlias, cast
+from typing import Any, Dict, Literal, List, Optional, Sequence, TypeAlias, cast
+import numpy as np
 from pythermodb_settings.models import Component, Temperature, Pressure
 from pythermodb_settings.utils import set_component_id, create_mixture_id, measure_time
+from pyThermoDB.core import TableMatrixData
 from pyThermoLinkDB.models import ModelSource
 # local
 from ..docs import ThermoModelCore
-from ..activity import NRTL, UNIQUAC
+from ..activity import ENRTL, NRTL, UNIQUAC
 from ..utils import set_feed_specification
 from ..utils.utility import TauCorrelation
 
@@ -25,6 +27,7 @@ TauSourcePriorityItem: TypeAlias = Literal[
 ]
 
 
+# ! ::: Default tau correlation selection for activity models
 def _activity_tau_correlation_default(
     model_name: str,
     datasource: Dict,
@@ -130,6 +133,7 @@ def _activity_tau_correlation_default(
     return default_by_model[model_name]
 
 
+# ! ::: Calculation of activity coefficient using NRTL or UNIQUAC models
 @measure_time
 def calc_activity_coefficient(
     components: List[Component],
@@ -518,6 +522,7 @@ def calc_activity_coefficient(
         raise Exception("calculation failed!, ", e)
 
 
+# ! ::: Calculation of activity coefficient using NRTL model
 def calc_activity_coefficient_using_nrtl_model(
     components: List[Component],
     pressure: Pressure,
@@ -834,6 +839,7 @@ def calc_activity_coefficient_using_nrtl_model(
         raise Exception("calculation failed!, ", e)
 
 
+# ! ::: Calculation using UNIQUAC model
 def calc_activity_coefficient_using_uniquac_model(
     components: List[Component],
     pressure: Pressure,
@@ -1162,5 +1168,267 @@ def calc_activity_coefficient_using_uniquac_model(
         except Exception as e:
             logger.error(f"calculation failed!, {e}")
             raise
+    except Exception as e:
+        raise Exception("calculation failed!, ", e)
+
+
+# ! ::: Calculation using ENRTL model
+def calc_activity_coefficient_using_enrtl_model(
+    components: List[Component],
+    pressure: Pressure,
+    temperature: Temperature,
+    tau_ij: Optional[
+        Dict[str, float | int] |
+        TableMatrixData | np.ndarray | List[List[float]]
+    ] = None,
+    alpha_ij: Optional[
+        Dict[str, float | int] |
+        TableMatrixData | np.ndarray | List[List[float]]
+    ] = None,
+    model_source: Optional[ModelSource | Dict[str, Any]] = None,
+    molality: Optional[Dict[str, float] | List[float] | np.ndarray] = None,
+    molarity: Optional[Dict[str, float] | List[float] | np.ndarray] = None,
+    long_range: Optional[Dict[str, Any]] = None,
+    charges: Optional[Dict[str, int]] = None,
+    model_input: Optional[Dict[str, Any]] = None,
+    tau_correlation: TauCorrelation = "direct_tau",
+    symbol_delimiter: Literal["|", "_"] = "|",
+    message: Optional[str] = None,
+    verbose: bool = False,
+    **kwargs
+):
+    """
+    Calculate activity coefficients using the ENRTL model.
+
+    ENRTL operates on true-species liquid compositions. Components should be
+    `pythermodb_settings.models.Component` objects so canonical formula-state
+    keys and charge metadata can be read from `get_formula_state()` and
+    `get_net_charge()`.
+
+    Parameters
+    ----------
+    components : List[Component]
+        True-species components, for example water, Na{+}, and Cl{-}. Each
+        component should include name, formula, state, mole fraction, and charge
+        metadata.
+    pressure : Pressure
+        Pressure object. ENRTL currently records this in the model input for API
+        consistency; the current ENRTL calculation uses temperature, composition,
+        long-range parameters, and local-composition parameters.
+    temperature : Temperature
+        Temperature object used by the ENRTL model and by temperature-dependent
+        local-composition parameter generation when `model_source` is used.
+    tau_ij : dict | TableMatrixData | np.ndarray | list[list[float]], optional
+        Chen-Evans local-composition interaction parameter matrix. If provided,
+        it is placed into `model_input` and takes precedence over `model_source`.
+    alpha_ij : dict | TableMatrixData | np.ndarray | list[list[float]], optional
+        Chen-Evans non-randomness parameter matrix. If provided, it is placed
+        into `model_input` and takes precedence over `model_source`.
+    model_source : ModelSource | dict, optional
+        Source containing ENRTL datasource/equationsource blocks. Used when
+        `tau_ij` and/or `alpha_ij` are not supplied directly.
+    molality : dict | list | np.ndarray, optional
+        True-species molality composition, required when
+        `long_range["basis"] == "molality"`.
+    molarity : dict | list | np.ndarray, optional
+        True-species molarity composition, required when
+        `long_range["basis"] == "molarity"`.
+    long_range : dict, optional
+        Long-range electrostatic configuration, such as
+        `{"model": "pitzer_debye_huckel", "basis": "molality", "A_phi": 0.392}`.
+        May also be supplied inside `model_input`.
+    charges : dict, optional
+        Legacy charge override keyed by canonical component key. Overrides are
+        validated against Component metadata when both are available.
+    model_input : dict, optional
+        Additional ENRTL input fields. Direct function arguments override
+        matching fields in this dictionary.
+    tau_correlation : TauCorrelation, optional
+        Correlation mode used when local-composition parameters are generated
+        from `model_source`. Defaults to `"direct_tau"`.
+    symbol_delimiter : Literal["|", "_"], optional
+        Delimiter used for pair-keyed parameter dictionaries.
+    message : str, optional
+        Custom result message.
+    verbose : bool, optional
+        If True, logs progress messages.
+    **kwargs
+        Additional keyword arguments forwarded to ENRTL model initialization and
+        calculation.
+
+    Returns
+    -------
+    tuple
+        `(res, others, G_ex)` where `res` is the activity-coefficient result,
+        `others` contains ENRTL diagnostics and intermediate arrays, and `G_ex`
+        is the reconstructed excess Gibbs energy result.
+
+    Raises
+    ------
+    ValueError
+        If required true-species composition, long-range inputs, or
+        local-composition parameters are missing or invalid.
+    TypeError
+        If `model_source` or `model_input` has an unsupported type.
+    """
+    try:
+        # LINK: start time
+        start_time = time.time()
+
+        # NOTE: model name
+        model_name = "ENRTL"
+
+        # >>> log
+        if verbose:
+            logger.info(
+                f"Calculating activity coefficient using {model_name} model"
+            )
+
+        # SECTION: validate inputs
+        # ! components
+        if (
+            not isinstance(components, list) or
+            not all(isinstance(c, Component) for c in components)
+        ):
+            raise ValueError(
+                "Invalid components input. ENRTL requires a list of Component objects."
+            )
+        if len(components) == 0:
+            raise ValueError("Components list is empty.")
+
+        # ! pressure
+        if not isinstance(pressure, Pressure):
+            raise ValueError(
+                "Invalid pressure input. Must be a Pressure object.")
+
+        # ! temperature
+        if not isinstance(temperature, Temperature):
+            raise ValueError(
+                "Invalid temperature input. Must be a Temperature object.")
+
+        # SECTION: normalize optional model input
+        model_input = {} if model_input is None else dict(model_input)
+        if not isinstance(model_input, dict):
+            raise TypeError("model_input must be a dictionary when provided")
+
+        # NOTE: ENRTL uses canonical formula-state true-species keys
+        component_keys = [
+            component.get_formula_state()
+            if hasattr(component, "get_formula_state")
+            else set_component_id(component, "Formula-State", "-")
+            for component in components
+        ]
+
+        # SECTION: true-species mole fraction
+        # NOTE: explicit model_input values override Component.mole_fraction metadata
+        mole_fraction = model_input.get("mole_fraction")
+        if mole_fraction is None:
+            mole_fraction = {
+                component_keys[i]: float(
+                    getattr(component, "mole_fraction", 0.0))
+                for i, component in enumerate(components)
+            }
+
+        # SECTION: build ENRTL model input
+        model_input_enrtl: Dict[str, Any] = {
+            **model_input,
+            "composition_representation": model_input.get(
+                "composition_representation",
+                "true_species",
+            ),
+            "mole_fraction": mole_fraction,
+            "pressure": [pressure.value, pressure.unit],
+            "temperature": [temperature.value, temperature.unit],
+        }
+
+        # NOTE: direct function arguments override matching model_input fields
+        if tau_ij is not None:
+            model_input_enrtl["tau_ij"] = tau_ij
+        if alpha_ij is not None:
+            model_input_enrtl["alpha_ij"] = alpha_ij
+        if molality is not None:
+            model_input_enrtl["molality"] = molality
+        if molarity is not None:
+            model_input_enrtl["molarity"] = molarity
+        if long_range is not None:
+            model_input_enrtl["long_range"] = long_range
+        if charges is not None:
+            model_input_enrtl["charges"] = charges
+
+        # SECTION: validate required ENRTL calculation inputs
+        # ! long-range electrostatic parameters
+        if "long_range" not in model_input_enrtl:
+            raise ValueError(
+                "ENRTL requires model_input['long_range'] or the long_range argument "
+                "with required long-range parameters such as A_phi."
+            )
+
+        # ! local-composition parameter source
+        has_direct_parameters = (
+            "tau_ij" in model_input_enrtl and
+            "alpha_ij" in model_input_enrtl
+        )
+        if not has_direct_parameters and model_source is None:
+            raise ValueError(
+                "ENRTL requires direct tau_ij/alpha_ij parameters or a model_source."
+            )
+
+        # SECTION: normalize model source
+        if model_source is None:
+            model_source_dict = None
+        elif isinstance(model_source, ModelSource):
+            model_source_dict = {
+                "datasource": model_source.data_source,
+                "equationsource": model_source.equation_source,
+            }
+        elif isinstance(model_source, dict):
+            model_source_dict = {
+                "datasource": model_source.get("datasource", {}),
+                "equationsource": model_source.get("equationsource", {}),
+            }
+        else:
+            raise TypeError(
+                "model_source must be a ModelSource, dict, or None")
+
+        # SECTION: initialize ENRTL activity model
+        activity_models = ThermoModelCore().select_activities(
+            components=components,
+            model_name=model_name,
+            model_source=model_source_dict,
+            check_reference=False,
+            **kwargs
+        )
+
+        if not isinstance(activity_models, ENRTL):
+            raise TypeError(
+                f"activity_models is not `ENRTL`, but {type(activity_models)}"
+            )
+
+        # SECTION: calculate activity coefficients
+        res, others = activity_models.cal(
+            model_input=model_input_enrtl,
+            tau_correlation=tau_correlation,
+            symbol_delimiter=symbol_delimiter,
+            message=message,
+            **kwargs
+        )
+
+        # SECTION: calculate excess Gibbs energy
+        G_ex = activity_models.excess_gibbs_free_energy(
+            mole_fraction=model_input_enrtl["mole_fraction"],
+            ln_gamma=others["ln_gamma_total"],
+        )
+
+        # LINK: end time
+        elapsed_time = time.time() - start_time
+
+        # >>> log
+        if verbose:
+            logger.info(
+                f"Activity coefficient calculation successful, elapsed time: {elapsed_time:.2f} seconds"
+            )
+
+        # NOTE: keep return shape consistent with NRTL/UNIQUAC helper functions
+        return res, others, G_ex
     except Exception as e:
         raise Exception("calculation failed!, ", e)
