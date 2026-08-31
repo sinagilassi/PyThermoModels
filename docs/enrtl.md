@@ -20,10 +20,20 @@ Supported infrastructure:
 - log-space contribution summation
 - mean ionic activity coefficient helper
 - neutral molecular NRTL limiting path
+- Chen-Evans local-composition interaction classification
+- charged true-species local-composition calculations
 
-Strict formulation rule:
+Formulation rule:
 
-The ionic Chen-Evans local-composition equations must be implemented in
-`enrtl_local_composition.py` before ionic ENRTL calculations are treated as
-production-complete. The current code fails explicitly for ionic
-local-composition calculations instead of substituting ordinary NRTL.
+The ionic Chen-Evans local-composition contribution is implemented in
+`pyThermoModels/activity/enrtl/local_composition.py`. It uses explicit
+interaction classes, excludes like-ion local-composition terms, keeps ordinary
+NRTL only as the all-neutral limiting path, and exposes local-composition
+diagnostics in the `other_values["local_composition_diagnostics"]` result.
+
+Validation boundary:
+
+The charged Chen-Evans calculation path is now available for true-species
+systems with supplied parameters. Quantitative production use still requires
+case-specific validation against published electrolyte activity-coefficient
+data and parameter sets.
