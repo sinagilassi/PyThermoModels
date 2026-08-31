@@ -10,6 +10,7 @@ from .eos_methods import (
 # activity methods
 from .activity_methods import (
     calc_activity_coefficient,
+    calc_activity_coefficient_using_enrtl_model,
     calc_activity_coefficient_using_nrtl_model,
     calc_activity_coefficient_using_uniquac_model
 )
@@ -28,6 +29,7 @@ __all__ = [
     'calc_liquid_fugacity',
     'calc_mixture_fugacity',
     'calc_activity_coefficient',
+    'calc_activity_coefficient_using_enrtl_model',
     'calc_activity_coefficient_using_nrtl_model',
     'calc_activity_coefficient_using_uniquac_model',
     'calc_tau_ij',
