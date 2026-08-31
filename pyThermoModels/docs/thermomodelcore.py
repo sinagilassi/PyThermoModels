@@ -909,7 +909,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
     def init_activity(
         self,
-        components: List[str],
+        components: List[Any],
         model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL'],
         model_source: Optional[
             Dict[str, Any]
@@ -1000,7 +1000,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
 
     def init_activities(
         self,
-        components: List[str],
+        components: List[Any],
         model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL'],
         model_source: Optional[
             Dict[str, Any]
