@@ -204,6 +204,7 @@ class ENRTL(ENRTLCore):
             "G_ij_comp": G_ij_comp,
             "long_range_model": long_range_inputs["model"],
             "local_composition_mode": local_mode,
+            "local_composition_diagnostics": self.local_composition.last_diagnostics,
             "composition_representation": inputs["composition_representation"],
         }
         return res, other_values
