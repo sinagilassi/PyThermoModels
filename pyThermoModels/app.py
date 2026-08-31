@@ -56,7 +56,7 @@ def eos(**kwargs):
 
 @add_attributes(metadata=ACTIVITY_MODELS)
 def activity(
-        components: List[str],
+        components: List[Any],
         model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL'],
         model_source: Optional[Dict[str, Any]] = None,
         **kwargs
@@ -67,7 +67,8 @@ def activity(
     Parameters
     ----------
     components: list
-        List of component names to be used in the activity model, such as ['ethanol', 'butyl-methyl-ether'].
+        List of component names or Component objects to be used in the activity model.
+        ENRTL should receive Component objects so charge metadata is available.
     model_name: str
         Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL').
             1. `NRTL`: Non-Random Two-Liquid Model
@@ -105,7 +106,7 @@ def activity(
 
 @add_attributes(metadata=ACTIVITY_MODELS)
 def activities(
-        components: List[str],
+        components: List[Any],
         model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL'],
         model_source: Optional[Dict[str, Any]] = None,
         **kwargs
@@ -116,7 +117,8 @@ def activities(
     Parameters
     ----------
     components: list
-        List of component names to be used in the activity model, such as ['ethanol', 'butyl-methyl-ether'].
+        List of component names or Component objects to be used in the activity model.
+        ENRTL should receive Component objects so charge metadata is available.
     model_name: str
         Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL').
             1. `NRTL`: Non-Random Two-Liquid Model
