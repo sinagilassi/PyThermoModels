@@ -1,7 +1,145 @@
 # import libs
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List, Literal, Optional
+
+import numpy as np
 
 from ..nrtl.parameter_core import NRTLParameterCore
+
+ENRTLRole = Literal["solvent", "neutral_solute", "cation", "anion"]
+ENRTLInteractionType = Literal[
+    "self",
+    "molecule_molecule",
+    "molecule_cation",
+    "molecule_anion",
+    "cation_molecule",
+    "anion_molecule",
+    "cation_anion",
+    "anion_cation",
+    "like_cation",
+    "like_anion",
+]
+
+
+@dataclass(frozen=True)
+class ENRTLComponentInfo:
+    """Thermodynamic role assigned to a true-species component."""
+
+    key: str
+    charge: int
+    role: ENRTLRole
+
+
+@dataclass(frozen=True)
+class ENRTLInteractionParameters:
+    """Chen-Evans local-composition parameter structure.
+
+    `tau[i, j]` and `alpha[i, j]` use the same index convention as the
+    existing NRTL implementation: row `i` is the neighboring/local species and
+    column `j` is the central species for the NRTL-like weighting
+    `G[i, j] = exp(-alpha[i, j] * tau[i, j])`.
+
+    `interaction_mask[i, j]` marks interaction classes allowed by the
+    Chen-Evans like-ion repulsion postulate. Like-ion and self terms are not
+    used by the ionic local-composition kernel.
+    """
+
+    components: List[ENRTLComponentInfo]
+    tau: np.ndarray
+    alpha: np.ndarray
+    interaction_mask: np.ndarray
+    interaction_type: np.ndarray
+
+    @classmethod
+    def from_tau_alpha(
+        cls,
+        component_keys: List[str],
+        charges: np.ndarray,
+        tau_ij: np.ndarray,
+        alpha_ij: np.ndarray,
+    ) -> "ENRTLInteractionParameters":
+        """Build and validate Chen-Evans interaction metadata."""
+        comp_num = len(component_keys)
+        if charges.shape != (comp_num,):
+            raise ValueError(f"charges must have shape ({comp_num},)")
+        if tau_ij.shape != (comp_num, comp_num):
+            raise ValueError(f"tau_ij must have shape ({comp_num}, {comp_num})")
+        if alpha_ij.shape != (comp_num, comp_num):
+            raise ValueError(f"alpha_ij must have shape ({comp_num}, {comp_num})")
+        if not np.all(np.isfinite(tau_ij)):
+            raise ValueError("tau_ij contains non-finite values")
+        if not np.all(np.isfinite(alpha_ij)):
+            raise ValueError("alpha_ij contains non-finite values")
+
+        components = [
+            ENRTLComponentInfo(
+                key=component_keys[i],
+                charge=int(charges[i]),
+                role=cls._role_from_charge(int(charges[i])),
+            )
+            for i in range(comp_num)
+        ]
+        interaction_type = np.empty((comp_num, comp_num), dtype=object)
+        interaction_mask = np.ones((comp_num, comp_num), dtype=bool)
+
+        for i in range(comp_num):
+            for j in range(comp_num):
+                kind = cls._interaction_type(components[i].role, components[j].role, i == j)
+                interaction_type[i, j] = kind
+                if kind in ("self", "like_cation", "like_anion"):
+                    interaction_mask[i, j] = False
+
+        prohibited = ~interaction_mask
+        np.fill_diagonal(prohibited, False)
+        if np.any(np.abs(tau_ij[prohibited]) > 0.0):
+            bad_i, bad_j = np.argwhere(np.abs(tau_ij * prohibited) > 0.0)[0]
+            raise ValueError(
+                "Chen-Evans 1986 prohibits like-ion local-composition "
+                "interaction parameters; nonzero tau_ij found for "
+                f"{component_keys[bad_i]} -> {component_keys[bad_j]}."
+            )
+
+        return cls(
+            components=components,
+            tau=np.asarray(tau_ij, dtype=float),
+            alpha=np.asarray(alpha_ij, dtype=float),
+            interaction_mask=interaction_mask,
+            interaction_type=interaction_type,
+        )
+
+    @staticmethod
+    def _role_from_charge(charge: int) -> ENRTLRole:
+        if charge > 0:
+            return "cation"
+        if charge < 0:
+            return "anion"
+        return "neutral_solute"
+
+    @staticmethod
+    def _interaction_type(
+        neighbor_role: ENRTLRole,
+        central_role: ENRTLRole,
+        is_self: bool,
+    ) -> ENRTLInteractionType:
+        if is_self:
+            return "self"
+        if neighbor_role in ("solvent", "neutral_solute"):
+            if central_role in ("solvent", "neutral_solute"):
+                return "molecule_molecule"
+            if central_role == "cation":
+                return "molecule_cation"
+            return "molecule_anion"
+        if neighbor_role == "cation":
+            if central_role == "cation":
+                return "like_cation"
+            if central_role == "anion":
+                return "cation_anion"
+            return "cation_molecule"
+        if central_role == "anion":
+            return "like_anion"
+        if central_role == "cation":
+            return "anion_cation"
+        return "anion_molecule"
 
 
 class ENRTLParameterCore(NRTLParameterCore):
