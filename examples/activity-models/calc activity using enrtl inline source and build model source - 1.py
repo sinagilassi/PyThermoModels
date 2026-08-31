@@ -1,18 +1,10 @@
-import os
-
-import pyThermoDB as ptdb
-import pyThermoLinkDB as ptdblink
 import pyThermoModels as ptm
-from pyThermoDB import MixtureThermoDB, build_mixture_thermodb_from_reference
-from pyThermoLinkDB import build_mixture_model_source, build_model_source
-from pyThermoLinkDB.models import ModelSource, MixtureModelSource
 from pythermodb_settings.models import Component
 from rich import print
+import yaml
 
 
 print(ptm.__version__)
-print(ptdb.__version__)
-print(ptdblink.__version__)
 
 
 REFERENCE_CONTENT = """
@@ -43,10 +35,6 @@ REFERENCES:
 """
 
 
-parent_dir = os.path.dirname(os.path.abspath(__file__))
-thermodb_dir = os.path.join(parent_dir, "..", "thermodb")
-
-
 water = Component(
     name="water",
     formula="H2O",
@@ -69,27 +57,58 @@ chloride = Component(
 true_species = [water, sodium, chloride]
 
 
-thermodb_components: MixtureThermoDB | None = build_mixture_thermodb_from_reference(
-    components=true_species,
-    reference_content=REFERENCE_CONTENT,
-    check_labels=False,
-    ignore_state_all_props=True,
-    thermodb_save=True,
-    thermodb_save_path=thermodb_dir,
-)
-if thermodb_components is None:
-    raise ValueError("thermodb_components is None")
+def _component_key(row):
+    return f"{row['Formula']}-{row['State']}"
 
-mixture_model_source: MixtureModelSource = build_mixture_model_source(
-    mixture_thermodb=thermodb_components,
+
+def build_enrtl_model_source_from_inline_reference(reference_content):
+    reference = yaml.safe_load(reference_content)
+    tables = reference["REFERENCES"]["ENRTL"]["TABLES"]
+    table = tables["Chen-Evans ENRTL local-composition parameters"]
+    columns = table["STRUCTURE"]["COLUMNS"]
+    rows = [dict(zip(columns, values)) for values in table["VALUES"]]
+
+    rows_by_mixture = {}
+    for row in rows:
+        rows_by_mixture.setdefault(row["Mixture"], []).append(row)
+
+    tau_ij = {}
+    alpha_ij = {}
+    for mixture_rows in rows_by_mixture.values():
+        name_to_key = {
+            row["Name"]: _component_key(row)
+            for row in mixture_rows
+        }
+        column_names = mixture_rows[0]["Mixture"].split("|")
+
+        for row in mixture_rows:
+            row_key = _component_key(row)
+            for column_position, column_name in enumerate(column_names, start=1):
+                column_key = name_to_key[column_name]
+                pair_key = f"{row_key} | {column_key}"
+                tau_ij[pair_key] = float(row[f"tau_i_{column_position}"])
+                alpha_ij[pair_key] = float(row[f"alpha_i_{column_position}"])
+
+    for component in true_species:
+        component_key = component.get_formula_state()
+        pair_key = f"{component_key} | {component_key}"
+        tau_ij[pair_key] = 0.0
+        alpha_ij[pair_key] = 0.0
+
+    return {
+        "datasource": {
+            "ENRTL": {
+                "tau_ij": tau_ij,
+                "alpha_ij": alpha_ij,
+            },
+        },
+        "equationsource": {},
+    }
+
+
+model_source_dict = build_enrtl_model_source_from_inline_reference(
+    REFERENCE_CONTENT
 )
-model_source: ModelSource = build_model_source(
-    source=[mixture_model_source],
-)
-model_source_dict = {
-    "datasource": model_source.data_source,
-    "equationsource": model_source.equation_source,
-}
 
 
 base_model_input = {
