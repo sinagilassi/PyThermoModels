@@ -74,32 +74,47 @@ def test_enrtl_mean_ionic_activity_coefficient():
     assert value == pytest.approx((0.8 * 0.9) ** 0.5)
 
 
-def test_enrtl_charged_calculation_reaches_strict_chen_evans_guardrail():
+def test_enrtl_charged_calculation_combines_chen_evans_contributions():
     model = ENRTL([
         FakeComponent("H2O-l", 0),
         FakeComponent("Na{+}-aq", 1),
         FakeComponent("Cl{-}-aq", -1),
     ])
 
-    with pytest.raises(NotImplementedError, match="Chen-Evans 1986"):
-        model.cal({
-            "composition_representation": "true_species",
-            "temperature": [298.15, "K"],
-            "mole_fraction": {
-                "H2O-l": 0.98,
-                "Na{+}-aq": 0.01,
-                "Cl{-}-aq": 0.01,
-            },
-            "molality": {
-                "H2O-l": 0.0,
-                "Na{+}-aq": 0.1,
-                "Cl{-}-aq": 0.1,
-            },
-            "tau_ij": np.zeros((3, 3)),
-            "alpha_ij": np.zeros((3, 3)),
-            "long_range": {
-                "model": "pitzer_debye_huckel",
-                "basis": "molality",
-                "A_phi": 0.392,
-            },
-        })
+    res, details = model.cal({
+        "composition_representation": "true_species",
+        "temperature": [298.15, "K"],
+        "mole_fraction": {
+            "H2O-l": 0.98,
+            "Na{+}-aq": 0.01,
+            "Cl{-}-aq": 0.01,
+        },
+        "molality": {
+            "H2O-l": 0.0,
+            "Na{+}-aq": 0.1,
+            "Cl{-}-aq": 0.1,
+        },
+        "tau_ij": [
+            [0.0, 0.10, 0.20],
+            [0.15, 0.00, 0.30],
+            [0.25, 0.40, 0.00],
+        ],
+        "alpha_ij": [
+            [0.0, 0.2, 0.2],
+            [0.2, 0.0, 0.2],
+            [0.2, 0.2, 0.0],
+        ],
+        "long_range": {
+            "model": "pitzer_debye_huckel",
+            "basis": "molality",
+            "A_phi": 0.392,
+        },
+    })
+
+    assert res["model"] == "ENRTL"
+    assert np.all(np.isfinite(res["value"]))
+    assert np.allclose(
+        details["ln_gamma_total"],
+        details["ln_gamma_long_range"] + details["ln_gamma_local_composition"],
+    )
+    assert details["local_composition_diagnostics"]["formulation"] == "chen_evans_1986"
