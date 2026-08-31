@@ -1,5 +1,6 @@
 import pyThermoModels as ptm
-from pythermodb_settings.models import Component
+from pyThermoModels.core import calc_activity_coefficient_using_enrtl_model
+from pythermodb_settings.models import Component, Pressure, Temperature
 from rich import print
 import yaml
 
@@ -154,12 +155,6 @@ print("local diagnostics:")
 print(details_source["local_composition_diagnostics"])
 
 
-activity_from_inputs = ptm.activity(
-    components=true_species,
-    model_name="ENRTL",
-)
-enrtl_from_inputs = activity_from_inputs.enrtl
-
 model_input_with_parameters = {
     **base_model_input,
     "tau_ij": [
@@ -174,19 +169,18 @@ model_input_with_parameters = {
     ],
 }
 
-res_inputs, details_inputs = enrtl_from_inputs.cal(
+res_inputs, details_inputs, g_ex_inputs = calc_activity_coefficient_using_enrtl_model(
+    components=true_species,
+    pressure=Pressure(value=1.0, unit="bar"),
+    temperature=Temperature(value=298.15, unit="K"),
     model_input=model_input_with_parameters,
-)
-g_ex_inputs = enrtl_from_inputs.excess_gibbs_free_energy(
-    mole_fraction=model_input_with_parameters["mole_fraction"],
-    ln_gamma=details_inputs["ln_gamma_total"],
 )
 
 print("\nENRTL from direct model_input parameters")
 print(res_inputs)
 print("mean ionic activity coefficient:")
 print(
-    enrtl_from_inputs.mean_ionic_activity_coefficient(
+    activity_from_source.enrtl.mean_ionic_activity_coefficient(
         gamma=details_inputs["activity_coefficients_comp"],
         cation="Na{+}-aq",
         anion="Cl{-}-aq",
