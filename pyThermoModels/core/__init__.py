@@ -3,6 +3,7 @@ from .eos_methods import (
     check_component_eos_roots,
     check_multi_component_eos_roots,
     calc_gas_fugacity,
+    calc_residual_properties,
     calc_liquid_fugacity,
     calc_mixture_fugacity
 )
@@ -26,6 +27,7 @@ __all__ = [
     'check_component_eos_roots',
     'check_multi_component_eos_roots',
     'calc_gas_fugacity',
+    'calc_residual_properties',
     'calc_liquid_fugacity',
     'calc_mixture_fugacity',
     'calc_activity_coefficient',
@@ -36,3 +38,4 @@ __all__ = [
     'calc_tau_ij_using_nrtl_model',
     'calc_tau_ij_using_uniquac_model',
 ]
+
