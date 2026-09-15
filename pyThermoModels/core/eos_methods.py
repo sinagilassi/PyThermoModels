@@ -355,6 +355,129 @@ def check_multi_component_eos_roots(
 
 
 @measure_time
+def calc_residual_properties(
+    component: Component,
+    pressure: Pressure,
+    temperature: Temperature,
+    model_source: ModelSource,
+    model_name: Literal[
+        'SRK', 'PR'
+    ] = 'SRK',
+    solver_method: Literal[
+        'ls', 'newton', 'fsolve', 'root'
+    ] = 'root',
+    component_key: Literal[
+        "Name-State", "Formula-State"
+    ] = "Name-State",
+    **kwargs
+) -> Dict[str, Any]:
+    """
+    Calculate pure-fluid cubic-EOS residual/departure properties.
+
+    Parameters
+    ----------
+    component: Component
+        Component object containing information about the chemical component.
+    pressure: Pressure
+        Pressure and unit.
+    temperature: Temperature
+        Temperature and unit.
+    model_source: ModelSource
+        Datasource and equationsource needed for EOS calculation.
+    model_name: str
+        EOS model name. Phase 1 supports ``SRK`` and ``PR``.
+    solver_method: str
+        EOS root solver method.
+    component_key: str
+        Component key type, ``Name-State`` or ``Formula-State``.
+    **kwargs: Optional[Dict]
+        Additional arguments.
+        - phase: str, explicit homogeneous phase/root choice. Defaults to ``VAPOR``.
+        - mode : Literal['silent', 'log', 'attach'], optional timing log mode.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Residual property result containing H^R, S^R, G^R, U^R, Cp^R, and Cv^R.
+    """
+    try:
+        # SECTION: validate inputs
+        # ! component
+        if not isinstance(component, Component):
+            raise ValueError(
+                "Invalid component input. Must be a Component object.")
+        # ! pressure
+        if not isinstance(pressure, Pressure):
+            raise ValueError(
+                "Invalid pressure input. Must be a Pressure object.")
+        # ! temperature
+        if not isinstance(temperature, Temperature):
+            raise ValueError(
+                "Invalid temperature input. Must be a Temperature object.")
+        # ! model source
+        if not isinstance(model_source, ModelSource):
+            raise ValueError(
+                "Invalid model_source input. Must be a ModelSource object.")
+
+        # NOTE: kwargs
+        # ! residual properties require one explicit homogeneous root
+        phase = kwargs.get('phase', 'VAPOR')
+
+        # SECTION: initialize eos core
+        try:
+            # NOTE: thermo manager
+            ThermoModelCore_ = ThermoModelCore()
+            # NOTE: eos core
+            eosCore = ThermoModelCore_.init_eos(**kwargs)
+        except Exception as e:
+            logger.error(f"Initialization failed!, {e}")
+            raise
+
+        # SECTION: input preparation
+        try:
+            # NOTE component id configuration
+            component_id: str = set_component_id(
+                component=component,
+                component_key=component_key
+            )
+
+            # model input
+            model_input = {
+                "phase": phase,
+                "component": component_id,
+                "pressure": [pressure.value, pressure.unit],
+                "temperature": [temperature.value, temperature.unit],
+            }
+
+            # model source
+            model_source_dict = {
+                "datasource": model_source.data_source,
+                "equationsource": model_source.equation_source
+            }
+        except Exception as e:
+            logger.error(f"Input preparation failed!, {e}")
+            raise
+
+        # SECTION: calculation
+        try:
+            # NOTE: pure-fluid residual/departure property calculation
+            res = eosCore.cal_residual_properties(
+                model_name=model_name,
+                model_input=model_input,
+                model_source=model_source_dict,
+                solver_method=solver_method,
+                **kwargs
+            )
+
+            return res
+        except Exception as e:
+            logger.error(f"Calculation failed!, {e}")
+            raise
+    except Exception as e:
+        logger.error(f"Residual property calculation failed!, {e}")
+        raise
+
+@measure_time
 def calc_gas_fugacity(
     component: Component,
     pressure: Pressure,
@@ -887,3 +1010,4 @@ def calc_mixture_fugacity(
     except Exception as e:
         logger.error(f"Mixture fugacity calculation failed!, {e}")
         raise
+
