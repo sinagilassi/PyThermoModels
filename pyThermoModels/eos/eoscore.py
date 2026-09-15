@@ -7,6 +7,8 @@ from pythermodb_settings.utils import set_component_id
 from pyThermoLinkDB.models import ModelSource
 # internals
 from .fugacitycore import FugacityCore
+from .eosmanager import EOSManager
+from .departure import residual_properties_cubic_pure
 from ..docs.thermolinkdb import ThermoLinkDB
 from ..plugin import ReferenceManager, EQUATION_OF_STATE_MODELS
 from .eosutils import EOSUtils
@@ -64,6 +66,192 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             return model_input_parsed
         except Exception as e:
             raise Exception("Parsing model inputs failed!, ", e)
+
+    @add_attributes(metadata=EQUATION_OF_STATE_MODELS)
+    def cal_residual_properties(
+        self,
+        model_name: Literal[
+            'SRK', 'PR'
+        ],
+        model_input: Dict,
+        model_source: Dict,
+        solver_method: Literal[
+            'ls', 'newton', 'fsolve', 'root'
+        ] = 'ls',
+        **kwargs
+    ) -> Dict[str, Any]:
+        '''
+        Calculate pure-fluid cubic-EOS residual/departure properties.
+
+        The residual convention is real-fluid property minus ideal-gas property
+        at the same temperature, pressure, and composition. This method is
+        intentionally separate from fugacity calculations and currently supports
+        pure PR and SRK only.
+        '''
+        try:
+            eos_model = model_name.upper()
+            eos_model = eos_model_name(eos_model)
+            if eos_model not in ['PR', 'SRK']:
+                raise Exception(
+                    'Residual properties are implemented for PR and SRK only!')
+
+            # SECTION: Input Validation
+            component = model_input.get('component', None)
+            if component is None or component == 'None':
+                raise Exception('Component name is not provided!')
+            components = [component.strip()]
+
+            # NOTE: Residual properties are evaluated for one explicit homogeneous root.
+            phase = model_input.get('phase', None)
+            if phase is None:
+                raise Exception(
+                    'Phase must be provided explicitly for residual properties!')
+            phase = phase.upper()
+            # ? Map the requested phase to the existing EOS root-analysis mode.
+            root_by_phase = {
+                'LIQUID': 2,
+                'VAPOR': 3,
+                'SUPERCRITICAL': 4,
+            }
+            if phase not in root_by_phase:
+                raise Exception(
+                    'Phase must be LIQUID, VAPOR, or SUPERCRITICAL for a single homogeneous root!')
+            root_id = root_by_phase[phase]
+
+            if 'pressure' not in model_input.keys():
+                raise Exception('No pressure in operating conditions!')
+            if 'temperature' not in model_input.keys():
+                raise Exception('No temperature in operating conditions!')
+
+            # SECTION: Unit Conversion
+            P = pycuc.to(
+                model_input['pressure'][0],
+                f"{model_input['pressure'][1]} => Pa"
+            )
+            T = pycuc.to(
+                model_input['temperature'][0],
+                f"{model_input['temperature'][1]} => K"
+            )
+
+            # SECTION: ThermoDB Source Setup
+            datasource = model_source.get('datasource', {})
+            equationsource = model_source.get('equationsource', {})
+            link_status = self.set_thermodb_link(datasource, equationsource)
+            if not link_status:
+                raise Exception('Thermodb link failed!')
+
+            reference = self._references.get(eos_model, None)
+            component_datasource = self.set_datasource(components, reference)
+            equation_equationsource = self.set_equationsource(
+                components, reference)
+
+            # SECTION: EOS Root Selection
+            eos_manager = EOSManager(
+                component_datasource, equation_equationsource, **kwargs)
+            root_analysis = {'root': [root_id]}
+
+            roots, eos_params, _params_comp = eos_manager.eos_roots(
+                P,
+                T,
+                components,
+                root_analysis,
+                eos_model=eos_model,
+                solver_method=solver_method,
+                mode='single'
+            )
+            if len(roots) == 0:
+                raise Exception(
+                    'No EOS root found for residual property calculation!')
+            Z = float(roots[0])
+            params = eos_params[0]
+
+            # SECTION: Critical-Property Extraction
+            component_data = component_datasource[components[0]]
+            Pc = pycuc.to(
+                float(component_data['Pc']['value']),
+                f"{component_data['Pc']['unit']} => Pa"
+            )
+            Tc = pycuc.to(
+                float(component_data['Tc']['value']),
+                f"{component_data['Tc']['unit']} => K"
+            )
+
+            # SECTION: Residual Property Evaluation
+            residual = residual_properties_cubic_pure(
+                P=P,
+                T=T,
+                Z=Z,
+                Tc=Tc,
+                Pc=Pc,
+                alpha_acentric_input=params['omega'],
+                eos_model=eos_model,
+                sigma=params['sigma'],
+                epsilon=params['epsilon'],
+                psi=params['psi'],
+                omega=params['omega'],
+                phase=phase,
+            )
+
+            return {
+                'component': components,
+                'phase': [phase.lower()],
+                'mode': 'SINGLE',
+                'eos_model': eos_model,
+                'convention': residual.convention,
+                'results': {
+                    phase.lower(): {
+                        'temperature': {'value': T, 'unit': 'K', 'symbol': 'T'},
+                        'pressure': {'value': P, 'unit': 'Pa', 'symbol': 'P'},
+                        'compressibility_coefficient': {
+                            'value': residual.compressibility_factor,
+                            'unit': 'dimensionless',
+                            'symbol': 'Z'
+                        },
+                        'molar_volume': {
+                            'value': residual.molar_volume,
+                            'unit': 'm3/mol',
+                            'symbol': 'MoVo'
+                        },
+                        'residual_enthalpy': {
+                            'value': residual.residual_enthalpy,
+                            'unit': 'J/mol',
+                            'symbol': 'H^R'
+                        },
+                        'residual_entropy': {
+                            'value': residual.residual_entropy,
+                            'unit': 'J/(mol.K)',
+                            'symbol': 'S^R'
+                        },
+                        'residual_gibbs': {
+                            'value': residual.residual_gibbs,
+                            'unit': 'J/mol',
+                            'symbol': 'G^R'
+                        },
+                        'residual_internal_energy': {
+                            'value': residual.residual_internal_energy,
+                            'unit': 'J/mol',
+                            'symbol': 'U^R'
+                        },
+                        'residual_isobaric_heat_capacity': {
+                            'value': residual.residual_isobaric_heat_capacity,
+                            'unit': 'J/(mol.K)',
+                            'symbol': 'Cp^R'
+                        },
+                        'residual_isochoric_heat_capacity': {
+                            'value': residual.residual_isochoric_heat_capacity,
+                            'unit': 'J/(mol.K)',
+                            'symbol': 'Cv^R'
+                        },
+                        'roots': {
+                            'value': [float(x) for x in roots],
+                            'unit': 'dimensionless',
+                            'symbol': 'Z_i'
+                        },
+                    }
+                }
+            }
+        except Exception as e:
+            raise Exception('Residual property calculation failed!, ', e)
 
     @add_attributes(metadata=EQUATION_OF_STATE_MODELS)
     def cal_fugacity(
@@ -195,6 +383,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             eos_model = eos_model_name(eos_model)
 
             # SECTION: phase
+            # NOTE: Residual properties are evaluated for one explicit homogeneous root.
             phase = model_input.get('phase', None)
 
             # check
@@ -210,6 +399,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             calculation_mode = 'single'
 
             # SECTION: component list
+            # SECTION: Input Validation
             component = model_input.get('component', None)
             # check
             if component is None or component == 'None':
@@ -264,6 +454,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             # SECTION: set datasource and equationsource
             # NOTE: check if datasource and equationsource are provided in model_input
             # datasource
+            # SECTION: ThermoDB Source Setup
             datasource = model_source.get('datasource', {})
             # equationsource
             equationsource = model_source.get('equationsource', {})
@@ -447,6 +638,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             eos_model = eos_model_name(eos_model)
 
             # NOTE: phase
+            # NOTE: Residual properties are evaluated for one explicit homogeneous root.
             phase = model_input.get('phase', None)
 
             # check
@@ -633,6 +825,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             eos_model = eos_model_name(eos_model)
 
             # NOTE: component list
+            # SECTION: Input Validation
             component = model_input.get('component', None)
             if component is None or component == 'None':
                 raise Exception('Component name is not provided!')
@@ -656,6 +849,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             # SECTION: set datasource and equationsource
             # NOTE: check if datasource and equationsource are provided in model_input
             # datasource
+            # SECTION: ThermoDB Source Setup
             datasource = model_source.get('datasource', {})
             # equationsource
             equationsource = model_source.get('equationsource', {})
@@ -684,6 +878,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
 
             # SECTION: operating conditions
             # pressure [Pa]
+            # SECTION: Unit Conversion
             P = pycuc.to(
                 operating_conditions["pressure"][0],
                 f"{operating_conditions['pressure'][1]} => Pa")
@@ -835,6 +1030,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             eos_model = eos_model_name(eos_model)
 
             # SECTION: phase
+            # NOTE: Residual properties are evaluated for one explicit homogeneous root.
             phase = model_input.get('phase', None)
 
             # check
@@ -921,6 +1117,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             # SECTION: set datasource and equationsource
             # NOTE: check if datasource and equationsource are provided in model_input
             # datasource
+            # SECTION: ThermoDB Source Setup
             datasource = model_source.get('datasource', {})
             # equationsource
             equationsource = model_source.get('equationsource', {})
@@ -1098,6 +1295,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             eos_model = eos_model_name(eos_model)
 
             # NOTE: phase
+            # NOTE: Residual properties are evaluated for one explicit homogeneous root.
             phase = model_input.get('phase', None)
 
             # check
@@ -1352,6 +1550,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             # SECTION: set datasource and equationsource
             # NOTE: check if datasource and equationsource are provided in model_input
             # datasource
+            # SECTION: ThermoDB Source Setup
             datasource = model_source.get('datasource', {})
             # equationsource
             equationsource = model_source.get('equationsource', {})
@@ -1374,6 +1573,7 @@ class eosCore(ThermoLinkDB, ReferenceManager):
 
             # SECTION: operating conditions
             # pressure [Pa]
+            # SECTION: Unit Conversion
             P = pycuc.to(
                 operating_conditions["pressure"][0],
                 f"{operating_conditions['pressure'][1]} => Pa")
@@ -1399,3 +1599,4 @@ class eosCore(ThermoLinkDB, ReferenceManager):
             return res
         except Exception as e:
             raise Exception("Fugacity calculation failed!, ", e)
+
