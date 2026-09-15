@@ -3,11 +3,12 @@
 # import libs
 import logging
 import numpy as np
-from math import pow, exp, log, sqrt
-from typing import Optional, Any
+from math import pow, sqrt
+from typing import Optional
 import pycuc
 # local
 from ..configs import R_CONST, PREDEFINED_PARAMETERS
+from .alpha import alpha_value
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -70,36 +71,28 @@ class EOSModels():
                     "epsilon": 0,
                     "omega": 0.12500,
                     'psi': 0.42188,
-                    'alpha': 1,
+                    'alpha': lambda T, Tc, omega=None: alpha_value(T, Tc, omega, model='vdW'),
                 },
                 "RK": {
                     "sigma": 1,
                     "epsilon": 0,
                     "omega": 0.08664,
                     'psi': 0.42748,
-                    'alpha': lambda Tr: pow(Tr, -0.50)
+                    'alpha': lambda T, Tc, omega=None: alpha_value(T, Tc, omega, model='RK')
                 },
                 "SRK": {
                     "sigma": 1,
                     "epsilon": 0,
                     "omega": 0.08664,
                     'psi': 0.42748,
-                    'alpha': lambda Tr, omega: pow(
-                        1 + (0.480 + 1.574 * omega - 0.176 * pow(omega, 2)) *
-                        (1 - pow(Tr, 0.5)),
-                        2
-                    )
+                    'alpha': lambda T, Tc, omega=None: alpha_value(T, Tc, omega, model='SRK')
                 },
                 "PR": {
                     "sigma": 1 + sqrt(2),
                     "epsilon": 1 - sqrt(2),
                     "omega": 0.07780,
                     'psi': 0.45724,
-                    'alpha': lambda Tr, omega: pow(
-                        1+(0.37464 + 1.54226*omega - 0.26992*pow(omega, 2)) *
-                        (1 - pow(Tr, 0.5)),
-                        2
-                    )
+                    'alpha': lambda T, Tc, omega=None: alpha_value(T, Tc, omega, model='PR')
                 },
             }
 
@@ -224,27 +217,16 @@ class EOSModels():
         epsilon: float = eos_parameter_selection_['epsilon']
         omega: float = eos_parameter_selection_['omega']
         psi: float = eos_parameter_selection_['psi']
-        alpha_: Any = eos_parameter_selection_['alpha']
+        alpha_ = eos_parameter_selection_['alpha']
 
         # Tr
         Tr = T/Tc
         # Pr
         Pr = P/Pc
 
-        # NOTE: alpha function
-        # >> alpha
-        alpha = 1.0
-
-        # check type
-        if method == "SRK" or method == 'PR':
-            alpha: float = alpha_(Tr, omega)
-        elif method == 'RK':
-            alpha: float = alpha_(Tr)
-        elif method == 'vdW':
-            alpha: float = alpha_
-        else:
+        if method not in ['vdW', 'RK', 'SRK', 'PR']:
             raise Exception("Unknown equation of state method!")
-
+        alpha: float = alpha_(T, Tc, omega)
         # SECTION: Determination of Equation-of-State Parameters (page 98)
         # a(T)
         a = psi*alpha*pow(R, 2)*pow(Tc, 2)/Pc
@@ -724,3 +706,5 @@ class EOSModels():
         alpha, beta, gamma = params['alpha'], params['beta'], params['gamma']
 
         return [1, alpha, beta, gamma]
+
+
