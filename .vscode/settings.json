@@ -10,6 +10,7 @@
         "equationsource",
         "ftol",
         "isochoric",
+        "Kesler",
         "Margules",
         "ndarray",
         "NRTL",
