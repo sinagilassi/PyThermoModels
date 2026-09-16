@@ -1,5 +1,5 @@
 # import packages/modules
-import os
+from examples.source.model_source_1 import model_source, model_source_dict, C3H8
 import sys
 from pathlib import Path
 from typing import Dict
@@ -22,7 +22,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # ! model source & components
-from examples.source.model_source_1 import model_source, model_source_dict, C3H8
 
 # check version
 print(ptm.__version__)
@@ -91,6 +90,3 @@ res = calc_residual_properties(
     mode='log',
 )
 print(res)
-
-
-
