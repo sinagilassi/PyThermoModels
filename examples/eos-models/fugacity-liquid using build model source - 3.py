@@ -1,5 +1,4 @@
 # import packages/modules
-import os
 from typing import Dict
 from rich import print
 import pyThermoModels as ptm
