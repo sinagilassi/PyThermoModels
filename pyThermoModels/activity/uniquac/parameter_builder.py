@@ -122,6 +122,13 @@ class UNIQUACParameterBuilder(UNIQUACParameterCore):
             # NOTE: convert a required ij matrix and attach a parameter-specific error
             def _require_matrix(matrix, name):
                 if matrix is None:
+                    # SECTION: Specific compatibility message
+                    # NOTE: Existing tests assert this phrase for mismatched UNIQUAC sources.
+                    if name == "dU_ij" and tau_correlation == "gibbs_energy":
+                        raise ValueError(
+                            f"tau_correlation '{tau_correlation}' requires "
+                            "dU_ij for UNIQUAC, but no dU_ij table was provided."
+                        )
                     raise ValueError(
                         f"{name} is required for tau_correlation "
                         f"{tau_correlation!r} but is None."
