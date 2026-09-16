@@ -9,6 +9,9 @@ import pycuc
 # local
 from ..configs import R_CONST, PREDEFINED_PARAMETERS
 from .alpha import alpha_value
+# SECTION: Phase-2 mixing rule interface
+# NOTE: Imported here so legacy EOSModels.eos_mixing_rule can remain a compatibility wrapper.
+from .mixing import classical_quadratic_mixing
 
 # NOTE: logger
 logger = logging.getLogger(__name__)
@@ -414,52 +417,17 @@ class EOSModels():
         - aij, bij are the pure component attraction parameters
         - kj is the binary interaction parameter (BIP), which accounts for deviations from ideal mixing
         '''
-        # record no
-        rNo = len(params_list)
-
-        # ki
-        if k_ij is None:
-            k_ij = np.zeros((rNo, rNo))
-        else:
-            # check
-            if isinstance(k_ij, list):
-                k_ij = np.array(k_ij)
-
-        # ai,bi, Ai,Bi
-        ai = np.zeros(rNo)
-        bi = np.zeros(rNo)
-        Ai = np.zeros(rNo)
-        Bi = np.zeros(rNo)
-
-        # extract data
-        for i in range(rNo):
-            ai[i] = params_list[i]['a']
-            bi[i] = params_list[i]['b']
-            Ai[i] = params_list[i]['A']
-            Bi[i] = params_list[i]['B']
-
-        # NOTE: Attraction parameter amix
-        a_ij = self.__aij(ai, k_ij)
-        A_ij = self.__aij(Ai, k_ij)
-
-        # NOTE: Calculate a_mix
-        a_mix = 0.0
-        A_mix = 0.0
-
-        # looping through the matrix
-        for i in range(rNo):
-            for j in range(rNo):
-                a_mix += xi[i] * xi[j] * a_ij[i, j]
-                A_mix += xi[i] * xi[j] * A_ij[i, j]
-
-        # NOTE: Covolume parameter
-        # bmix
-        b_mix = np.dot(xi, bi)
-        # Bmix
-        B_mix = np.dot(xi, Bi)
-
-        # res
-        return a_mix, b_mix, a_ij, A_mix, B_mix
+        # SECTION: Compatibility wrapper
+        # NOTE: New code should use classical_quadratic_mixing directly.
+        result = classical_quadratic_mixing(xi, params_list, k_ij=k_ij)
+        # ! Preserve legacy tuple order expected by existing fugacity code.
+        return (
+            result.a_mix,
+            result.b_mix,
+            result.a_ij,
+            result.A_mix,
+            result.B_mix,
+        )
 
     def __aij(
         self,
