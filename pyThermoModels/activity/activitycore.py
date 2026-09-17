@@ -1,4 +1,4 @@
-# import packages/modules
+﻿# import packages/modules
 from typing import Any, Union, Optional, Dict, List
 from math import log
 # local
@@ -6,6 +6,7 @@ from .nrtl import NRTL
 from .uniquac import UNIQUAC
 from .unifac import UNIFAC
 from .enrtl import ENRTL
+from .pitzer import Pitzer
 from .wilson import Wilson
 from .margules import Margules
 from .van_laar import VanLaar
@@ -21,6 +22,7 @@ class ActivityCore:
     __uniquac: Optional[UNIQUAC] = None
     __unifac: Optional[UNIFAC] = None
     __enrtl: Optional[ENRTL] = None
+    __pitzer: Optional[Pitzer] = None
     __wilson: Optional[Wilson] = None
     __margules: Optional[Margules] = None
     __van_laar: Optional[VanLaar] = None
@@ -112,6 +114,14 @@ class ActivityCore:
             )
             # ! redlich-kister
             self.__redlich_kister = RedlichKister(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                mixture_id=self._mixture_id,
+            )
+        # ! pitzer: v1 is deliberately binary-only.
+        if len(self.components) == 2:
+            self.__pitzer = Pitzer(
                 components=self.components,
                 datasource=self.datasource,
                 equationsource=self.equationsource,
@@ -220,6 +230,12 @@ class ActivityCore:
             raise Exception(f"Error in ENRTL: {e}") from e
 
     @property
+    def pitzer(self):
+        """Return the independent binary Pitzer electrolyte model."""
+        if self.__pitzer is None:
+            raise ValueError("PITZER model not initialized.")
+        return self.__pitzer
+    @property
     def wilson(self):
         '''
         Initialize the Wilson activity model.
@@ -270,7 +286,7 @@ class ActivityCore:
     def select(
         self,
         model_name: str
-    ) -> Union[NRTL, UNIQUAC, UNIFAC, ENRTL, Wilson, Margules, VanLaar, RedlichKister]:
+    ) -> Union[NRTL, UNIQUAC, UNIFAC, ENRTL, Pitzer, Wilson, Margules, VanLaar, RedlichKister]:
         '''
         Select the activity model based on the model name.
 
@@ -310,6 +326,12 @@ class ActivityCore:
                     self.components,
                     self.datasource,
                     self.equationsource
+                )
+            elif model_name == 'PITZER':
+                return Pitzer(
+                    self.components,
+                    self.datasource,
+                    self.equationsource,
                 )
             elif model_name == 'WILSON':
                 return Wilson(
