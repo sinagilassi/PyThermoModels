@@ -140,3 +140,43 @@ REFERENCES:
   UNIFAC:
     DEPENDANT-DATA: None
     DEPENDANT-EQUATIONS: None
+  WILSON:
+    DEPENDANT-DATA:
+      lambda:
+        name: Wilson Lambda parameter
+        symbol: lambda
+        unit: None
+    DEPENDANT-EQUATIONS: None
+  MARGULES:
+    DEPENDANT-DATA:
+      A:
+        name: two-suffix Margules parameter
+        symbol: A
+        unit: None
+      A12:
+        name: three-suffix Margules parameter from component 1 to 2
+        symbol: A12
+        unit: None
+      A21:
+        name: three-suffix Margules parameter from component 2 to 1
+        symbol: A21
+        unit: None
+    DEPENDANT-EQUATIONS: None
+  VAN_LAAR:
+    DEPENDANT-DATA:
+      a1:
+        name: van Laar parameter for component 1
+        symbol: a1
+        unit: None
+      a2:
+        name: van Laar parameter for component 2
+        symbol: a2
+        unit: None
+    DEPENDANT-EQUATIONS: None
+  REDLICH_KISTER:
+    DEPENDANT-DATA:
+      a:
+        name: Redlich-Kister ordered coefficient vector
+        symbol: a
+        unit: None
+    DEPENDANT-EQUATIONS: None
