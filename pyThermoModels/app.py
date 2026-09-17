@@ -1,9 +1,10 @@
-# import packages/modules
+﻿# import packages/modules
 from typing import Dict, Optional, Literal, List, Any
 # local
 from .activity import (
     ActivityCore,
     ENRTL,
+    Pitzer,
     NRTL,
     UNIQUAC,
     UNIFAC
@@ -58,7 +59,7 @@ def eos(**kwargs):
 def activity(
         components: List[Any],
         model_name: Literal[
-            'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL',
+            'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL', 'PITZER',
             'WILSON', 'MARGULES', 'VAN_LAAR', 'REDLICH_KISTER'
         ],
         model_source: Optional[Dict[str, Any]] = None,
@@ -78,7 +79,8 @@ def activity(
             2. `UNIQUAC`: Universal Quasi-Chemical Model
             3. `UNIFAC`: Universal Functional Activity Coefficient Model
             4. `ENRTL`: Electrolyte Non-Random Two-Liquid Model
-            5. `WILSON`: Wilson Model
+            5. `PITZER`: Binary Pitzer Electrolyte Model
+            6. `WILSON`: Wilson Model
             6. `MARGULES`: Margules Model
             7. `VAN_LAAR`: van Laar Model
             8. `REDLICH_KISTER`: Redlich-Kister Model
