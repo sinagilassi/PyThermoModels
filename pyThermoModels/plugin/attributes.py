@@ -1,4 +1,4 @@
-# import libs
+﻿# import libs
 
 # local
 
@@ -90,6 +90,18 @@ ACTIVITY_MODELS = {
             "states. The first formulation identifier is chen_evans_1986; "
             "charge is consumed from component metadata and speciation is "
             "kept outside ENRTL."
+        )
+    },
+    "PITZER": {
+        'DEPENDENT_DATA': {
+            'beta0': {'unit': 'kg/mol', 'symbol': 'beta0'},
+            'beta1': {'unit': 'kg/mol', 'symbol': 'beta1'},
+            'c_phi': {'unit': 'kg^2/mol^2', 'symbol': 'C_phi'},
+        },
+        'DEPENDENT_EQUATIONS': {},
+        'DESCRIPTION': (
+            "Pitzer v1: one fully dissociated binary electrolyte on a molality "
+            "basis, using the single-alpha formulation and reporting gamma_pm only."
         )
     },
     "WILSON": {
