@@ -91,5 +91,49 @@ ACTIVITY_MODELS = {
             "charge is consumed from component metadata and speciation is "
             "kept outside ENRTL."
         )
+    },
+    "WILSON": {
+        'DEPENDENT_DATA': {
+            'lambda_parameters': {'unit': 'None', 'symbol': 'lambda'},
+        },
+        'DEPENDENT_EQUATIONS': {},
+        'DESCRIPTION': (
+            "Wilson activity model using positive dimensionless Lambda "
+            "parameters. The standard Wilson model cannot represent "
+            "liquid-liquid splitting."
+        )
+    },
+    "MARGULES": {
+        'DEPENDENT_DATA': {
+            'A': {'unit': 'None', 'symbol': 'A'},
+            'A12': {'unit': 'None', 'symbol': 'A12'},
+            'A21': {'unit': 'None', 'symbol': 'A21'},
+        },
+        'DEPENDENT_EQUATIONS': {},
+        'DESCRIPTION': (
+            "Binary two-suffix and three-suffix Margules activity model "
+            "with dimensionless excess-Gibbs parameters."
+        )
+    },
+    "VAN_LAAR": {
+        'DEPENDENT_DATA': {
+            'a1': {'unit': 'None', 'symbol': 'a1'},
+            'a2': {'unit': 'None', 'symbol': 'a2'},
+        },
+        'DEPENDENT_EQUATIONS': {},
+        'DESCRIPTION': (
+            "Binary van Laar activity model with dimensionless a1 and a2 "
+            "parameters."
+        )
+    },
+    "REDLICH_KISTER": {
+        'DEPENDENT_DATA': {
+            'a': {'unit': 'None', 'symbol': 'a'},
+        },
+        'DEPENDENT_EQUATIONS': {},
+        'DESCRIPTION': (
+            "Binary Redlich-Kister excess-Gibbs expansion using ordered "
+            "dimensionless coefficients a[0..n]."
+        )
     }
 }
