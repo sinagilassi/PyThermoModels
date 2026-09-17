@@ -6,6 +6,10 @@ from .nrtl import NRTL
 from .uniquac import UNIQUAC
 from .unifac import UNIFAC
 from .enrtl import ENRTL
+from .wilson import Wilson
+from .margules import Margules
+from .van_laar import VanLaar
+from .redlich_kister import RedlichKister
 
 
 class ActivityCore:
@@ -17,6 +21,10 @@ class ActivityCore:
     __uniquac: Optional[UNIQUAC] = None
     __unifac: Optional[UNIFAC] = None
     __enrtl: Optional[ENRTL] = None
+    __wilson: Optional[Wilson] = None
+    __margules: Optional[Margules] = None
+    __van_laar: Optional[VanLaar] = None
+    __redlich_kister: Optional[RedlichKister] = None
 
     # NOTE: mixture id
     _mixture_id: Optional[str] = None
@@ -80,6 +88,34 @@ class ActivityCore:
                 datasource=self.datasource,
                 equationsource=self.equationsource,
                 **kwargs
+            )
+            # ! wilson
+            self.__wilson = Wilson(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                mixture_id=self._mixture_id,
+            )
+            # ! margules
+            self.__margules = Margules(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                mixture_id=self._mixture_id,
+            )
+            # ! van Laar
+            self.__van_laar = VanLaar(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                mixture_id=self._mixture_id,
+            )
+            # ! redlich-kister
+            self.__redlich_kister = RedlichKister(
+                components=self.components,
+                datasource=self.datasource,
+                equationsource=self.equationsource,
+                mixture_id=self._mixture_id,
             )
         # ! enrtl
         self.__enrtl = ENRTL(
@@ -183,7 +219,58 @@ class ActivityCore:
         except Exception as e:
             raise Exception(f"Error in ENRTL: {e}") from e
 
-    def select(self, model_name: str) -> Union[NRTL, UNIQUAC, UNIFAC, ENRTL]:
+    @property
+    def wilson(self):
+        '''
+        Initialize the Wilson activity model.
+        '''
+        try:
+            if self.__wilson is None:
+                raise ValueError("Wilson model not initialized.")
+            return self.__wilson
+        except Exception as e:
+            raise Exception(f"Error in Wilson: {e}") from e
+
+    @property
+    def margules(self):
+        '''
+        Initialize the Margules activity model.
+        '''
+        try:
+            if self.__margules is None:
+                raise ValueError("Margules model not initialized.")
+            return self.__margules
+        except Exception as e:
+            raise Exception(f"Error in Margules: {e}") from e
+
+    @property
+    def van_laar(self):
+        '''
+        Initialize the van Laar activity model.
+        '''
+        try:
+            if self.__van_laar is None:
+                raise ValueError("van Laar model not initialized.")
+            return self.__van_laar
+        except Exception as e:
+            raise Exception(f"Error in van Laar: {e}") from e
+
+    @property
+    def redlich_kister(self):
+        '''
+        Initialize the Redlich-Kister activity model.
+        '''
+        try:
+            if self.__redlich_kister is None:
+                raise ValueError("Redlich-Kister model not initialized.")
+            return self.__redlich_kister
+        except Exception as e:
+            raise Exception(f"Error in Redlich-Kister: {e}") from e
+
+    def select(
+        self,
+        model_name: str
+    ) -> Union[NRTL, UNIQUAC, UNIFAC, ENRTL, Wilson, Margules, VanLaar, RedlichKister]:
         '''
         Select the activity model based on the model name.
 
@@ -198,6 +285,8 @@ class ActivityCore:
             Instance of the selected activity model class.
         '''
         try:
+            model_name = model_name.upper()
+
             if model_name == 'NRTL':
                 return NRTL(
                     self.components,
@@ -218,6 +307,30 @@ class ActivityCore:
                 )
             elif model_name == 'ENRTL':
                 return ENRTL(
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
+            elif model_name == 'WILSON':
+                return Wilson(
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
+            elif model_name == 'MARGULES':
+                return Margules(
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
+            elif model_name == 'VAN_LAAR':
+                return VanLaar(
+                    self.components,
+                    self.datasource,
+                    self.equationsource
+                )
+            elif model_name == 'REDLICH_KISTER':
+                return RedlichKister(
                     self.components,
                     self.datasource,
                     self.equationsource
