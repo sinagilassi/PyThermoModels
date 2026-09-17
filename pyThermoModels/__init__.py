@@ -1,4 +1,4 @@
-from .configs import (
+﻿from .configs import (
     __description__,
     __version__,
     __author__
@@ -6,6 +6,7 @@ from .configs import (
 from .activity import (
     ActivityCore,
     ENRTL,
+    Pitzer,
     NRTL,
     UNIQUAC,
     UNIFAC
@@ -31,6 +32,7 @@ __all__ = [
     # activity models
     'NRTL',
     'ENRTL',
+    'Pitzer',
     'UNIQUAC',
     'UNIFAC',
     'ActivityCore'

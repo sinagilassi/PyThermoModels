@@ -1,6 +1,7 @@
-from .activitycore import ActivityCore
+﻿from .activitycore import ActivityCore
 from .nrtl import NRTL
 from .enrtl import ENRTL
+from .pitzer import Pitzer
 from .uniquac import UNIQUAC
 from .wilson import Wilson
 from .margules import Margules
@@ -19,6 +20,7 @@ __all__ = [
     'ActivityCore',
     'NRTL',
     'ENRTL',
+    'Pitzer',
     'UNIQUAC',
     'UNIFAC',
     'Wilson',
