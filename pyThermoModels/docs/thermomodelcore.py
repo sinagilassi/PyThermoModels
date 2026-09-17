@@ -911,7 +911,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
         self,
         components: List[Any],
         model_name: Literal[
-            'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL',
+            'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL', 'PITZER',
             'WILSON', 'MARGULES', 'VAN_LAAR', 'REDLICH_KISTER'
         ],
         model_source: Optional[
@@ -983,7 +983,7 @@ class ThermoModelCore(ThermoDB, ThermoLinkDB, ReferenceManager):
             # SECTION: reference for activity models
             reference = self._references.get(activity_model, None)
 
-            if activity_model == 'ENRTL' and reference is None:
+            if activity_model in ('ENRTL', 'PITZER') and reference is None:
                 component_datasource = datasource
                 equation_equationsource = equationsource
             else:
