@@ -1,4 +1,4 @@
-# ENRTL Activity Calculation Guide for Agents
+﻿# ENRTL Activity Calculation Guide for Agents
 
 This guide documents the current `PyThermoModels` ENRTL input contract. Treat
 the implementation as the source of truth and keep the thermodynamic guidance
@@ -29,15 +29,15 @@ Implemented infrastructure:
 - neutral molecular NRTL limiting path
 - log-space contribution summation
 - mean ionic activity coefficient helper
-- excess Gibbs energy from supplied `ln_gamma`
+- contribution-level excess-Gibbs diagnostics with ionic total gating
 
 Important limitation:
 
-The charged-species Chen-Evans local-composition equations are not yet
-implemented. If any component has nonzero charge and the local-composition mode
-is `"chen_evans_1986"`, `ENRTL.cal()` raises `NotImplementedError`. This is
-intentional; do not document the current model as production-complete for ionic
-ENRTL activity coefficients.
+The charged-species Chen-Evans local-composition path is implemented for
+`"chen_evans_1986"` and is used for ionic true-species calculations. Its
+caloric extensions remain gated: the current long-range equations expose
+`ln(gamma)` contributions, not a validated long-range excess-Gibbs potential, and
+public excess enthalpy is intentionally unavailable.
 
 For neutral-only mixtures, ENRTL falls back to the NRTL local-composition limit.
 For ionic mixtures, the current code can validate inputs and defines the
@@ -297,8 +297,8 @@ For source-generated values, provide NRTL-style source symbols such as `tau`,
 
 Local-composition modes:
 
-- `"chen_evans_1986"` is the default. It raises for ionic mixtures until the
-  full electrolyte-specific local-composition equations are implemented.
+- `"chen_evans_1986"` is the default and supports the implemented ionic
+  Chen-Evans local-composition path.
 - `"neutral_nrtl_limit"` is valid only when every component charge is zero.
 
 Do not force ionic ENRTL parameters into an ordinary unrestricted NRTL matrix
@@ -410,8 +410,7 @@ res, details = model.cal({
 
 ## Ionic True-Species Example
 
-This input is structurally correct, but currently reaches the
-Chen-Evans local-composition guardrail:
+This input exercises the implemented ionic Chen-Evans local-composition path:
 
 ```python
 components = [
@@ -445,10 +444,8 @@ model_input = {
     },
 }
 
-try:
-    res, details = enrtl.cal(model_input=model_input)
-except NotImplementedError:
-    print("Ionic Chen-Evans local-composition equations are incomplete.")
+res, details = enrtl.cal(model_input=model_input)
+local_gE_RT = details["excess_gibbs_contributions_RT"]["local_composition"]
 ```
 
 ## Mean Ionic Activity Coefficient
@@ -487,13 +484,12 @@ exp((nu_cation*ln(gamma_cation) + nu_anion*ln(gamma_anion))
 - `mole_fraction`: dict, list, or numpy array in component order.
 - `ln_gamma`: list or numpy array with one value per component.
 
-It returns `G^E / RT`:
-
-```text
-sum(x_i * ln(gamma_i))
-```
-
-Use `details["ln_gamma_total"]` from `cal()` when available.
+For neutral mixtures it returns the NRTL identity `sum(x_i * ln(gamma_i))`.
+For ionic mixtures, this identity is rejected unless
+`allow_ionic_identity=True` explicitly accepts a caller-defined true-species
+convention. Prefer `details["excess_gibbs_contributions_RT"]`; its total is
+unavailable for ionic systems until a long-range excess-Gibbs potential is
+validated.
 
 ## Common Failure Points
 
@@ -507,8 +503,8 @@ Use `details["ln_gamma_total"]` from `cal()` when available.
 - Missing `molality` or `molarity` when the long-range basis requires it.
 - Missing `A_phi` for `pitzer_debye_huckel`.
 - Missing `A`, `B`, or charged-component `ion_size` for `debye_huckel`.
-- Expecting an ionic ENRTL calculation to complete before the
-  Chen-Evans local-composition equations are implemented.
+- Expecting a complete ionic `G^E` or excess enthalpy before long-range and
+  derivative/reference-state validation is complete.
 - Using `neutral_nrtl_limit` with charged species.
 - Mismatching component order between `components`, list inputs, and matrices.
 
@@ -524,5 +520,5 @@ Use `details["ln_gamma_total"]` from `cal()` when available.
 6. Provide long-range constants for the chosen long-range model.
 7. Provide `tau_ij` and `alpha_ij` directly or ensure the source can generate
    them with the selected `tau_correlation`.
-8. State the current ionic local-composition limitation whenever showing ionic
-   ENRTL examples or tests.
+8. State that ionic caloric outputs remain gated whenever showing ionic ENRTL
+   examples or tests.
