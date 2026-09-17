@@ -57,7 +57,10 @@ def eos(**kwargs):
 @add_attributes(metadata=ACTIVITY_MODELS)
 def activity(
         components: List[Any],
-        model_name: Literal['NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL'],
+        model_name: Literal[
+            'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL',
+            'WILSON', 'MARGULES', 'VAN_LAAR', 'REDLICH_KISTER'
+        ],
         model_source: Optional[Dict[str, Any]] = None,
         **kwargs
 ) -> ActivityCore:
@@ -70,11 +73,15 @@ def activity(
         List of component names or Component objects to be used in the activity model.
         ENRTL should receive Component objects so charge metadata is available.
     model_name: str
-        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'UNIFAC', 'ENRTL').
+        Name of the activity model to be used (e.g., 'NRTL', 'UNIQUAC', 'WILSON').
             1. `NRTL`: Non-Random Two-Liquid Model
             2. `UNIQUAC`: Universal Quasi-Chemical Model
             3. `UNIFAC`: Universal Functional Activity Coefficient Model
             4. `ENRTL`: Electrolyte Non-Random Two-Liquid Model
+            5. `WILSON`: Wilson Model
+            6. `MARGULES`: Margules Model
+            7. `VAN_LAAR`: van Laar Model
+            8. `REDLICH_KISTER`: Redlich-Kister Model
     model_source: dict, optional
         Dictionary containing the source of the activity model data.
         If None, default values will be used.
