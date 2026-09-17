@@ -1,7 +1,8 @@
 # import libs
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
+from pyThermoDB import TableMatrixData
 
 # local
 from ...plugin import ACTIVITY_MODELS
@@ -116,7 +117,9 @@ class Wilson(ClassicalActivityBase):
     def excess_gibbs_free_energy(
         self,
         mole_fraction: Optional[Dict[str, float]] = None,
-        lambda_ij: Optional[np.ndarray] = None,
+        lambda_ij: Optional[
+            TableMatrixData | np.ndarray | Dict[str, float] | List[List[float]]
+        ] = None,
         symbol_delimiter: Literal["|", "_"] = "|",
         message: Optional[str] = None,
         res_format: Literal["str", "json", "dict"] = "dict",
