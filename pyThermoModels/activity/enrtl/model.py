@@ -1,4 +1,4 @@
-from math import exp, log
+﻿from math import exp, log
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
@@ -10,7 +10,12 @@ from ...utils import add_attributes
 from ...utils.utility import TauCorrelation
 from ..component_parameter_mixin import ComponentParameterMixin
 from .component_adapter import ENRTLComponentAdapter
+from .caloric import excess_enthalpy_not_available
 from .core import ActivityBasis, CompositionRepresentation, ENRTLCore
+from .excess_gibbs import (
+    build_excess_gibbs_diagnostics,
+    local_composition_excess_gibbs_RT,
+)
 from .local_composition import ENRTLFormulation, ENRTLLocalComposition
 from .long_range import ENRTLLongRange
 from .parameter_builder import ENRTLParameterBuilder
@@ -165,6 +170,23 @@ class ENRTL(ENRTLCore):
             symbol_delimiter=symbol_delimiter,
         )
 
+        # SECTION: Thermodynamic-extension diagnostics
+        gE_lc_RT = local_composition_excess_gibbs_RT(
+            local_composition=self.local_composition,
+            mole_fraction=x,
+            charges=charges,
+            tau_ij=inputs["tau_ij"],
+            alpha_ij=inputs["alpha_ij"],
+            mode=local_mode,
+        )
+        excess_gibbs = build_excess_gibbs_diagnostics(
+            local_composition_RT=gE_lc_RT,
+            charges=charges,
+            composition_representation=inputs["composition_representation"],
+            local_composition_mode=local_mode,
+            long_range_model=long_range_inputs["model"],
+            ionic_strength_basis=basis,
+        )
         message = (
             "Calculate activity coefficients using ENRTL "
             f"({self.formulation})"
@@ -206,6 +228,11 @@ class ENRTL(ENRTLCore):
             "local_composition_mode": local_mode,
             "local_composition_diagnostics": self.local_composition.last_diagnostics,
             "composition_representation": inputs["composition_representation"],
+            "excess_gibbs_RT": excess_gibbs["total"],
+            "excess_gibbs_contributions_RT": excess_gibbs,
+            "reference_state": excess_gibbs["reference_state"],
+            "activity_convention": excess_gibbs["activity_convention"],
+            "species_basis": excess_gibbs["species_basis"],
         }
         return res, other_values
 
@@ -318,11 +345,43 @@ class ENRTL(ENRTLCore):
         self,
         mole_fraction: Dict[str, float] | List[float] | np.ndarray,
         ln_gamma: List[float] | np.ndarray,
+        *,
+        composition_representation: CompositionRepresentation = "true_species",
+        allow_ionic_identity: bool = False,
+        charges: Optional[Dict[str, int]] = None,
     ) -> Dict[str, Any]:
+        """Return the neutral identity, or an explicitly accepted ionic identity.
+
+        This helper is not the source of an ionic ENRTL excess-Gibbs result;
+        use ``cal()`` diagnostics for validated contribution-level values.
+        """
+        # SECTION: Prevent apparent-species and implicit ionic conventions.
+        if composition_representation != "true_species":
+            raise NotImplementedError(
+                "excess Gibbs energy requires composition_representation='true_species'"
+            )
         x = self._composition_to_array(mole_fraction, "mole_fraction")
+        if abs(float(np.sum(x)) - 1.0) > self.COMPOSITION_ATOL:
+            raise ValueError("ENRTL mole fractions must sum to 1.0")
         ln_gamma_array = np.asarray(ln_gamma, dtype=float)
         if ln_gamma_array.shape != (self.comp_num,):
             raise ValueError(f"ln_gamma must have shape ({self.comp_num},)")
+        if not np.all(np.isfinite(ln_gamma_array)):
+            raise ValueError("ln_gamma must contain finite values")
+
+        # NOTE: component metadata remains the default charge source.
+        adapter = ENRTLComponentAdapter(
+            components=self.original_components,
+            charge_overrides=charges,
+            require_charges=False,
+        )
+        charge_array = adapter.charges
+        if np.any(charge_array != 0) and not allow_ionic_identity:
+            raise NotImplementedError(
+                "sum(x_i * ln_gamma_i) is not a validated ionic ENRTL excess-Gibbs "
+                "identity; set allow_ionic_identity=True only when accepting the "
+                "caller-defined true-species convention."
+            )
 
         gE_RT = float(np.sum(x * ln_gamma_array))
         return {
@@ -334,8 +393,14 @@ class ENRTL(ENRTLCore):
             "value": gE_RT,
             "unit": 1,
             "symbol": "ExMoGiFrEn",
+            "composition_representation": composition_representation,
+            "identity_convention": "sum_x_ln_gamma",
+            "ionic_identity_explicitly_allowed": bool(allow_ionic_identity),
         }
 
+    def excess_enthalpy(self, *args: Any, **kwargs: Any) -> None:
+        """Guard the public caloric API until Step 10 validation is complete."""
+        return excess_enthalpy_not_available()
     def _build_tau_alpha(
         self,
         model_input: Dict[str, Any],
