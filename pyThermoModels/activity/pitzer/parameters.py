@@ -1,5 +1,5 @@
 ﻿"""Validated parameter container for Pitzer binary-electrolyte v1."""
-
+from collections.abc import Mapping
 from dataclasses import dataclass
 from math import isfinite
 
@@ -27,3 +27,37 @@ class PitzerBinaryParameters:
         for name in ("alpha", "A_phi", "b"):
             if getattr(self, name) <= 0.0:
                 raise ValueError(f"{name} must be positive")
+
+
+# ! extract Pitzer binary parameters
+def _extract_pitzer_binary_parameters(
+        model_input: Mapping
+) -> PitzerBinaryParameters:
+    # SECTION: Validation
+    beta0 = model_input.get("beta0")
+    # >> check
+    if beta0 is None:
+        raise ValueError("beta0 must be provided in model_input")
+    beta1 = model_input.get("beta1")
+    # >> check
+    if beta1 is None:
+        raise ValueError("beta1 must be provided in model_input")
+
+    c_phi = model_input.get("c_phi")
+    # >> check
+    if c_phi is None:
+        raise ValueError("c_phi must be provided in model_input")
+
+    # NOTE: default values for optional parameters
+    alpha = model_input.get("alpha", 2.0)
+    A_phi = model_input.get("A_phi", 0.3915)
+    b = model_input.get("b", 1.2)
+
+    return PitzerBinaryParameters(
+        beta0=beta0,
+        beta1=beta1,
+        c_phi=c_phi,
+        alpha=model_input.get("alpha", 2.0),
+        A_phi=model_input.get("A_phi", 0.3915),
+        b=model_input.get("b", 1.2),
+    )

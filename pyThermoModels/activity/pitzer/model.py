@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-
+# locals
 from ...plugin import ACTIVITY_MODELS
 from ...utils import add_attributes
 from .binary import (
@@ -19,7 +19,7 @@ from .core import (
     validate_binary_electrolyte_v1,
     validate_electroneutrality,
 )
-from .parameters import PitzerBinaryParameters
+from .parameters import PitzerBinaryParameters, _extract_pitzer_binary_parameters
 
 
 class Pitzer:
@@ -39,22 +39,46 @@ class Pitzer:
         **kwargs: Any,
     ) -> None:
         if not isinstance(components, list) or len(components) != 2:
-            raise ValueError("Pitzer v1 requires exactly [cation, anion] components")
-        self.components = [self._component_key(component) for component in components]
+            raise ValueError(
+                "Pitzer v1 requires exactly [cation, anion] components")
+        self.components = [self._component_key(
+            component) for component in components]
         self.datasource = {} if datasource is None else datasource
         self.equationsource = {} if equationsource is None else equationsource
 
     @add_attributes(metadata=ACTIVITY_MODELS["PITZER"])
-    def cal(self, model_input: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def cal(
+        self,
+        model_input: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Calculate binary Pitzer mean activity, osmotic coefficient, and water activity."""
         if not isinstance(model_input, dict):
             raise TypeError("model_input must be a dictionary")
 
         # SECTION: Build the validated binary ionic state.
-        salt_molality = float(model_input.get("salt_molality"))
+        salt_molality = model_input.get("salt_molality")
+        if salt_molality is None:
+            raise ValueError("salt_molality must be provided in model_input")
+        # >>> set
+        salt_molality = float(salt_molality)
+
+        # ? charges
+        charges = model_input.get("charges")
+        if charges is None or not isinstance(charges, (list, tuple)) or len(charges) != 2:
+            raise ValueError(
+                "charges must be provided as a list or tuple of length 2 in model_input")
+        charges = [int(charge) for charge in charges]
+
+        # ? stoichiometry
+        stoichiometry = model_input.get("stoichiometry")
+        if stoichiometry is None or not isinstance(stoichiometry, (list, tuple)) or len(stoichiometry) != 2:
+            raise ValueError(
+                "stoichiometry must be provided as a list or tuple of length 2 in model_input")
+        stoichiometry = [int(nu) for nu in stoichiometry]
+
         charges, stoichiometry = validate_binary_electrolyte_v1(
-            charges=model_input.get("charges"),
-            stoichiometry=model_input.get("stoichiometry"),
+            charges=charges,
+            stoichiometry=stoichiometry,
         )
         ion_molalities = build_binary_ion_molalities(
             salt_molality=salt_molality,
@@ -65,14 +89,11 @@ class Pitzer:
         ionic_strength = calc_ionic_strength(ion_molalities, charges)
 
         # SECTION: Parameters are direct, caller-supplied values at this temperature.
-        params = PitzerBinaryParameters(
-            beta0=model_input.get("beta0"),
-            beta1=model_input.get("beta1"),
-            c_phi=model_input.get("c_phi"),
-            alpha=model_input.get("alpha", 2.0),
-            A_phi=model_input.get("A_phi", 0.3915),
-            b=model_input.get("b", 1.2),
+        # NOTE: extract parameters
+        params: PitzerBinaryParameters = _extract_pitzer_binary_parameters(
+            model_input=model_input
         )
+
         phi = calc_osmotic_coefficient_binary(
             salt_molality=salt_molality,
             ionic_strength=ionic_strength,
@@ -105,7 +126,8 @@ class Pitzer:
             osmotic_coefficient=phi,
             nu_cation=int(stoichiometry[0]),
             nu_anion=int(stoichiometry[1]),
-            water_molar_mass=float(model_input.get("water_molar_mass", 0.01801528)),
+            water_molar_mass=float(model_input.get(
+                "water_molar_mass", 0.01801528)),
         )
 
         # ! gamma_mean is not an individual single-ion activity coefficient.

@@ -27,7 +27,8 @@ def calc_f_gamma(ionic_strength: float, params: PitzerBinaryParameters) -> float
     if I == 0.0:
         return 0.0
     root_I = sqrt(I)
-    bracket = root_I / (1.0 + params.b * root_I) + 2.0 * log(1.0 + params.b * root_I) / params.b
+    bracket = root_I / (1.0 + params.b * root_I) + 2.0 * \
+        log(1.0 + params.b * root_I) / params.b
     return -params.A_phi * bracket
 
 
@@ -40,7 +41,8 @@ def calc_B_gamma(ionic_strength: float, params: PitzerBinaryParameters) -> float
         return 2.0 * params.beta0 + params.beta1
     root_I = sqrt(I)
     alpha_root_I = params.alpha * root_I
-    bracket = 1.0 - (1.0 + alpha_root_I - 0.5 * alpha_root_I**2) * exp(-alpha_root_I)
+    bracket = 1.0 - (1.0 + alpha_root_I - 0.5 *
+                     alpha_root_I**2) * exp(-alpha_root_I)
     return 2.0 * params.beta0 + 2.0 * params.beta1 * bracket / (params.alpha**2 * I)
 
 
@@ -110,6 +112,7 @@ def calc_gamma_mean_binary(
         )
     )
 
+
 def calc_water_activity(
     salt_molality: float,
     osmotic_coefficient: float,
@@ -122,7 +125,8 @@ def calc_water_activity(
     phi = float(osmotic_coefficient)
     M_w = float(water_molar_mass)
     if not isfinite(phi) or not isfinite(M_w) or M_w <= 0.0:
-        raise ValueError("osmotic_coefficient and water_molar_mass must be finite; water_molar_mass must be positive")
+        raise ValueError(
+            "osmotic_coefficient and water_molar_mass must be finite; water_molar_mass must be positive")
     if nu_cation <= 0 or nu_anion <= 0:
         raise ValueError("stoichiometric coefficients must be positive")
     return exp(-M_w * (nu_cation + nu_anion) * m * phi)
