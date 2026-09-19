@@ -3,6 +3,8 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+import pycuc
+from pythermodb_settings.models import Component, Temperature
 # locals
 from ...plugin import ACTIVITY_MODELS
 from ...utils import add_attributes
@@ -20,6 +22,18 @@ from .core import (
     validate_electroneutrality,
 )
 from .parameters import PitzerBinaryParameters, _extract_pitzer_binary_parameters
+from .parameters import PitzerParameterSet
+from .components import normalize_molalities, normalize_pitzer_components
+from .multicomponent import (
+    calc_Z,
+    calc_activity_coefficients,
+    calc_ln_activity_coefficients,
+    calc_multicomponent_ionic_strength,
+    calc_multicomponent_net_charge,
+    calc_osmotic_coefficient_multicomponent,
+    calc_water_activity_multicomponent,
+    validate_multicomponent_electroneutrality,
+)
 
 
 class Pitzer:
@@ -36,13 +50,20 @@ class Pitzer:
         components: List[Any],
         datasource: Optional[Dict[str, Any]] = None,
         equationsource: Optional[Dict[str, Any]] = None,
+        formulation: str = "binary_single_alpha_v1",
         **kwargs: Any,
     ) -> None:
-        if not isinstance(components, list) or len(components) != 2:
-            raise ValueError(
-                "Pitzer v1 requires exactly [cation, anion] components")
-        self.components = [self._component_key(
-            component) for component in components]
+        # SECTION: Formulation-specific component validation.
+        if formulation not in ("binary_single_alpha_v1", "multicomponent_pitzer_v2"):
+            raise ValueError(f"Unsupported Pitzer formulation '{formulation}'")
+        if formulation == "binary_single_alpha_v1":
+            if not isinstance(components, list) or len(components) != 2:
+                raise ValueError("Pitzer v1 requires exactly [cation, anion] components")
+            self.components = [self._component_key(component) for component in components]
+        else:
+            normalize_pitzer_components(components)
+            self.components = components
+        self.formulation = formulation
         self.datasource = {} if datasource is None else datasource
         self.equationsource = {} if equationsource is None else equationsource
 
@@ -54,6 +75,9 @@ class Pitzer:
         """Calculate binary Pitzer mean activity, osmotic coefficient, and water activity."""
         if not isinstance(model_input, dict):
             raise TypeError("model_input must be a dictionary")
+
+        if self.formulation == "multicomponent_pitzer_v2":
+            return self._cal_multicomponent_v2(model_input)
 
         # SECTION: Build the validated binary ionic state.
         salt_molality = model_input.get("salt_molality")
@@ -162,6 +186,73 @@ class Pitzer:
                 "alpha": params.alpha,
                 "A_phi": params.A_phi,
                 "b": params.b,
+            },
+        }
+        return res, other_values
+
+    # SECTION: Component-centric multicomponent Pitzer v2 orchestration
+    def _cal_multicomponent_v2(
+        self, model_input: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """Calculate ionic multicomponent Pitzer properties from true species."""
+        temperature = model_input.get("temperature")
+        if not isinstance(temperature, Temperature):
+            raise TypeError("Pitzer v2 temperature must be a pythermodb_settings Temperature")
+        molalities = model_input.get("molalities")
+        if molalities is None:
+            raise ValueError("Pitzer v2 requires molalities in model_input")
+        parameters = model_input.get("parameters")
+        if not isinstance(parameters, PitzerParameterSet):
+            raise TypeError("Pitzer v2 parameters must be a PitzerParameterSet")
+        strict_parameters = bool(model_input.get("strict_parameters", True))
+        water_molar_mass = float(model_input.get("water_molar_mass", 0.01801528))
+        if not np.isfinite(water_molar_mass) or water_molar_mass <= 0.0:
+            raise ValueError("water_molar_mass must be finite and positive")
+
+        # NOTE: Temperature remains metadata while kernels use kelvin.
+        temperature_K = pycuc.convert_from_to(temperature.value, temperature.unit, "K")
+        normalized = normalize_molalities(self.components, molalities)
+        validate_multicomponent_electroneutrality(self.components, normalized)
+        ionic_strength = calc_multicomponent_ionic_strength(self.components, normalized)
+        Z = calc_Z(self.components, normalized)
+        ln_gamma = calc_ln_activity_coefficients(self.components, normalized, parameters, strict_parameters)
+        gamma = calc_activity_coefficients(self.components, normalized, parameters, strict_parameters)
+        phi = calc_osmotic_coefficient_multicomponent(self.components, normalized, parameters, strict_parameters)
+        water_activity = calc_water_activity_multicomponent(self.components, normalized, parameters, strict_parameters, water_molar_mass)
+        component_ids = [component.get_key("Formula-State") for component in self.components]
+
+        res = {
+            "property_name": "activity coefficients",
+            "model": "PITZER",
+            "formulation": self.formulation,
+            "components": component_ids,
+            "value": gamma,
+            "unit": 1,
+            "symbol": "gamma_i",
+        }
+        other_values = {
+            "temperature": temperature.model_dump(),
+            "temperature_K": temperature_K,
+            "molalities": normalized,
+            "ionic_strength": ionic_strength,
+            "ionic_strength_unit": "mol/kg",
+            "Z": Z,
+            "net_charge": calc_multicomponent_net_charge(self.components, normalized),
+            "ln_activity_coefficients": ln_gamma,
+            "activity_coefficients": gamma,
+            "osmotic_coefficient": phi,
+            "water_activity": water_activity,
+            "water_molar_mass": water_molar_mass,
+            "strict_parameters": strict_parameters,
+            "parameters": parameters,
+            "component_metadata": {
+                component.get_key("Formula-State"): {
+                    "formula": component.formula,
+                    "name": component.name,
+                    "state": component.state,
+                    "charge": component.get_net_charge(),
+                    "species_type": component.species_type,
+                } for component in self.components
             },
         }
         return res, other_values

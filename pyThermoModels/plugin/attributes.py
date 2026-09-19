@@ -100,8 +100,8 @@ ACTIVITY_MODELS = {
         },
         'DEPENDENT_EQUATIONS': {},
         'DESCRIPTION': (
-            "Pitzer v1: one fully dissociated binary electrolyte on a molality "
-            "basis, using the single-alpha formulation and reporting gamma_pm only."
+            "Pitzer v1 binary electrolyte and component-centric v2 aqueous "
+            "multicomponent ionic formulation on a molality basis."
         )
     },
     "WILSON": {

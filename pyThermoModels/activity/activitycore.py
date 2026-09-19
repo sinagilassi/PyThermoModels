@@ -119,14 +119,14 @@ class ActivityCore:
                 equationsource=self.equationsource,
                 mixture_id=self._mixture_id,
             )
-        # ! pitzer: v1 is deliberately binary-only.
-        if len(self.components) == 2:
-            self.__pitzer = Pitzer(
-                components=self.components,
-                datasource=self.datasource,
-                equationsource=self.equationsource,
-                mixture_id=self._mixture_id,
-            )
+        # ! Pitzer retains v1 for binary legacy callers and uses v2 otherwise.
+        self.__pitzer = Pitzer(
+            components=self.components,
+            datasource=self.datasource,
+            equationsource=self.equationsource,
+            mixture_id=self._mixture_id,
+            formulation=("binary_single_alpha_v1" if len(self.components) == 2 else "multicomponent_pitzer_v2"),
+        )
         # ! enrtl
         self.__enrtl = ENRTL(
             components=self.components,
@@ -332,6 +332,7 @@ class ActivityCore:
                     self.components,
                     self.datasource,
                     self.equationsource,
+                    formulation=("binary_single_alpha_v1" if len(self.components) == 2 else "multicomponent_pitzer_v2"),
                 )
             elif model_name == 'WILSON':
                 return Wilson(
