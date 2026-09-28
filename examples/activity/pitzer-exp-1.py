@@ -6,7 +6,7 @@ temperature-specific Pitzer parameter source.
 """
 
 from itertools import combinations
-from pprint import pprint
+from rich import print
 
 from pythermodb_settings.models import Component, Temperature
 
@@ -90,5 +90,5 @@ result, details = model.cal(
 )
 
 # Normalized molalities, I, Z, gamma_i, phi, and water activity are in details.
-pprint(result)
-pprint(details)
+print(result)
+print(details)
