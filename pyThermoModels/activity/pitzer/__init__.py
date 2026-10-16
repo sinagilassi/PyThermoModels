@@ -20,7 +20,7 @@ from .core import (
 )
 from .model import Pitzer
 from .parameters import (
-    PitzerBinaryParameters, PitzerMulticomponentBinaryParameters,
+    PitzerBinaryParameters, PitzerMultiComponentBinaryParameters,
     PitzerParameterSet, PitzerPsiParameter, PitzerThetaParameter,
 )
 from .components import PitzerSpeciesState, build_pitzer_species_state, normalize_molalities, normalize_pitzer_components
@@ -37,7 +37,7 @@ from .multicomponent import (
 __all__ = [
     "Pitzer",
     "PitzerBinaryParameters",
-    "PitzerMulticomponentBinaryParameters",
+    "PitzerMultiComponentBinaryParameters",
     "PitzerThetaParameter",
     "PitzerPsiParameter",
     "PitzerParameterSet",
