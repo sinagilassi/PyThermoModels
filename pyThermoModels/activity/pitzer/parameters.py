@@ -63,9 +63,9 @@ def _extract_pitzer_binary_parameters(
     )
 
 
-# SECTION: Multicomponent Pitzer v2 parameter containers
+# SECTION: Multi-Component Pitzer v2 parameter containers
 @dataclass(frozen=True)
-class PitzerMulticomponentBinaryParameters:
+class PitzerMultiComponentBinaryParameters:
     """Temperature-specific cation--anion parameters for Pitzer v2.
 
     ``alpha2`` is required only when ``beta2`` is non-zero.  The parameters
