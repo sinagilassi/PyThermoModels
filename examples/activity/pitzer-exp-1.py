@@ -12,7 +12,7 @@ from pythermodb_settings.models import Component, Temperature
 
 from pyThermoModels.activity.pitzer import (
     Pitzer,
-    PitzerMulticomponentBinaryParameters,
+    PitzerMultiComponentBinaryParameters,
     PitzerParameterSet,
     PitzerPsiParameter,
     PitzerThetaParameter,
@@ -44,7 +44,7 @@ cations, anions = components[:3], components[3:]
 # NOTE: Values are examples, not a literature parameter set.
 binary_parameters = {
     (cation.get_key("Formula"), anion.get_key("Formula")):
-    PitzerMulticomponentBinaryParameters(
+    PitzerMultiComponentBinaryParameters(
         beta0=0.05,
         beta1=0.15,
         c_phi=0.001,
