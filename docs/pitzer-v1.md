@@ -19,7 +19,7 @@ charge map. Temperatures are converted to kelvin internally.
 ```python
 from pythermodb_settings.models import Component, Temperature
 from pyThermoModels.activity.pitzer import (
-    Pitzer, PitzerMulticomponentBinaryParameters, PitzerParameterSet,
+    Pitzer, PitzerMultiComponentBinaryParameters, PitzerParameterSet,
 )
 
 na = Component(name="Sodium", formula="Na{+}", state="aq")
@@ -28,7 +28,7 @@ parameters = PitzerParameterSet(
     A_phi=0.3915,
     b=1.2,
     binary={
-        ("Na{+}", "Cl{-}"): PitzerMulticomponentBinaryParameters(
+        ("Na{+}", "Cl{-}"): PitzerMultiComponentBinaryParameters(
             beta0=0.0765, beta1=0.2664, c_phi=0.00127,
         ),
     },
