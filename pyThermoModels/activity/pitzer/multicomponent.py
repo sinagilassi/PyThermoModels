@@ -1,4 +1,4 @@
-"""Multicomponent aqueous-ion Pitzer v2 thermodynamic equations."""
+"""Multi-component aqueous-ion Pitzer v2 thermodynamic equations."""
 
 from collections.abc import Mapping
 from itertools import combinations
@@ -14,8 +14,10 @@ from .interactions import (
 )
 from .mixing import calc_Phi, calc_Phi_phi, calc_Phi_prime
 from .parameters import (
-    PitzerMulticomponentBinaryParameters, PitzerParameterSet,
-    PitzerPsiParameter, PitzerThetaParameter,
+    PitzerMultiComponentBinaryParameters,
+    PitzerParameterSet,
+    PitzerPsiParameter,
+    PitzerThetaParameter,
 )
 
 
@@ -42,37 +44,51 @@ def validate_multicomponent_electroneutrality(components: list[Component], molal
     """Require a Pitzer v2 species state to be electrically neutral."""
     charge = calc_multicomponent_net_charge(components, molalities)
     if abs(charge) > atol:
-        raise ValueError(f"Pitzer ionic state is not electroneutral: net molal charge = {charge:.6e}")
+        raise ValueError(
+            f"Pitzer ionic state is not electroneutral: net molal charge = {charge:.6e}")
     return True
 
 
 # SECTION: Binary interaction functions
-def calc_B(ionic_strength: float, params: PitzerMulticomponentBinaryParameters) -> float:
+def calc_B(ionic_strength: float, params: PitzerMultiComponentBinaryParameters) -> float:
     """Return the standard Pitzer binary activity interaction ``B``."""
     root_i = sqrt(ionic_strength)
     result = params.beta0 + params.beta1 * calc_g(params.alpha1 * root_i)
     if params.beta2 != 0.0:
         # ? alpha2 is validated by the parameter container when beta2 is active.
+        # >> check
+        if params.alpha2 is None:
+            raise ValueError("alpha2 must be supplied when beta2 is non-zero")
+
         result += params.beta2 * calc_g(float(params.alpha2) * root_i)
     return result
 
 
-def calc_B_prime(ionic_strength: float, params: PitzerMulticomponentBinaryParameters) -> float:
+def calc_B_prime(ionic_strength: float, params: PitzerMultiComponentBinaryParameters) -> float:
     """Return derivative of B with respect to ionic strength."""
     if ionic_strength == 0.0:
         return 0.0
     root_i = sqrt(ionic_strength)
-    result = params.beta1 * calc_g_prime(params.alpha1 * root_i) * params.alpha1 / (2.0 * root_i)
+    result = params.beta1 * \
+        calc_g_prime(params.alpha1 * root_i) * params.alpha1 / (2.0 * root_i)
     if params.beta2 != 0.0:
-        result += params.beta2 * calc_g_prime(float(params.alpha2) * root_i) * float(params.alpha2) / (2.0 * root_i)
+        # >> check
+        if params.alpha2 is None:
+            raise ValueError("alpha2 must be supplied when beta2 is non-zero")
+        result += params.beta2 * \
+            calc_g_prime(float(params.alpha2) * root_i) * \
+            float(params.alpha2) / (2.0 * root_i)
     return result
 
 
-def calc_B_phi(ionic_strength: float, params: PitzerMulticomponentBinaryParameters) -> float:
+def calc_B_phi(ionic_strength: float, params: PitzerMultiComponentBinaryParameters) -> float:
     """Return binary interaction used in the osmotic coefficient."""
     root_i = sqrt(ionic_strength)
     result = params.beta0 + params.beta1 * exp(-params.alpha1 * root_i)
     if params.beta2 != 0.0:
+        # >> check
+        if params.alpha2 is None:
+            raise ValueError("alpha2 must be supplied when beta2 is non-zero")
         result += params.beta2 * exp(-float(params.alpha2) * root_i)
     return result
 
@@ -90,31 +106,39 @@ def _m(component: Component, values: Mapping[str, float]) -> float:
     return values[component.get_key("Formula-State")]
 
 
-def _binary(params: PitzerParameterSet, cation: Component, anion: Component, strict: bool) -> PitzerMulticomponentBinaryParameters | None:
-    parameter = require_parameter(params.binary, make_binary_interaction_key(cation, anion), "binary", strict)
-    if parameter is not None and not isinstance(parameter, PitzerMulticomponentBinaryParameters):
-        raise TypeError("binary parameter mappings must contain PitzerMulticomponentBinaryParameters")
+def _binary(params: PitzerParameterSet, cation: Component, anion: Component, strict: bool) -> PitzerMultiComponentBinaryParameters | None:
+    parameter = require_parameter(
+        params.binary, make_binary_interaction_key(cation, anion), "binary", strict)
+    if parameter is not None and not isinstance(parameter, PitzerMultiComponentBinaryParameters):
+        raise TypeError(
+            "binary parameter mappings must contain PitzerMultiComponentBinaryParameters")
     return parameter
 
 
 def _theta(params: PitzerParameterSet, left: Component, right: Component, strict: bool) -> PitzerThetaParameter | None:
-    parameter = require_parameter(params.theta, make_theta_key(left, right), "theta", strict)
+    parameter = require_parameter(
+        params.theta, make_theta_key(left, right), "theta", strict)
     if parameter is not None and not isinstance(parameter, PitzerThetaParameter):
-        raise TypeError("theta parameter mappings must contain PitzerThetaParameter")
+        raise TypeError(
+            "theta parameter mappings must contain PitzerThetaParameter")
     return parameter
 
 
 def _psi_cc_a(params: PitzerParameterSet, c1: Component, c2: Component, anion: Component, strict: bool) -> PitzerPsiParameter | None:
-    parameter = require_parameter(params.psi_cc_a, make_psi_cc_a_key(c1, c2, anion), "psi_cc_a", strict)
+    parameter = require_parameter(
+        params.psi_cc_a, make_psi_cc_a_key(c1, c2, anion), "psi_cc_a", strict)
     if parameter is not None and not isinstance(parameter, PitzerPsiParameter):
-        raise TypeError("psi_cc_a parameter mappings must contain PitzerPsiParameter")
+        raise TypeError(
+            "psi_cc_a parameter mappings must contain PitzerPsiParameter")
     return parameter
 
 
 def _psi_c_aa(params: PitzerParameterSet, cation: Component, a1: Component, a2: Component, strict: bool) -> PitzerPsiParameter | None:
-    parameter = require_parameter(params.psi_c_aa, make_psi_c_aa_key(cation, a1, a2), "psi_c_aa", strict)
+    parameter = require_parameter(
+        params.psi_c_aa, make_psi_c_aa_key(cation, a1, a2), "psi_c_aa", strict)
     if parameter is not None and not isinstance(parameter, PitzerPsiParameter):
-        raise TypeError("psi_c_aa parameter mappings must contain PitzerPsiParameter")
+        raise TypeError(
+            "psi_c_aa parameter mappings must contain PitzerPsiParameter")
     return parameter
 
 
@@ -126,12 +150,14 @@ def calc_F(components: list[Component], values: Mapping[str, float], params: Pit
         for anion in anions:
             binary = _binary(params, cation, anion, strict_parameters)
             if binary is not None:
-                result += _m(cation, values) * _m(anion, values) * calc_B_prime(ionic_strength, binary)
+                result += _m(cation, values) * _m(anion, values) * \
+                    calc_B_prime(ionic_strength, binary)
     for group in (cations, anions):
         for left, right in combinations(group, 2):
             theta = _theta(params, left, right, strict_parameters)
             if theta is not None:
-                result += _m(left, values) * _m(right, values) * calc_Phi_prime(ionic_strength, left.get_net_charge(), right.get_net_charge(), params.A_phi)
+                result += _m(left, values) * _m(right, values) * calc_Phi_prime(
+                    ionic_strength, left.get_net_charge(), right.get_net_charge(), params.A_phi)
     return result
 
 
@@ -153,17 +179,21 @@ def calc_ln_activity_coefficients(components: list[Component], molalities: Mappi
             binary = _binary(params, ion, opposite, strict_parameters)
             if binary is not None:
                 # NOTE: 3/2 converts C_phi to the individual-ion convention.
-                total += _m(opposite, values) * (2.0 * calc_B(ionic_strength, binary) + 1.5 * calc_Z(components, values) * calc_C(binary.c_phi, ion.get_net_charge(), opposite.get_net_charge()))
+                total += _m(opposite, values) * (2.0 * calc_B(ionic_strength, binary) + 1.5 * calc_Z(
+                    components, values) * calc_C(binary.c_phi, ion.get_net_charge(), opposite.get_net_charge()))
         for partner in same:
             if partner is ion:
                 continue
             theta = _theta(params, ion, partner, strict_parameters)
             if theta is not None:
-                total += 2.0 * _m(partner, values) * calc_Phi(theta.theta, ionic_strength, ion.get_net_charge(), partner.get_net_charge(), params.A_phi)
+                total += 2.0 * _m(partner, values) * calc_Phi(theta.theta, ionic_strength,
+                                                              ion.get_net_charge(), partner.get_net_charge(), params.A_phi)
             for opposite in opposites:
-                psi = _psi_cc_a(params, ion, partner, opposite, strict_parameters)
+                psi = _psi_cc_a(params, ion, partner,
+                                opposite, strict_parameters)
                 if psi is not None:
-                    total += _m(partner, values) * _m(opposite, values) * psi.psi
+                    total += _m(partner, values) * \
+                        _m(opposite, values) * psi.psi
         if is_cation:
             for a1, a2 in combinations(anions, 2):
                 psi = _psi_c_aa(params, ion, a1, a2, strict_parameters)
@@ -175,17 +205,21 @@ def calc_ln_activity_coefficients(components: list[Component], molalities: Mappi
         for opposite in cations:
             binary = _binary(params, opposite, ion, strict_parameters)
             if binary is not None:
-                total += _m(opposite, values) * (2.0 * calc_B(ionic_strength, binary) + 1.5 * calc_Z(components, values) * calc_C(binary.c_phi, opposite.get_net_charge(), ion.get_net_charge()))
+                total += _m(opposite, values) * (2.0 * calc_B(ionic_strength, binary) + 1.5 * calc_Z(
+                    components, values) * calc_C(binary.c_phi, opposite.get_net_charge(), ion.get_net_charge()))
         for partner in anions:
             if partner is ion:
                 continue
             theta = _theta(params, ion, partner, strict_parameters)
             if theta is not None:
-                total += 2.0 * _m(partner, values) * calc_Phi(theta.theta, ionic_strength, ion.get_net_charge(), partner.get_net_charge(), params.A_phi)
+                total += 2.0 * _m(partner, values) * calc_Phi(theta.theta, ionic_strength,
+                                                              ion.get_net_charge(), partner.get_net_charge(), params.A_phi)
             for opposite in cations:
-                psi = _psi_c_aa(params, opposite, ion, partner, strict_parameters)
+                psi = _psi_c_aa(params, opposite, ion,
+                                partner, strict_parameters)
                 if psi is not None:
-                    total += _m(partner, values) * _m(opposite, values) * psi.psi
+                    total += _m(partner, values) * \
+                        _m(opposite, values) * psi.psi
         for c1, c2 in combinations(cations, 2):
             psi = _psi_cc_a(params, c1, c2, ion, strict_parameters)
             if psi is not None:
@@ -207,31 +241,38 @@ def calc_osmotic_coefficient_multicomponent(components: list[Component], molalit
     total_m = sum(values.values())
     if total_m == 0.0:
         return 1.0
-    ionic_strength, Z = calc_multicomponent_ionic_strength(components, values), calc_Z(components, values)
+    ionic_strength, Z = calc_multicomponent_ionic_strength(
+        components, values), calc_Z(components, values)
     cations, anions = _groups(components)
-    term = -params.A_phi * ionic_strength ** 1.5 / (1.0 + params.b * sqrt(ionic_strength))
+    term = -params.A_phi * ionic_strength ** 1.5 / \
+        (1.0 + params.b * sqrt(ionic_strength))
     for cation in cations:
         for anion in anions:
             binary = _binary(params, cation, anion, strict_parameters)
             if binary is not None:
-                term += _m(cation, values) * _m(anion, values) * (calc_B_phi(ionic_strength, binary) + Z * calc_C(binary.c_phi, cation.get_net_charge(), anion.get_net_charge()))
+                term += _m(cation, values) * _m(anion, values) * (calc_B_phi(ionic_strength, binary) +
+                                                                  Z * calc_C(binary.c_phi, cation.get_net_charge(), anion.get_net_charge()))
     for group, is_cation in ((cations, True), (anions, False)):
         for left, right in combinations(group, 2):
             theta = _theta(params, left, right, strict_parameters)
             if theta is not None:
-                term += _m(left, values) * _m(right, values) * calc_Phi_phi(theta.theta, ionic_strength, left.get_net_charge(), right.get_net_charge(), params.A_phi)
+                term += _m(left, values) * _m(right, values) * calc_Phi_phi(theta.theta,
+                                                                            ionic_strength, left.get_net_charge(), right.get_net_charge(), params.A_phi)
             opposites = anions if is_cation else cations
             for opposite in opposites:
-                psi = _psi_cc_a(params, left, right, opposite, strict_parameters) if is_cation else _psi_c_aa(params, opposite, left, right, strict_parameters)
+                psi = _psi_cc_a(params, left, right, opposite, strict_parameters) if is_cation else _psi_c_aa(
+                    params, opposite, left, right, strict_parameters)
                 if psi is not None:
-                    term += _m(left, values) * _m(right, values) * _m(opposite, values) * psi.psi
+                    term += _m(left, values) * _m(right, values) * \
+                        _m(opposite, values) * psi.psi
     return 1.0 + 2.0 * term / total_m
 
 
 def calc_water_activity_multicomponent(components: list[Component], molalities: Mapping[str, float], params: PitzerParameterSet, strict_parameters: bool = True, water_molar_mass: float = 0.01801528) -> float:
     """Return water activity from multicomponent osmotic coefficient."""
     values = normalize_molalities(components, molalities)
-    phi = calc_osmotic_coefficient_multicomponent(components, values, params, strict_parameters)
+    phi = calc_osmotic_coefficient_multicomponent(
+        components, values, params, strict_parameters)
     return exp(-float(water_molar_mass) * sum(values.values()) * phi)
 
 
@@ -243,7 +284,8 @@ def calc_mean_ionic_activity_coefficient(ion_activity_coefficients: Mapping[str,
     from math import log
     for component_id, nu in stoichiometry.items():
         if component_id not in ion_activity_coefficients or int(nu) <= 0:
-            raise ValueError("stoichiometry must reference coefficients with positive integers")
+            raise ValueError(
+                "stoichiometry must reference coefficients with positive integers")
         gamma = float(ion_activity_coefficients[component_id])
         if gamma <= 0.0:
             raise ValueError("activity coefficients must be positive")
