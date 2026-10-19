@@ -1,4 +1,4 @@
-"""Run the component-centric multicomponent Pitzer v2 aqueous-ion example.
+"""Run the component-centric multi-component Pitzer v2 aqueous-ion example.
 
 The example uses a true-species molality state, not apparent salts.  Parameter
 values below are illustrative only; production work must use a validated,
