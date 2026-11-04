@@ -30,7 +30,7 @@ def _parameters(components):
         0.0) for c1, c2 in __import__('itertools').combinations(cations, 2) for a in anions}
     psi_c_aa = {make_psi_c_aa_key(
         c, anions[0], anions[1]): PitzerPsiParameter(0.0) for c in cations}
-    return PitzerParameterSet(A_phi=.3915, b=1.2, binary=binary, theta=theta, psi_cc_a=psi_cc_a, psi_c_aa=psi_c_aa)
+    return PitzerParameterSet(A_phi=.3915, b=1.2, binary=binary, theta=theta, psi_cc_a=psi_cc_a, psi_c_aa=psi_c_aa, j_strategy="pitzer_1975")
 
 
 def test_component_composition_functions_and_temperature_normalization():
