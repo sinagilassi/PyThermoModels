@@ -36,6 +36,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=2.3.3",
+    "autograd>=1.7",
     "scipy>=1.16.2",
     "pydantic-settings>=2.10.1",
     "pydantic>=2.11.9",
