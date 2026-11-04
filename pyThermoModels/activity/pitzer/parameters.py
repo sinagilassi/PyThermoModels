@@ -1,6 +1,6 @@
 ﻿"""Validated parameter container for Pitzer binary-electrolyte v1."""
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import isfinite
 
 
@@ -132,6 +132,12 @@ class PitzerParameterSet:
     theta: Mapping
     psi_cc_a: Mapping
     psi_c_aa: Mapping
+    lambda_ni: Mapping = field(default_factory=dict)
+    lambda_nn: Mapping = field(default_factory=dict)
+    zeta_g: Mapping = field(default_factory=dict)
+    j_strategy: str | None = None
+    convention_id: str = "PITZER_GEX_CANONICAL_V1"
+    provenance: Mapping = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         # NOTE: Mappings use Formula-based canonical interaction identities.
@@ -140,6 +146,10 @@ class PitzerParameterSet:
             if not isfinite(value) or value <= 0.0:
                 raise ValueError(f"{name} must be finite and positive")
             object.__setattr__(self, name, value)
-        for name in ("binary", "theta", "psi_cc_a", "psi_c_aa"):
+        if self.convention_id != "PITZER_GEX_CANONICAL_V1":
+            raise ValueError("Unsupported Pitzer interaction convention")
+        if self.j_strategy not in (None, "pitzer_1975", "reduced_no_electrostatic_mixing"):
+            raise ValueError("Unsupported Pitzer J strategy")
+        for name in ("binary", "theta", "psi_cc_a", "psi_c_aa", "lambda_ni", "lambda_nn", "zeta_g", "provenance"):
             if not isinstance(getattr(self, name), Mapping):
                 raise TypeError(f"{name} must be a mapping")

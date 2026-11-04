@@ -43,7 +43,8 @@ def calc_multicomponent_net_charge(components: list[Component], molalities: Mapp
 def validate_multicomponent_electroneutrality(components: list[Component], molalities: Mapping[str, float], atol: float = 1.0e-12) -> bool:
     """Require a Pitzer v2 species state to be electrically neutral."""
     charge = calc_multicomponent_net_charge(components, molalities)
-    if abs(charge) > atol:
+    scale = calc_Z(components, molalities)
+    if abs(charge) > atol + 1e-10 * scale:
         raise ValueError(
             f"Pitzer ionic state is not electroneutral: net molal charge = {charge:.6e}")
     return True
@@ -164,6 +165,11 @@ def calc_F(components: list[Component], values: Mapping[str, float], params: Pit
 # SECTION: Thermodynamic properties
 def calc_ln_activity_coefficients(components: list[Component], molalities: Mapping[str, float], params: PitzerParameterSet, strict_parameters: bool = True) -> dict[str, float]:
     """Calculate conventional individual-ion Pitzer ``ln(gamma_i)`` values."""
+    from .gibbs import evaluate_gibbs
+    _, values, _, _ = evaluate_gibbs(components, molalities, params, strict_parameters)
+    return {c.get_key("Formula-State"): float(value) for c, value in zip(components, values)}
+
+    # Historical equations retained below for comparison only.
     normalize_pitzer_components(components)
     values = normalize_molalities(components, molalities)
     validate_multicomponent_electroneutrality(components, values)
@@ -235,6 +241,9 @@ def calc_activity_coefficients(*args, **kwargs) -> dict[str, float]:
 
 def calc_osmotic_coefficient_multicomponent(components: list[Component], molalities: Mapping[str, float], params: PitzerParameterSet, strict_parameters: bool = True) -> float:
     """Calculate the ionic multicomponent Pitzer osmotic coefficient."""
+    from .gibbs import evaluate_gibbs
+    return evaluate_gibbs(components, molalities, params, strict_parameters)[2]
+
     normalize_pitzer_components(components)
     values = normalize_molalities(components, molalities)
     validate_multicomponent_electroneutrality(components, values)

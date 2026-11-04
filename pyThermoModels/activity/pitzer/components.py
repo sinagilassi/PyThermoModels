@@ -39,9 +39,9 @@ def normalize_pitzer_components(components: list[Component]) -> None:
             raise NotImplementedError("Pitzer v2 does not support zwitterion interactions")
         if component.is_radical() or component.is_radical_ion():
             raise NotImplementedError("Pitzer v2 does not support radical species")
-        if component.is_neutral():
-            raise NotImplementedError("Pitzer v2 neutral interactions require lambda/zeta parameters")
-        if not (component.is_cation() or component.is_anion()):
+        if component.is_neutral() and component.formula == "H2O":
+            raise NotImplementedError("Water is the solvent, not a solute with lambda/zeta interactions")
+        if not (component.is_cation() or component.is_anion() or component.is_neutral()):
             raise ValueError(f"Unsupported Pitzer ionic species '{component_id}'")
 
 
