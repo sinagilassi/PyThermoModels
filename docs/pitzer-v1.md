@@ -48,7 +48,28 @@ change parameter lookup. Parameter coverage is strict by default: active
 interactions must be represented explicitly, including interactions assigned a
 zero value.
 
-V2 is an ionic formulation. Neutral `lambda`/`zeta` interactions, radicals,
-and zwitterions are intentionally rejected. Chemical dissociation and
-speciation remain the responsibility of the reaction/equilibrium layer; Pitzer
-consumes the resulting true-species molalities.
+Both formulations calculate properties from a shared molality-basis excess
+Gibbs function. The multicomponent formulation also accepts neutral aqueous
+solutes (water remains the solvent), with `lambda_ni`, `lambda_nn`, and
+`zeta_g` mappings on `PitzerParameterSet`. Keys are formula tuples: neutral
+then ion, sorted neutral pair (including self), and neutral/cation/anion,
+respectively. Values are canonical coefficients in kg/mol for lambda and
+(kg/mol)^2 for zeta; `zeta_g` is the coefficient of the Gibbs monomial, not
+an unverified external database value. Strict coverage requires explicit zero
+entries for omitted interactions.
+
+Unequal-charge same-sign pairs require explicit `j_strategy="pitzer_1975"`
+for the Pitzer (1975) equation 47 approximation, or
+`"reduced_no_electrostatic_mixing"` for a deliberately reduced model. The
+former is compared with Wolery et al. (2010), Appendix A, table A-3:
+https://wipp.energy.gov/information_repository/cra/CRA-2014/References/Others/Wolery_Xiong_Long_2010_ERMS550239.pdf.
+The choice must match the parameter library. Chemical speciation remains the
+responsibility of a separate equilibrium layer.
+
+Parameters supplied directly are already resolved at the requested temperature
+and pressure. The current implementation does not yet resolve ModelSource
+tables, validate parameter ranges or pressure, convert external conventions,
+or provide validated MU/ETA adapters. Do not interpret direct input as a
+verified external parameter library. Scientific mixed-electrolyte and neutral
+reference comparisons remain outstanding; the code is not a validated complete
+Pitzer implementation.
