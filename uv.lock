@@ -23,6 +23,19 @@ wheels = [
 ]
 
 [[package]]
+name = "autograd"
+version = "1.9.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/ac/4a8b58364ba865ab545251edbe475e5a35326814a5d274a2211d33ed8a5d/autograd-1.9.1.tar.gz", hash = "sha256:7818c5c69ddf9efb7da74097bd741a4c7920133f41966f68537223a15ef798bc", size = 2566975, upload-time = "2026-07-02T07:43:58.255Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/ce/8c98e6604bb1ec9d03c8493c328185b69bb7533fe08f3640f0f3641bd9d1/autograd-1.9.1-py3-none-any.whl", hash = "sha256:b788bae3fa010cbffb4cfb7b8ba2a3f0daa6072a8506da6164c779fe9cf3e05a", size = 54387, upload-time = "2026-07-02T07:43:56.502Z" },
+]
+
+[[package]]
 name = "numpy"
 version = "2.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -486,6 +499,7 @@ name = "pythermomodels"
 version = "1.8.0"
 source = { editable = "." }
 dependencies = [
+    { name = "autograd" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pycuc" },
@@ -501,6 +515,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "autograd", specifier = ">=1.7" },
     { name = "numpy", specifier = ">=2.3.3" },
     { name = "pycuc" },
     { name = "pydantic", specifier = ">=2.11.9" },
