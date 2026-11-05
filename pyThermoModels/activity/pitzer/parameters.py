@@ -124,7 +124,7 @@ class PitzerPsiParameter:
 
 @dataclass(frozen=True)
 class PitzerParameterSet:
-    """Explicit parameter source for one multicomponent Pitzer calculation."""
+    """Explicit parameter source for one multi-component Pitzer calculation."""
 
     A_phi: float
     b: float
